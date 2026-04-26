@@ -9,6 +9,8 @@
 .import func_close_inputstream
 .import func_print_hex
 
+.import func_slurp_header
+
 .include "include/file.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"
@@ -94,6 +96,8 @@ start:
    jsr func_print_hex
    iny
    bne @read_loop
+   
+   jsr func_slurp_header
    
    ;---------------------------------------------------------------------------
    ; Finally, close the file stream and return   

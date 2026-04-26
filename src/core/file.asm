@@ -27,9 +27,6 @@ FILE_IO_MODE_READ   := 2 ; 2 means read
 ;       even when I'm 100% certain the open failed (because I used a bogus filename)
 ;------------------------------------------------------------------------------
 .proc sub_open_inputstream: near
-
-   stp
-   nop
    jsr KERNAL_SETNAM              ; inform kernal of a file that is to be later opened
 
    lda #FILE_LOGICAL_NUMBER       ; A is the logical file number

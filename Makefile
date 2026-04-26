@@ -19,12 +19,14 @@ INCLUDES := $(wildcard $(INCDIR)/*.inc)
 #------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------
-LIB_CORE_SOURCES := $(wildcard $(SOURCE)/core/*.asm)
+LIB_CORE_SOURCES  := $(wildcard $(SOURCE)/core/*.asm)
+LIB_CODEC_SOURCES := $(wildcard $(SOURCE)/codec/*.asm)
 LIB_CORE_OBJECTS  := $(LIB_CORE_SOURCES:$(SOURCE)/core/%.asm=$(TARGET)/core/%.o)
+LIB_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=$(TARGET)/codec/%.o)
 
 # ca65 seems to need this in reverse-dependency order
-LIBS_AS_ARGS := core.lib
-LIBS_AS_DEPS := $(TARGET)/core.lib
+LIBS_AS_ARGS := core.lib codec.lib
+LIBS_AS_DEPS := $(TARGET)/core.lib $(TARGET)/codec.lib
 
 #------------------------------------------------------------------
 # Target run (default), debug, clean
@@ -51,6 +53,9 @@ $(TARGET):
 $(TARGET)/core: | $(TARGET)
 	mkdir $@
 
+$(TARGET)/codec: | $(TARGET)
+	mkdir $@
+
 $(TARGET)/IMAGE.FLI: | $(IMAGE_FILENAME)
 	cp $(IMAGE_FILENAME) $@
 
@@ -66,6 +71,9 @@ $(TARGET)/FLIP.PRG: $(TARGET)/main.o $(LIBS_AS_DEPS) $(TARGET)/IMAGE.FLI
 $(TARGET)/core.lib: $(LIB_CORE_OBJECTS)
 	cd $(TARGET)/core && ar65 a core.lib *.o && mv core.lib $(TARGET)
 
+$(TARGET)/codec.lib: $(LIB_CODEC_OBJECTS)
+	cd $(TARGET)/codec && ar65 a codec.lib *.o && mv codec.lib $(TARGET)
+
 #------------------------------------------------------------------
 # Targets to build sources
 #
@@ -73,6 +81,9 @@ $(TARGET)/core.lib: $(LIB_CORE_OBJECTS)
 # the crude changing of directory and subsequent move	
 #------------------------------------------------------------------
 $(TARGET)/core/%.o: $(SOURCE)/core/%.asm $(INCLUDES) | $(TARGET)/core
+	cd $(dir $<) && cl65 -t cx16 -c $(notdir $<) -o $(notdir $@) && mv $(notdir $@) $@
+
+$(TARGET)/codec/%.o: $(SOURCE)/codec/%.asm $(INCLUDES) | $(TARGET)/codec
 	cd $(dir $<) && cl65 -t cx16 -c $(notdir $<) -o $(notdir $@) && mv $(notdir $@) $@
 
 $(TARGET)/%.o: $(SOURCE)/%.asm $(INCLUDES) | $(TARGET)
