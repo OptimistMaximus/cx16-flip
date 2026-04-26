@@ -75,11 +75,12 @@ CHUNK_FLI_COPY  := $0010 ; FLI uncompressed
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
 ;------------------------------------------------------------------------------
 RC_SUCCESS                    := 0
-RC_UNSUPPORTED_FILE_TYPE      := 1  ; .X .Y hold low and high bytes of type
-RC_UNSUPPORTED_FRAME_TYPE     := 2  ; .X .Y hold low and high bytes of type
-RC_UNSUPPORTED_CHUNK_TYPE     := 3  ; .X .Y hold low and high bytes of type
-RC_WIDTH_TOO_BIG              := 4  ; .X .Y hold low and high bytes of width
-RC_HEIGHT_TOO_BIG             := 5  ; .X .Y hold low and high bytes of height
-RC_DELAY_TOO_LONG             := 6
+RC_CANNOT_OPEN_FILE           := 1  ; .X holds CHKIN status, .Y holds OPEN status
+RC_UNSUPPORTED_FILE_TYPE      := 2  ; .X .Y hold low and high bytes of type
+RC_UNSUPPORTED_FRAME_TYPE     := 3  ; .X .Y hold low and high bytes of type
+RC_UNSUPPORTED_CHUNK_TYPE     := 4  ; .X .Y hold low and high bytes of type
+RC_WIDTH_TOO_BIG              := 5  ; .X .Y hold low and high bytes of width
+RC_HEIGHT_TOO_BIG             := 6  ; .X .Y hold low and high bytes of height
+RC_DELAY_TOO_LONG             := 7
 
 .endif

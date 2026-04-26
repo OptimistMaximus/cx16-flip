@@ -7,8 +7,9 @@
 .import func_find_arg
 .import func_open_inputstream
 .import func_close_inputstream
+.import func_print_hex
 
-
+.include "include/file.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"
 .include "include/petscii.inc"
@@ -56,7 +57,7 @@ start:
 
    ;---------------------------------------------------------------------------
    ; Establish the filename by looking for a custom argument. If no such arg
-   ; was found, then we'll use our default value.  Then, open the file stream.
+   ; was found, then we'll use our default value.  Then, open the file.
    ;---------------------------------------------------------------------------
    lda #0
    ldx #<RAM_VOLATILE_BUF
@@ -67,15 +68,33 @@ start:
    ldy #>default_image_filename
    bra @filename_established
 @arg_was_cool:
+   APPEND_ACCESS_MODE_TO_FILENAME PETSCII_UPPER_R
    ldx #<RAM_VOLATILE_BUF
    ldy #>RAM_VOLATILE_BUF
 @filename_established:
+
    jsr func_open_inputstream
+   tya
+   beq @open_success
+   BSOD RC_CANNOT_OPEN_FILE
+@open_success:
+
+   txa
+   beq @chkin_success
+   BSOD RC_CANNOT_OPEN_FILE
+@chkin_success:
 
    ;---------------------------------------------------------------------------
    ; Now we can enter the main part of the program
    ;---------------------------------------------------------------------------
-
+   ldy #0
+@read_loop:
+   SLURP_VAR16 ZP16_VOLATILE_EF
+   lda ZP16_VOLATILE_EF+0
+   jsr func_print_hex
+   iny
+   bne @read_loop
+   
    ;---------------------------------------------------------------------------
    ; Finally, close the file stream and return   
    ;---------------------------------------------------------------------------

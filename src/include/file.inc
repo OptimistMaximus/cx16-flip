@@ -4,17 +4,36 @@
 .include "kernal.inc"
 
 ;------------------------------------------------------------------------------
-; SLURP_A
+; SLURP_INTO_A
+;
+; Slurp 1 byte into .A
+;------------------------------------------------------------------------------
+.macro SLURP_INTO_A targetAddr
+   jsr KERNAL_ACPTR
+.endmacro
+
+;------------------------------------------------------------------------------
+; SLURP_ARRAY
 ;
 ; Reads a number of bytes specified in .A into memory at the target address.
 ;
-; prep: .A holds the number of bytes to read
+; This does a PHX/PHY/PLY/PLX which costs 14 cycles, so slurping into an array
+; of length 1 is slower than using SLURP_VAR8. Slurping into an array of
+; length 2 is faster than using SLURP_VAR16 since 2 SLURP_INTO_A calls would
+; require two JSR/RTS which is already 18 cycles. 
+;
+; @param .A holds the number of bytes to read
+; @param targetAddr is the destination address
 ;------------------------------------------------------------------------------
-.macro SLURP_A targetAddr
-   clc                     ; clear means advance destination after each read
-   ldx #<ARRAY_stagingArea ; X is the low byte of where to write into memory
-   ldy #>ARRAY_stagingArea ; Y is the high byte of where to write into memory
-   jsr KERNAL_MACPTR       ; read multiple bytes from input channel to memory
+.macro SLURP_ARRAY targetAddr
+   phx
+      phy
+         clc                ; clear means advance destination after each read
+         ldx #<targetAddr   ; X is the low byte of where to write into memory
+         ldy #>targetAddr   ; Y is the high byte of where to write into memory
+         jsr KERNAL_MACPTR  ; read multiple bytes from input channel to memory
+      ply
+   plx
 .endmacro
 
 ;------------------------------------------------------------------------------
@@ -23,7 +42,7 @@
 ; Slurp 1 byte into the target address
 ;------------------------------------------------------------------------------
 .macro SLURP_VAR8 targetAddr
-   jsr KERNAL_ACPTR
+   SLURP_INTO_A
    sta targetAddr
 .endmacro
 
@@ -34,7 +53,7 @@
 ;------------------------------------------------------------------------------
 .macro SLURP_VAR16 targetAddr
    lda #2
-   SLURP_A targetAddr
+   SLURP_ARRAY targetAddr
 .endmacro
 
 ;------------------------------------------------------------------------------
@@ -42,9 +61,9 @@
 ;
 ; Slurp 3 byte into the target address
 ;------------------------------------------------------------------------------
-.macro SLURP_VAR16 targetAddr
+.macro SLURP_VAR24 targetAddr
    lda #3
-   SLURP_A targetAddr
+   SLURP_ARRAY targetAddr
 .endmacro
 
 ;------------------------------------------------------------------------------
@@ -52,9 +71,38 @@
 ;
 ; Slurp 4 byte into the target address
 ;------------------------------------------------------------------------------
-.macro SLURP_VAR16 targetAddr
+.macro SLURP_VAR32 targetAddr
    lda #4
-   SLURP_A targetAddr
+   SLURP_ARRAY targetAddr
+.endmacro
+
+;------------------------------------------------------------------------------
+; APPEND_ACCESS_MODE
+;
+; Appends a comma and the "WARM" access mode character to a filename.
+;
+; PETSCII_UPPER_W for Writing
+; PETSCII_UPPER_A for Appending
+; PETSCII_UPPER_R for Reading
+; PETSCII_UPPER_M for Modifying
+;
+; @param accessMode the acces mode (see above)
+; @param targetAddr the address of the filename (null terminated)
+;------------------------------------------------------------------------------
+.macro APPEND_ACCESS_MODE_TO_FILENAME targetAddr
+   tax                           ; squirrel away .A for later
+   ldy #$FF
+@append_access_mode_loop:
+   iny
+   lda (targetAddr),y
+   bne @append_access_mode_loop
+
+   lda #PETSCII_COMMA
+   sta (targetAddr),y
+   txa
+   sta (targetAddr),y
+   lda #PETSCII_NULL
+   sta (targetAddr),y
 .endmacro
 
 .endif
