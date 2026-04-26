@@ -24,12 +24,21 @@ multiple spaces between arguments. For example, do NOT run it like this:
 Upon returning to BASIC, it sents the .A register to the return code,
 and the .X and .Y registers hold extra details.  You can examine these
 via `PRINT PEEK(780)`,  `PRINT PEEK(781)`, and `PRINT PEEK(782)`,
-respectively.  
+respectively.  The .X and .Y value usually holds the low and high bytes
+of a 16-bit detail value.
 
-| .A | .A meaning                  | .X and .Y meaning                    |
-|----|-----------------------------|--------------------------------------|
-| 0  | success                     | n/a                                  |
-| 1  | cannot open file            | .X .Y holds CHKIN and OPEN status    |
+| .A | .A meaning                | .X and .Y meaning                     |
+|----|---------------------------|---------------------------------------|
+| 0  | success                   | n/a                                   |
+| 1  | cannot open file          | .X is CHKIN statis, .Y is OPEN status |
+| 2  | unsupported file type     | the file type                         |
+| 3  | unsupported frame type    | the frame type                        |
+| 4  | unsupported chunk type    | the chunk type                        |
+| 5  | width too big             | the image width                       |
+| 6  | height too big            | the image height                      |
+| 7  | depth too big             | the color depth                       |
+| 8  | speed too high            | the FLI speed, lower 16-bits only     |
+| 9  | delay too long            | the FLC delay                         |
 
 
 

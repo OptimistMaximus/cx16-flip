@@ -28,11 +28,11 @@
 ; @effect .C is set if the arg could not be found
 ;------------------------------------------------------------------------------
 .proc func_find_arg: near
-   stx ZP16_VOLATILE_CD+0                ; squirrel away the target address
-   sty ZP16_VOLATILE_CD+1
-   sta ZP8_VOLATILE_A                    ; squirrel away desired arg index
+   stx ZP_VOLATILE_CD+0                ; squirrel away the target address
+   sty ZP_VOLATILE_CD+1
+   sta ZP_VOLATILE_A                    ; squirrel away desired arg index
    lda #$FD                              ; establish current index as -3
-   sta ZP8_VOLATILE_B                    ; (i.e. RUN:REM are args -3, -2, -1)
+   sta ZP_VOLATILE_B                    ; (i.e. RUN:REM are args -3, -2, -1)
 
    ldx #$FF                              ; start at -1 because we INX first
 arg_matching_loop:                       ; this is the main loop for matching
@@ -43,10 +43,10 @@ arg_matching_loop:                       ; this is the main loop for matching
    beq arg_matching_done                 ; null terminator encountered
    cmp #PETSCII_SPACE
    beq arg_matching_loop                 ; advance if we're in delimiting space
-   lda ZP8_VOLATILE_B                    ; we found an arg, so bump the found index
+   lda ZP_VOLATILE_B                    ; we found an arg, so bump the found index
    inc
-   sta ZP8_VOLATILE_B
-   cmp ZP8_VOLATILE_A                    ; if it matches the arg we want, we're done
+   sta ZP_VOLATILE_B
+   cmp ZP_VOLATILE_A                    ; if it matches the arg we want, we're done
    beq arg_matching_done
 
 arg_skip_loop:                           ; if it didn't match then we fall through
@@ -61,8 +61,8 @@ arg_skip_loop:                           ; if it didn't match then we fall throu
 
 arg_matching_done:
 
-   lda ZP8_VOLATILE_B                    ; if we didn't find it, bail
-   cmp ZP8_VOLATILE_A
+   lda ZP_VOLATILE_B                    ; if we didn't find it, bail
+   cmp ZP_VOLATILE_A
    bne done
 
    dex                                   ; dex to counteract next loop's inx
@@ -76,12 +76,12 @@ arg_copy_loop:                           ; now we can continue walking with .X
    beq done
    cmp #PETSCII_SPACE
    beq arg_copy_done
-   sta (ZP16_VOLATILE_CD),y
+   sta (ZP_VOLATILE_CD),y
    bra arg_copy_loop
 arg_copy_done:
    
    lda #0                                ; null-terminate
-   sta (ZP16_VOLATILE_CD),y
+   sta (ZP_VOLATILE_CD),y
    clc                                   ; confirm success
    bra done_success
 

@@ -9,13 +9,13 @@
 
 .proc func_strlen: near
 
-   stx ZP16_VOLATILE_AB+0
-   sty ZP16_VOLATILE_AB+1
+   stx ZP_VOLATILE_AB+0
+   sty ZP_VOLATILE_AB+1
 
    phy
       ldy #0
    @loop:
-      lda (ZP16_VOLATILE_AB),y
+      lda (ZP_VOLATILE_AB),y
       beq @loop_done
       iny
       bra @loop

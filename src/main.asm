@@ -89,16 +89,14 @@ start:
    ;---------------------------------------------------------------------------
    ; Now we can enter the main part of the program
    ;---------------------------------------------------------------------------
-   ldy #0
-@read_loop:
-   SLURP_VAR16 ZP16_VOLATILE_EF
-   lda ZP16_VOLATILE_EF+0
-   jsr func_print_hex
-   iny
-   bne @read_loop
-   
    jsr func_slurp_header
-   
+   stp
+   nop
+   nop
+   beq @header_is_cool
+   rts ; ERROR! return to basic, retaining .A, .X, .Y
+@header_is_cool:
+ 
    ;---------------------------------------------------------------------------
    ; Finally, close the file stream and return   
    ;---------------------------------------------------------------------------
