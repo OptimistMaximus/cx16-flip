@@ -21,6 +21,6 @@
       bra @loop
    @loop_done:
       tya
-   ply   
+   ply
    rts
 .endproc

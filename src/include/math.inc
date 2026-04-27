@@ -460,7 +460,7 @@
       bra @slow_multiply_loop
 @slow_multiply_done:
    ply
-.endmacro   
+.endmacro
 
 
 ;==============================================================================
@@ -486,7 +486,7 @@
    bra @slow_divide_loop
 
 @slow_divide_done:
-.endmacro   
+.endmacro
 
 
 

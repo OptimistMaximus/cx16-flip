@@ -15,11 +15,11 @@
    ; anything.  Test Suite 2 will test things that depend only on things
    ; already proven to work by virtue of Test Suite 1 passing.  And so on.
    ;
-   ; This test file should remain as simple as possible. It has the bare 
-   ; minimum logic necessary to interpret the Carry bit and .X and .Y values 
+   ; This test file should remain as simple as possible. It has the bare
+   ; minimum logic necessary to interpret the Carry bit and .X and .Y values
    ; as set by the assertions in the xuint.inc macros.
    ;###########################################################################
-    
+
 start:
 
    ;===========================================================================
@@ -31,13 +31,13 @@ start:
 
    jsr test_suite_2
    bcs fail
-   
+
    ;===========================================================================
    ; End of test suites. Don't change anything below.
    ;===========================================================================
 
    jmp pass
-      
+
 .macro PRINT petscii
    lda #petscii
    jsr $FFD2
@@ -46,7 +46,7 @@ start:
 .macro PRINT_NEWLINE
    PRINT $0D
 .endmacro
-   
+
 pass:
    jsr $FF81
    PRINT_NEWLINE
@@ -56,8 +56,8 @@ pass:
    PRINT 's'
    PRINT_NEWLINE
    PRINT_NEWLINE
-   rts   
-   
+   rts
+
 fail:
    phy                   ; push .Y (assertion number)
       phx                ; push .X (test number)
@@ -76,9 +76,9 @@ fail:
    PRINT_NEWLINE
    PRINT_NEWLINE
    rts
- 
+
 ; a simplified print routine based on the assumption that the nibbles
-; of test numbers and assertion numbers stay within 0-9 
+; of test numbers and assertion numbers stay within 0-9
 sub_print_hex:
    pha
       lsr
@@ -92,5 +92,4 @@ sub_print_hex:
    ora #$30
    jsr $FFD2
    rts
-   
-  
+

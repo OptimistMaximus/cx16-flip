@@ -38,7 +38,7 @@
 arg_matching_loop:                       ; this is the main loop for matching
    inx
    cpx #KERNAL_BASIC_BUFFER_LEN
-   beq arg_matching_done                 ; end of buffer encountered 
+   beq arg_matching_done                 ; end of buffer encountered
    lda KERNAL_BASIC_BUFFER,x
    beq arg_matching_done                 ; null terminator encountered
    cmp #PETSCII_SPACE
@@ -79,7 +79,7 @@ arg_copy_loop:                           ; now we can continue walking with .X
    sta (ZP_VOLATILE_CD),y
    bra arg_copy_loop
 arg_copy_done:
-   
+
    lda #0                                ; null-terminate our copy
    sta (ZP_VOLATILE_CD),y
    clc                                   ; confirm success
@@ -90,4 +90,4 @@ done:
 done_success:
    rts
 .endproc
-   
+

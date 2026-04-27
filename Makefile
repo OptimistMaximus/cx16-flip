@@ -37,11 +37,11 @@ TEST_LIBS := $(MAIN_LIBS) zzz/test.lib
 test: zzz/TEST.PRG
 	cd zzz && x16emu -run -debug 080D -prg TEST.PRG
 
-run: zzz/FLIP.PRG $(MAIN_RESOURCES)
-	cd zzz && x16emu -run -prg FLIP.PRG
+run: zzz/MAIN.PRG $(MAIN_RESOURCES)
+	cd zzz && x16emu -run -prg MAIN.PRG
 
-debug: zzz/FLIP.PRG $(MAIN_RESOURCES)
-	cd zzz && x16emu -run -debug 080D -prg FLIP.PRG
+debug: zzz/MAIN.PRG $(MAIN_RESOURCES)
+	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG
 	ls -l $<
 
 clean:
@@ -68,7 +68,7 @@ zzz/test:
 #------------------------------------------------------------------
 # Targets to build programs
 #------------------------------------------------------------------
-zzz/FLIP.PRG: zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
+zzz/MAIN.PRG: zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
 	cl65 -o $@ $< $(MAIN_LIBS)
 
 zzz/TEST.PRG: zzz/test.o $(TEST_LIBS) | zzz

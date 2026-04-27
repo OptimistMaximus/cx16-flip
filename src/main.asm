@@ -106,9 +106,9 @@ start:
 
 
 
- 
+
    ;---------------------------------------------------------------------------
-   ; Finally, close the file stream, wait for "any key" then return to BASIC   
+   ; Finally, close the file stream, wait for "any key" then return to BASIC
    ;---------------------------------------------------------------------------
    jsr func_close_inputstream
 

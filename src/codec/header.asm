@@ -23,7 +23,7 @@
 
    lda #128 ; header is always 128 bytes
    SLURP_ARRAY RAM_stagingArea
-   
+
    U16_COPY_VAR RAM16_fileType,   RAM_stagingArea+4
    U16_COPY_VAR ZP16_numFrames,   RAM_stagingArea+6
    U16_COPY_VAR ZP16_width,       RAM_stagingArea+8
@@ -44,7 +44,7 @@
    beq @fileType_is_cool
    RTS_VAR16_DETAIL RC_UNSUPPORTED_FILE_TYPE, RAM16_fileType
 @fileType_is_cool:
-   
+
    ;---------------------------------------------------------------------------
    ; validate width
    ;---------------------------------------------------------------------------
@@ -93,7 +93,7 @@
    ; header, so it should not be noticeable.
    ;
    ; We'll keep using the 32-bit variable, which will be fine because we know
-   ; the upper 2 bytes are zeros, and we only care about the lower 2 anyway.   
+   ; the upper 2 bytes are zeros, and we only care about the lower 2 anyway.
    ;---------------------------------------------------------------------------
    U16_COPY_IMM varTemp1, 6
    U16_SLOW_MULTIPLY varTemp2, varSpeed, varTemp1
@@ -104,4 +104,4 @@
 .endproc
 
 
-   
+

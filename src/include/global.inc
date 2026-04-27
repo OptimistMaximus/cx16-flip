@@ -103,7 +103,7 @@ RC_HEIGHT_TOO_BIG             := 6 ; height
 RC_DEPTH_TOO_BIG              := 7 ; depth
 RC_SPEED_TOO_HIGH             := 8 ; FLI speed, lower half of 32-bit value
 RC_DELAY_TOO_LONG             := 9 ; FLC delay
- 
+
 
 ;------------------------------------------------------------------------------
 ; Convenience Macros for RTS with Return Code and .X .Y detail

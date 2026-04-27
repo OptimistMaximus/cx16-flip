@@ -21,7 +21,7 @@
 ; This does a PHX/PHY/PLY/PLX which costs 14 cycles, so slurping into an array
 ; of length 1 is slower than using SLURP_VAR8. Slurping into an array of
 ; length 2 is faster than using SLURP_VAR16 since 2 SLURP_INTO_A calls would
-; require two JSR/RTS which is already 18 cycles. 
+; require two JSR/RTS which is already 18 cycles.
 ;
 ; @param .A holds the number of bytes to read
 ; @param targetAddr is the destination address

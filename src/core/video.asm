@@ -37,7 +37,7 @@
 @print:
    jmp KERNAL_CHROUT ; print whatever's in A
 .endproc
-   
+
 ;-----------------------------------------------------------------------------
 ; func_vera_setup
 ;
