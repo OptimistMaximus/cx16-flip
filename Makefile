@@ -4,14 +4,11 @@ INCDIR := $(SOURCE)/include
 
 .PHONY: run debug clean test 
 
-CC := cl65 -t cx16
-LD := ar65 a
-
 #------------------------------------------------------------------
 # Resources
 #------------------------------------------------------------------
 IMAGE_FILENAME := $(RESDIR)/BELL.FLI
-MAIN_RESOURCES := )/IMAGE.FLI
+MAIN_RESOURCES := zzz/IMAGE.FLI
 
 #------------------------------------------------------------------
 # Includes
@@ -38,7 +35,7 @@ TEST_LIBS := $(MAIN_LIBS) zzz/test.lib
 # Target test (default), debug, clean, run
 #------------------------------------------------------------------
 test: zzz/TEST.PRG
-	cd zzz && x16emu -run -prg -debug 080D TEST.PRG
+	cd zzz && x16emu -run -debug 080D -prg TEST.PRG
 
 run: zzz/FLIP.PRG $(MAIN_RESOURCES)
 	cd zzz && x16emu -run -prg FLIP.PRG
@@ -72,35 +69,51 @@ zzz/test:
 # Targets to build programs
 #------------------------------------------------------------------
 zzz/FLIP.PRG: zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
-	cd zzz && cl65 -o MAIN.PRG main.o $(MAIN_LIBS)
+	cl65 -o $@ $< $(MAIN_LIBS)
 
 zzz/TEST.PRG: zzz/test.o $(TEST_LIBS) | zzz
-	cd zzz && cl65 -o MAIN.PRG main.o $(TEST_LIBS)
+	cl65 -o $@ $< $(TEST_LIBS)
 
 #------------------------------------------------------------------
 # Targets to build libraries
 #------------------------------------------------------------------
 zzz/core.lib: $(LIB_CORE_OBJECTS) | zzz
-	cd zzz/core && $(LD) core.lib *.o && mv core.lib ..
+	ar65 a $@ zzz/core/*.o
 
 zzz/codec.lib: $(LIB_CODEC_OBJECTS) | zzz
-	cd zzz/codec && $(LD) codec.lib *.o && mv codec.lib ..
+	ar65 a $@ zzz/codec/*.o
 
 zzz/test.lib: $(LIB_TEST_OBJECTS) | zzz
-	cd zzz/test && $(LD) test.lib *.o && mv ..
+	ar65 a $@ zzz/test/*.o
 
 #------------------------------------------------------------------
 # Targets to build sources
+#
+# Note, cl65 is very picky about order of arguments.
+#
+#       cl16 -t cx16 -c foo/bar.asm -o foo/bar.o
+#
+# will ignore the output path and just put the object in the same
+# directory as the source.  But if you use the following order
+# then it works as you would intuitively expect:
+#
+#       cl65 -t cx16 -o foo/bar.o -c foo/bar.asm
+#
 #------------------------------------------------------------------
 zzz/core/%.o: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
-	cd $(dir $<) && $(CC) -c $(notdir $<) -o $(notdir $@) && mv $(notdir $@) ../../$(dir $@)
+	cl65 -t cx16 -o $@ -c $<
 
 zzz/codec/%.o: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
-	cd $(dir $<) && $(CC) -c $(notdir $<) -o $(notdir $@) && mv $(notdir $@) ../../$(dir $@)
+	cl65 -t cx16 -o $@ -c $<
 
 zzz/test/%.o: $(SOURCE)/test/%.asm $(INCLUDES) | zzz/test
-	cd $(dir $<) && $(CC) -c $(notdir $<) -o $(notdir $@) && mv $(notdir $@) ../../$(dir $@)
+	cl65 -t cx16 -o $@ -c $<
 
-zzz/%.o: $(SOURCE)/%.asm $(INCLUDES) | zzz
-	cd $(SOURCE) && $(CC) -c $(notdir $<) -o $(notdir $@) && mv $(notdir $@) ../zzz
+zzz/main.o: $(SOURCE)/main.asm $(INCLUDES) | zzz
+	cl65 -t cx16 -o $@ -c $<
+
+zzz/test.o: $(SOURCE)/test.asm $(INCLUDES) | zzz
+	cl65 -t cx16 -o $@ -c $<
+
+
 
