@@ -8,6 +8,8 @@
 .import func_open_inputstream
 .import func_close_inputstream
 .import func_print_hex
+.import func_vera_setup
+.import func_vera_restore
 
 .import func_slurp_header
 
@@ -22,36 +24,43 @@
 
 default_image_filename: .asciiz "image.fli,r"
 
-;------------------------------------------------------------------------------
-; MACRO: BSOD (BASIC Screen of Death)
-;
-; Call this to return to BASIC, with .A set to the return code.  This macro
-; assumes you will only ever call it in a situation where RTS would indeed
-; return to basic.
-;
-; @param rc  the return code     assumed to be an immediate value
-;------------------------------------------------------------------------------
-.macro BSOD rc
-   lda #rc
-   ldx #0
-   ldy #0
-   rts
+.macro PRINT petscii
+   lda #petscii
+   jsr KERNAL_CHROUT
 .endmacro
 
 ;------------------------------------------------------------------------------
-; MACRO: BSOD (BASIC Screen of Death)
+; RTS_BSOD (BASIC Screen of Death)
 ;
-; Call this to return to BASIC, with .A set to the return code, and .X and .Y
-; set to the details of the error code. Similar to BSOD, only call this when
-; an RTS would actually return you to BASIC.
-;
-; @param rc     the return code     assumed to be an immediate value
-; @param detail detail              assumed to be the address of a 16-bit value
+; Call this to return to BASIC, assuming .A .X and .Y were already set with
+; the return status and detail.  This restores VERA  back to default
+; and prints the return status and detail as text.
 ;------------------------------------------------------------------------------
-.macro BSOD_VAR16 rc, detail
-   lda #rc
-   ldx detail+0
-   ldy detail+1
+.macro RTS_BSOD
+   phy
+      phx
+         pha
+            jsr func_vera_restore
+            PRINT PETSCII_RETURN
+            PRINT PETSCII_LOWER_E
+            PRINT PETSCII_LOWER_R
+            PRINT PETSCII_LOWER_R
+            PRINT PETSCII_LOWER_O
+            PRINT PETSCII_LOWER_R
+            PRINT PETSCII_SPACE
+         pla
+         jsr func_print_hex
+         PRINT PETSCII_SPACE
+         PRINT PETSCII_OPEN_SQUARE
+      plx
+      txa
+      jsr func_print_hex
+   ply
+   tya
+   jsr func_print_hex
+   PRINT PETSCII_CLOSE_SQUARE
+   PRINT PETSCII_RETURN
+   PRINT PETSCII_RETURN
    rts
 .endmacro
 
@@ -70,35 +79,41 @@ start:
    ldy #>default_image_filename
    bra @filename_established
 @arg_was_cool:
-   APPEND_ACCESS_MODE_TO_FILENAME PETSCII_UPPER_R
+   APPEND_ACCESS_MODE_TO_FILENAME RAM_VOLATILE_BUF, PETSCII_LOWER_R
+   tya ; new string length
    ldx #<RAM_VOLATILE_BUF
    ldy #>RAM_VOLATILE_BUF
 @filename_established:
 
+   ;---------------------------------------------------------------------------
+   ; Open the file as an input stream
+   ;---------------------------------------------------------------------------
    jsr func_open_inputstream
-   tya
-   beq @open_success
-   BSOD RC_CANNOT_OPEN_FILE
-@open_success:
-
-   txa
-   beq @chkin_success
-   BSOD RC_CANNOT_OPEN_FILE
-@chkin_success:
+   beq @inputstream_is_cool
+   RTS_BSOD
+@inputstream_is_cool:
 
    ;---------------------------------------------------------------------------
-   ; Now we can enter the main part of the program
+   ; Now we can enter the main part of the program.
    ;---------------------------------------------------------------------------
    jsr func_slurp_header
-   stp
-   nop
-   nop
    beq @header_is_cool
-   rts ; ERROR! return to basic, retaining .A, .X, .Y
+   RTS_BSOD
 @header_is_cool:
+
+   jsr func_vera_setup
+
+
+
+
  
    ;---------------------------------------------------------------------------
-   ; Finally, close the file stream and return   
+   ; Finally, close the file stream, wait for "any key" then return to BASIC   
    ;---------------------------------------------------------------------------
    jsr func_close_inputstream
-   BSOD RC_SUCCESS
+
+:  jsr KERNAL_GETIN             ; i.e. press any key to continue
+   beq :-                       ; (leaving last image still on-screen)
+
+   jsr func_vera_restore        ; restore vera to text mode
+   RTS_NO_DETAIL RC_SUCCESS

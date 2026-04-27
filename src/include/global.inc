@@ -65,6 +65,7 @@ ZP16_width             := $42
 ZP8_height             := $44
 ZP8_depth              := $45
 ZP16_numFrames         := $46
+ZP8_activeLayer        := $49 ; 0 means Layer 0 is active, !0 means Layer 1
 
 RAM16_fileType         := $500
 

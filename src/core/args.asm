@@ -70,17 +70,17 @@ arg_matching_done:
 arg_copy_loop:                           ; now we can continue walking with .X
    iny
    inx                                   ; and copying along the way
-   cpx #KERNAL_BASIC_BUFFER_LEN
-   beq done;
-   lda KERNAL_BASIC_BUFFER,x
-   beq done
+   cpx #KERNAL_BASIC_BUFFER_LEN          ; ... making sure to stop in the
+   beq arg_copy_done                     ; literal edge case of hitting the
+   lda KERNAL_BASIC_BUFFER,x             ; end of the buffer, or the NULL
+   beq arg_copy_done                     ; terminator
    cmp #PETSCII_SPACE
    beq arg_copy_done
    sta (ZP_VOLATILE_CD),y
    bra arg_copy_loop
 arg_copy_done:
    
-   lda #0                                ; null-terminate
+   lda #0                                ; null-terminate our copy
    sta (ZP_VOLATILE_CD),y
    clc                                   ; confirm success
    bra done_success

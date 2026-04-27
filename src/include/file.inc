@@ -2,6 +2,7 @@
 .define FILE_INC = 1
 
 .include "kernal.inc"
+.include "math.inc"
 
 ;------------------------------------------------------------------------------
 ; SLURP_INTO_A
@@ -77,32 +78,37 @@
 .endmacro
 
 ;------------------------------------------------------------------------------
-; APPEND_ACCESS_MODE
+; APPEND_ACCESS_MODE_TO_FILENAME
 ;
 ; Appends a comma and the "WARM" access mode character to a filename.
 ;
-; PETSCII_UPPER_W for Writing
-; PETSCII_UPPER_A for Appending
-; PETSCII_UPPER_R for Reading
-; PETSCII_UPPER_M for Modifying
+; PETSCII_LOWER_W for Writing
+; PETSCII_LOWER_A for Appending
+; PETSCII_LOWER_R for Reading
+; PETSCII_LOWER_M for Modifying
 ;
-; @param accessMode the acces mode (see above)
-; @param targetAddr the address of the filename (null terminated)
+; @param targetAddr holds the address of the string to append to
+; @param accessMode holds the access mode petscii character
+; @effect .Y holds the new length of the string
 ;------------------------------------------------------------------------------
-.macro APPEND_ACCESS_MODE_TO_FILENAME targetAddr
-   tax                           ; squirrel away .A for later
-   ldy #$FF
-@append_access_mode_loop:
-   iny
-   lda (targetAddr),y
-   bne @append_access_mode_loop
+.macro APPEND_ACCESS_MODE_TO_FILENAME targetAddr, accessMode
+   U16_COPY_IMM ZP_VOLATILE_AB, targetAddr ; targetAddr might not be zero page
+                                           ; so we need to squirrel it into ZP
+                                           ; (immediate, so it points properly)
 
+   ldy #$FF
+@append_access_mode_loop:               ; this loop advances us to the
+   iny                                  ; position of the NULL terminator
+   lda (ZP_VOLATILE_AB),y
+   bne @append_access_mode_loop
    lda #PETSCII_COMMA
-   sta (targetAddr),y
-   txa
-   sta (targetAddr),y
+   sta (ZP_VOLATILE_AB),y
+   iny
+   lda #accessMode
+   sta (ZP_VOLATILE_AB),y
+   iny
    lda #PETSCII_NULL
-   sta (targetAddr),y
+   sta (ZP_VOLATILE_AB),y
 .endmacro
 
 .endif

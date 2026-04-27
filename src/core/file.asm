@@ -20,11 +20,6 @@ FILE_IO_MODE_READ   := 2 ; 2 means read
 ; @param .A length of filename
 ; @param .X low byte of filename addr
 ; @param .Y high byte of filename addr
-; @effect .Y holds the OPEN status (see READST documentation)
-; @effect .X holds the CHKIN status (see READST documentation)
-;
-; TODO: figure out why READST isn't working.  I always get a zero loaded into .A
-;       even when I'm 100% certain the open failed (because I used a bogus filename)
 ;------------------------------------------------------------------------------
 .proc sub_open_inputstream: near
    jsr KERNAL_SETNAM              ; inform kernal of a file that is to be later opened
@@ -35,13 +30,9 @@ FILE_IO_MODE_READ   := 2 ; 2 means read
    jsr KERNAL_SETLFS              ; set file parameters
 
    jsr KERNAL_OPEN                ; opens a channel
-   jsr KERNAL_READST              ; read status
-   tay                            ;  ... and squirrel away to .Y
 
    ldx #FILE_LOGICAL_NUMBER       ; X is the logical file number (same value we used for SETLFS)
    jsr KERNAL_CHKIN               ; set channel for character input
-   jsr KERNAL_READST              ; read status
-   tax                            ;  ... and squirrel away to .X
    rts
 .endproc
 

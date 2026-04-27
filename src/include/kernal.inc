@@ -67,7 +67,7 @@ KERNAL_ACPTR      := $FFA5  ; Read single byte from the peripheral bus
 
 KERNAL_CINT       := $FF81  ; Restore VERA to original settings
 
-KERNAL_READST     := $FFB7  ; Read Status Word (for KERNAL_OPEN result)
+KERNAL_READST     := $FFB7  ; Read Status Word
 KERNAL_SETLFS     := $FFBA  ; Set logical file parameters
 KERNAL_SETNAM     := $FFBD  ; Set logical file name
 KERNAL_OPEN       := $FFC0  ; Open a logical file
