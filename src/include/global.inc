@@ -56,7 +56,7 @@ ZP_VOLATILE_N    := $3D
 ZP_VOLATILE_O    := $3E
 ZP_VOLATILE_P    := $3F
 
-RAM_VOLATILE_BUF   := $400 ; $400-$4FF scratch area
+RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES

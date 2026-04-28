@@ -1,14 +1,14 @@
 .ifndef MATH2_INC
         MATH2_INC = 1
-        
-        
+
+
 .include "math.inc"
 
-;#############################################################################        
+;#############################################################################
 ; Similar to "math.inc", these are macros that provide conveniences for doing
 ; basic 16, 24, and 32 bit stuff. But, they are built upon the macros in
 ; "math.inc" so they are in a separate file for organizational purposes.
-;#############################################################################        
+;#############################################################################
 
 ;==============================================================================
 ; U16_SLOW_MULTIPLY

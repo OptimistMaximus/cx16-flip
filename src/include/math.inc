@@ -1,7 +1,7 @@
 .ifndef MATH_INC
         MATH_INC = 1
-        
-;#############################################################################        
+
+;#############################################################################
 ; This file has macros for 16, 24, and 32 bit math, and also some convenient
 ; macros for copying 16, 24, and 32 bit values.  This makes the code less
 ; cluttered when doing simple straightforward things.
@@ -12,7 +12,7 @@
 ; Some of these macros use anonymous labels. It's best to avoid them if your
 ; calling code also uses anonymous labels, since keeping track of the :+++
 ; and :-- references will be a nightmare.
-;#############################################################################        
+;#############################################################################
 
 ;==============================================================================
 ; U16_STZ
@@ -154,7 +154,7 @@
 ; @param targetAddr the target address
 ; @param sourceAddr the source address
 ;==============================================================================
-.macro U32_COPY_VAR targetAddr,sourceAddr
+.macro U32_COPY_VAR targetAddr, sourceAddr
    lda sourceAddr+0
    sta targetAddr+0
    lda sourceAddr+1
@@ -293,7 +293,7 @@
 ; Zero (Z)   1 means value == other
 ;            0 means value != other
 ; Neg (N)    Reflects bit 7 of the (value − other) result
-; 
+;
 ; @param valueAddr the value's address
 ; @param otherValue the argument
 ;==============================================================================
@@ -317,7 +317,7 @@
 ; Zero (Z)   1 means value == other
 ;            0 means value != other
 ; Neg (N)    Reflects bit 7 of the (value − other) result
-; 
+;
 ; @param valueAddr the value's address
 ; @param otherValue the argument
 ;==============================================================================
@@ -332,7 +332,7 @@
 
 ;==============================================================================
 ; U32_CMP_IMM
-; 
+;
 ; @param valueAddr the value's address
 ; @param otherValue the argument (must be 24-bit)
 ;

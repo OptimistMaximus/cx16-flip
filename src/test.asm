@@ -6,6 +6,21 @@
 
 .import test_suite_0
 .import test_suite_1
+.import test_suite_2
+
+.macro RUN_SUITE label
+   jsr label
+   bcs fail
+.endmacro
+
+.macro PRINT petscii
+   lda #petscii
+   jsr $FFD2
+.endmacro
+
+.macro PRINT_NEWLINE
+   PRINT $0D
+.endmacro
 
    jmp start
 
@@ -22,30 +37,11 @@
 
 start:
 
-   ;===========================================================================
-   ; Start of test suites. Don't change anything above.
-   ;===========================================================================
-
-   jsr test_suite_0
-   bcs fail
-
-   jsr test_suite_1
-   bcs fail
-
-   ;===========================================================================
-   ; End of test suites. Don't change anything below.
-   ;===========================================================================
+   RUN_SUITE test_suite_0
+   RUN_SUITE test_suite_1
+   RUN_SUITE test_suite_2
 
    jmp pass
-
-.macro PRINT petscii
-   lda #petscii
-   jsr $FFD2
-.endmacro
-
-.macro PRINT_NEWLINE
-   PRINT $0D
-.endmacro
 
 pass:
    jsr $FF81

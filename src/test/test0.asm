@@ -1,5 +1,9 @@
 .export test_suite_0
 
+.segment "RODATA"
+
+test_array_data: .byte $11,$22,$33,$44
+
 .segment "CODE"
 
 .include "../include/global.inc"
@@ -25,6 +29,8 @@
    ; U16_STZ    U16_COPY_IMM    U16_COPY_VAR
    ; U24_STZ    U24_COPY_IMM    U24_COPY_VAR
    ; U32_STZ                    U32_COPY_VAR
+   ;
+   ; ARRAY_COPY
    ;---------------------------------------------------------------------------
    lda #$55
    sta ZP_VOLATILE_A
@@ -75,15 +81,14 @@
    U24_STZ ZP_VOLATILE_ABC
    U24_COPY_VAR ZP_VOLATILE_ABC, ZP_VOLATILE_JKL
    ASSERT_VAR_U24_EQUALS_IMM $0022, $FACADE, ZP_VOLATILE_ABC
-      
+
    U32_STZ ZP_VOLATILE_ABCD
    U32_COPY_VAR ZP_VOLATILE_ABCD, ZP_VOLATILE_EFGH
    ASSERT_VAR_U16_EQUALS_IMM $0023, $AABB, ZP_VOLATILE_AB
    ASSERT_VAR_U16_EQUALS_IMM $0024, $CCDD, ZP_VOLATILE_CD
    
-   
    ;---------------------------------------------------------------------------
-   ; TEST 01 (add subtract)
+   ; TEST 01 (add, subtract)
    ;
    ; U16_ADD_IMM   U16_ADD_VAR   U16_SUB_IMM   U16_SUB_VAR
    ;---------------------------------------------------------------------------
@@ -92,7 +97,7 @@
 
    U16_ADD_IMM ZP_VOLATILE_AB, $0004
    ASSERT_VAR_U16_EQUALS_IMM $0100, $0102, ZP_VOLATILE_AB
-   
+
    U16_SUB_IMM ZP_VOLATILE_AB, $0004
    ASSERT_VAR_U16_EQUALS_IMM $0101, $00FE, ZP_VOLATILE_AB
 
@@ -101,7 +106,7 @@
 
    U16_SUB_VAR ZP_VOLATILE_AB, ZP_VOLATILE_CD
    ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, ZP_VOLATILE_AB
-   
+
    PASS
 .endproc
 

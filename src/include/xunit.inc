@@ -8,9 +8,9 @@
 ; to the simplicity of the logic that prints test status to screen (upon
 ; failure), please make sure that all values use only digits 0-9.  For example
 ; $1234 is Test 12's 34th assertion.
-; 
+;
 ;#############################################################################
-        
+
 ;=============================================================================
 ; ASSERT_PASS
 ;
@@ -42,10 +42,32 @@
    rts
 .endmacro
 
-;-----------------------------------------------------------------------------
+;=============================================================================
+; ASSERT_BCS - assert .P flag C is set, such that a bcs would branch
+;=============================================================================
+.macro ASSERT_BCS testId
+.scope
+    bcs @ok
+    FAIL testId
+@ok:
+.endscope
+.endmacro
+
+;=============================================================================
+; ASSERT_BCC - assert .P flag C is clear, such that a bcc would branch
+;=============================================================================
+.macro ASSERT_BCC testId
+.scope
+    bcc @ok
+    FAIL testId
+@ok:
+.endscope
+.endmacro
+
+;=============================================================================
 ; ASSERT_VAR_U8_EQUALS_IMM - assert 8-bit value at addr
 ;                            equals the specified immediate value
-;-----------------------------------------------------------------------------
+;=============================================================================
 .macro ASSERT_VAR_U8_EQUALS_IMM testId, expectValue, actualAddr
 .scope
    lda #expectValue
@@ -56,10 +78,10 @@
 .endscope
 .endmacro
 
-;-----------------------------------------------------------------------------
+;=============================================================================
 ; ASSERT_VAR_U16_EQUALS_IMM - assert 16-bit value at addr
 ;                             equals the specified immediate value
-;-----------------------------------------------------------------------------
+;=============================================================================
 .macro ASSERT_VAR_U16_EQUALS_IMM testId, expectValue, actualAddr
 .scope
    lda actualAddr+0
@@ -75,10 +97,10 @@
 .endscope
 .endmacro
 
-;-----------------------------------------------------------------------------
+;=============================================================================
 ; ASSERT_VAR_U24_EQUALS_IMM - assert 24-bit value at addr
 ;                             equals the specified immediate value
-;-----------------------------------------------------------------------------
+;=============================================================================
 .macro ASSERT_VAR_U24_EQUALS_IMM testId,expectValue,actualAddr
 .scope
    lda actualAddr+0
@@ -99,7 +121,25 @@
 .endscope
 .endmacro
 
-
+;=============================================================================
+; ASSERT_RAM_EQUALS_ARRAY - assumes addresses are absolute addresses
+;=============================================================================
+.macro ASSERT_RAM_EQUALS_ARRAY testId, maxOffset, expectAddr, actualAddr
+   phx
+   ldx #0
+:
+   lda actualAddr,x
+   cmp expectAddr,x
+   bne :+
+   cpx #maxOffset
+   beq :++
+   inx
+   bra :-
+:
+   plx
+   FAIL testId
+:  plx
+.endmacro
 
 .endif
 

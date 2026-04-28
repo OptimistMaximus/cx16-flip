@@ -1,8 +1,4 @@
 .org $080D            ; specify where in memory our code will live
-.segment "STARTUP"    ; declare segments
-.segment "INIT"
-.segment "ONCE"
-.segment "CODE"
 
 .import func_find_arg
 .import func_open_inputstream
@@ -10,8 +6,12 @@
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore
-
 .import func_slurp_header
+
+.segment "INIT"
+.segment "STARTUP"
+.segment "ONCE"
+.segment "CODE"
 
 .include "include/file.inc"
 .include "include/global.inc"
@@ -22,8 +22,11 @@
 
    jmp start
 
-default_image_filename: .asciiz "image.fli,r"
+default_image_filename: .byte "image.fli,r"
 
+;------------------------------------------------------------------------------
+; PRINT
+;------------------------------------------------------------------------------
 .macro PRINT petscii
    lda #petscii
    jsr KERNAL_CHROUT

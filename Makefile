@@ -29,7 +29,7 @@ LIB_TEST_OBJECTS := $(LIB_TEST_SOURCES:$(SOURCE)/test/%.asm=zzz/test/%.o)
 
 # ca65 seems to need this in reverse-dependency order
 MAIN_LIBS := zzz/core.lib zzz/codec.lib
-TEST_LIBS := $(MAIN_LIBS) zzz/test.lib
+TEST_LIBS := zzz/test.lib $(MAIN_LIBS)
 
 #------------------------------------------------------------------
 # Target test (default), debug, clean, run

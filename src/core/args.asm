@@ -25,6 +25,8 @@
 ;         .Y is the high byte of the target address
 ;
 ; @effect .C is set if the arg could not be found
+; @effect .X is clobbered
+; @effect .Y is clobbered
 ;==============================================================================
 .proc func_find_arg: near
    stx ZP_VOLATILE_CD+0                ; squirrel away the target address
