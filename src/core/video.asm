@@ -8,12 +8,11 @@
 .include "../include/kernal.inc"
 .include "../include/vera.inc"
 
-;-----------------------------------------------------------------------------
+;==============================================================================
 ; print byte as hex text to screen (assuming text mode)
 ;
-; param: A
-; side-effect: A
-;-----------------------------------------------------------------------------
+; @param:  .A holds the value you want to print to screen
+;==============================================================================
 .proc func_print_hex: near
    pha               ; push A onto stack
       lsr            ; shift left 4 times, i.e.  A = A >> 4
@@ -38,7 +37,7 @@
    jmp KERNAL_CHROUT ; print whatever's in A
 .endproc
 
-;-----------------------------------------------------------------------------
+;==============================================================================
 ; func_vera_setup
 ;
 ; Initialize VERA conditions (do this once at startup, after reading and
@@ -47,7 +46,7 @@
 ;
 ; TODO: create sprites, enable sprites here, and  use them to cover up the
 ;       pixelated mess that will be shown below the 320x200 line.
-;-----------------------------------------------------------------------------
+;==============================================================================
 .proc func_vera_setup: near
 
    stz ZP8_activeLayer               ; Layer 0 is active
@@ -76,11 +75,11 @@
    jmp KERNAL_GRAPH_INIT
 .endproc
 
-;-----------------------------------------------------------------------------
+;==============================================================================
 ; func_vera_restore
 ;
 ; Restore VERA to default conditions (do this once before returning to BASIC)
-;-----------------------------------------------------------------------------
+;==============================================================================
 .proc func_vera_restore: near
    jmp KERNAL_CINT
 .endproc

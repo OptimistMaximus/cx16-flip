@@ -6,8 +6,7 @@
 .include "../include/kernal.inc"
 .include "../include/petscii.inc"
 
-
-;------------------------------------------------------------------------------
+;==============================================================================
 ; func_find_arg
 ;
 ; This simplistic implementation looks at the BASIC buffer and finds an arg
@@ -26,7 +25,7 @@
 ;         .Y is the high byte of the target address
 ;
 ; @effect .C is set if the arg could not be found
-;------------------------------------------------------------------------------
+;==============================================================================
 .proc func_find_arg: near
    stx ZP_VOLATILE_CD+0                ; squirrel away the target address
    sty ZP_VOLATILE_CD+1

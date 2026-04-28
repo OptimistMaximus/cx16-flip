@@ -4,8 +4,8 @@
 .segment "ONCE"
 .segment "CODE"
 
+.import test_suite_0
 .import test_suite_1
-.import test_suite_2
 
    jmp start
 
@@ -26,10 +26,10 @@ start:
    ; Start of test suites. Don't change anything above.
    ;===========================================================================
 
-   jsr test_suite_1
+   jsr test_suite_0
    bcs fail
 
-   jsr test_suite_2
+   jsr test_suite_1
    bcs fail
 
    ;===========================================================================

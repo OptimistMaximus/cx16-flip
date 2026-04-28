@@ -7,7 +7,12 @@
 .include "../include/xunit.inc"
 
 .proc test_suite_1: near
-   ASSERT_PASS
-   rts
+
+
+
+
+
+   PASS
+
 .endproc
 

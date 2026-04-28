@@ -91,13 +91,13 @@ zzz/test.lib: $(LIB_TEST_OBJECTS) | zzz
 #
 # Note, cl65 is very picky about order of arguments.
 #
-#       cl16 -t cx16 -c foo/bar.asm -o foo/bar.o
+#       cl65 -t cx16 -c src/bar.asm -o zzz/bar.o
 #
 # will ignore the output path and just put the object in the same
 # directory as the source.  But if you use the following order
 # then it works as you would intuitively expect:
 #
-#       cl65 -t cx16 -o foo/bar.o -c foo/bar.asm
+#       cl65 -t cx16 -o zzz/bar.o -c src/bar.asm
 #
 #------------------------------------------------------------------
 zzz/core/%.o: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core

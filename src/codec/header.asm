@@ -6,12 +6,13 @@
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
+.include "../include/math2.inc"
 .include "../include/petscii.inc"
 
 ;==============================================================================
 ; func_slurp_header
 ;
-; @effect .A .X .Y holds validation status (maps 1:1 with return codes)
+; @effect .A .X .Y per RTS_xxx_DETAIL semantics
 ;==============================================================================
 .proc func_slurp_header: near
 

@@ -94,96 +94,21 @@ VERA_L1_VSCROLL_H = $9F3A
 ; VERA default memory layout
 ;------------------------------------------------------------------------------
 VERA_ADDR_BITMAP         = $00000 ; Bitmap (320x240 @ 256c)
+VERA_ADDR_UNUSED1        = $12C00 ; $400 bytes
 VERA_ADDR_SPRITES        = $13000 ; Sprite Image Data
 VERA_ADDR_TEXT           = $1B000 ; Text Mode Tile Base (Screen Codes)
+VERA_ADDR_UNUSED2        = $1EC00 ; $400 bytes
 VERA_ADDR_CHARSET        = $1F000 ; Text Mode Tile Map  (Character Set)
+VERA_ADDR_UNUSED3        = $1F800 ; $1C0 bytes
 VERA_ADDR_PSG            = $1F9C0 ; [IMMOBILE] PSG Registers
 VERA_ADDR_PALETTE        = $1FA00 ; [IMMOBILE] Color Palette
 VERA_ADDR_PALETTE_LOW    = $1FA00
 VERA_ADDR_PALETTE_HIGH   = $1FA01
 VERA_ADDR_SPRITE_ATTRS   = $1FC00 ; [IMMOBILE] Sprite Attributes
 VERA_ADDR_SPRITE_ATTRS_1 = $1FC08 ; [IMMOBILE] Sprite Attributes for Sprite 1
+VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attributes for Sprite 2
+                                  ;            ... et cetera ...
 
-VERA_ADDR_UNUSED1        = $12C00  ; $1000 bytes
-VERA_ADDR_UNUSED2        = $1EC00  ; $1000 bytes
-VERA_ADDR_UNUSED3        = $1F800  ; $01C0 bytes
 
-;------------------------------------------------------------------------------
-; MACRO set VERA address for transfer
-;
-; This is a special optimization for VRAM addresses in 320x240 mode when only
-; using up to row offset 203. This means all addresses are within the 16-bit
-; range and we can safv a few cycles by assuming the high VERA addr byte is 0.
-;
-; @param controlValue what to pass to VERA_CTRL (e.g. ADDRSEL)
-; @param addressPointer the memory address which holds the 16-bit VRAM address
-; @param optionValue the options to load into the high byte (e.g. stride)
-;------------------------------------------------------------------------------
-.macro SET_VERA_ADDR16_VAR controlValue,addressPointer,optionValue
-    lda #controlValue
-    sta VERA_CTRL
-    lda addressPointer+0
-    sta VERA_ADDRx_L
-    lda addressPointer+1
-    sta VERA_ADDRx_M
-    lda #optionValue
-    sta VERA_ADDRx_H
-.endmacro
-
-;------------------------------------------------------------------------------
-; MACRO set VERA address for transfer
-;
-; @param controlValue what to pass to VERA_CTRL (e.g. ADDRSEL)
-; @param addressPointer the memory address which holds the 24-bit VRAM address
-; @param optionValue the options to OR into the high byte (e.g. stride)
-;------------------------------------------------------------------------------
-.macro SET_VERA_ADDR24_VAR controlValue,addressPointer,optionValue
-    lda #controlValue
-    sta VERA_CTRL
-    lda addressPointer+0
-    sta VERA_ADDRx_L
-    lda addressPointer+1
-    sta VERA_ADDRx_M
-    lda addressPointer+2
-    ora #optionValue
-    sta VERA_ADDRx_H
-.endmacro
-
-;------------------------------------------------------------------------------
-; MACRO set VERA address for transfer
-;
-; @param controlValue what to pass to VERA_CTRL (e.g. ADDRSEL)
-; @param addressValue the immediate value of the 24-bit VRAM address [0000-FFFF]
-; @param optionValue the options to OR into the high byte (e.g. stride)
-;------------------------------------------------------------------------------
-.macro SET_VERA_ADDR16_IMM controlValue, addressValue, optionValue
-    lda #controlValue
-    sta VERA_CTRL
-    lda #<addressValue
-    sta VERA_ADDRx_L
-    lda #>addressValue
-    sta VERA_ADDRx_M
-    lda #optionValue
-    sta VERA_ADDRx_H
-.endmacro
-
-;------------------------------------------------------------------------------
-; MACRO set VERA address for transfer
-;
-; @param controlValue what to pass to VERA_CTRL (e.g. ADDRSEL)
-; @param addressValue the immediate value of the 24-bit VRAM address
-; @param optionValue the options to OR into the high byte (e.g. stride)
-;------------------------------------------------------------------------------
-.macro SET_VERA_ADDR24_IMM controlValue, addressValue, optionValue
-    lda #controlValue
-    sta VERA_CTRL
-    lda #<addressValue
-    sta VERA_ADDRx_L
-    lda #>addressValue
-    sta VERA_ADDRx_M
-    lda #^addressValue
-    ora #optionValue
-    sta VERA_ADDRx_H
-.endmacro
 
 .endif

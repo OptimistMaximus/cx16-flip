@@ -19,37 +19,42 @@
 ; you did, then no logic could ever safely use them!  If you need ZP vars for
 ; IRQ stuff, declare them in the "STATIC" section.
 ;------------------------------------------------------------------------------
-ZP_VOLATILE_ABCD := $22
-ZP_VOLATILE_EFGH := $26
-ZP_VOLATILE_IJKL := $2A
+ZP_VOLATILE_ABCD := $30
+ZP_VOLATILE_EFGH := $34
+ZP_VOLATILE_IJKL := $38
+ZP_VOLATILE_MNOP := $3C
 
-ZP_VOLATILE_ABC  := $22
-ZP_VOLATILE_DEF  := $25
-ZP_VOLATILE_GHI  := $28
-ZP_VOLATILE_JKL  := $2B
+ZP_VOLATILE_ABC  := $30
+ZP_VOLATILE_DEF  := $33
+ZP_VOLATILE_GHI  := $36
+ZP_VOLATILE_JKL  := $39
+ZP_VOLATILE_MNO  := $3C
 
-ZP_VOLATILE_AB   := $22
-ZP_VOLATILE_CD   := $24
-ZP_VOLATILE_EF   := $26
-ZP_VOLATILE_GH   := $28
-ZP_VOLATILE_IJ   := $2A
-ZP_VOLATILE_KL   := $2C
-ZP_VOLATILE_MN   := $2E
+ZP_VOLATILE_AB   := $30
+ZP_VOLATILE_CD   := $32
+ZP_VOLATILE_EF   := $34
+ZP_VOLATILE_GH   := $36
+ZP_VOLATILE_IJ   := $38
+ZP_VOLATILE_KL   := $3A
+ZP_VOLATILE_MN   := $3C
+ZP_VOLATILE_OP   := $3E
 
-ZP_VOLATILE_A     := $22
-ZP_VOLATILE_B     := $23
-ZP_VOLATILE_C     := $24
-ZP_VOLATILE_D     := $25
-ZP_VOLATILE_E     := $26
-ZP_VOLATILE_F     := $27
-ZP_VOLATILE_G     := $28
-ZP_VOLATILE_H     := $29
-ZP_VOLATILE_I     := $2A
-ZP_VOLATILE_J     := $2B
-ZP_VOLATILE_K     := $2C
-ZP_VOLATILE_L     := $2D
-ZP_VOLATILE_M     := $2E
-ZP_VOLATILE_N     := $2F
+ZP_VOLATILE_A    := $30
+ZP_VOLATILE_B    := $31
+ZP_VOLATILE_C    := $32
+ZP_VOLATILE_D    := $33
+ZP_VOLATILE_E    := $34
+ZP_VOLATILE_F    := $35
+ZP_VOLATILE_G    := $36
+ZP_VOLATILE_H    := $37
+ZP_VOLATILE_I    := $38
+ZP_VOLATILE_J    := $39
+ZP_VOLATILE_K    := $3A
+ZP_VOLATILE_L    := $3B
+ZP_VOLATILE_M    := $3C
+ZP_VOLATILE_N    := $3D
+ZP_VOLATILE_O    := $3E
+ZP_VOLATILE_P    := $3F
 
 RAM_VOLATILE_BUF   := $400 ; $400-$4FF scratch area
 
@@ -105,12 +110,15 @@ RC_SPEED_TOO_HIGH             := 8 ; FLI speed, lower half of 32-bit value
 RC_DELAY_TOO_LONG             := 9 ; FLC delay
 
 
-;------------------------------------------------------------------------------
-; Convenience Macros for RTS with Return Code and .X .Y detail
+;==============================================================================
+; RTS_VAR16_DETAIL
 ;
-; This is very important: lda is always done LAST, so that calling code can
-; safely do a BEQ or BNE to check the return status
-;------------------------------------------------------------------------------
+; This macro establishes a semantic convention where a subroutine can return
+; with .A holding a return code (see above) and .X and .Y holding detail.
+;
+; Note that as part of this macro's contract, it sets .A as the very last
+; action. So, callers can do a quick BEQ or BNE to detect success or failure.
+;==============================================================================
 .macro RTS_VAR16_DETAIL rc, detailAddr
    ldx #<detailAddr
    ldy #>detailAddr
@@ -118,6 +126,12 @@ RC_DELAY_TOO_LONG             := 9 ; FLC delay
    rts
 .endmacro
 
+;==============================================================================
+; RTS_NO_DETAIL
+;
+; This macro is exactly the same as RTS_VAR16_DETAIL, except it forces the
+; .X and .Y values to zero.
+;==============================================================================
 .macro RTS_NO_DETAIL rc
    ldx #0
    ldy #0
