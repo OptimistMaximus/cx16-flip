@@ -10,6 +10,9 @@ INCDIR := $(SOURCE)/include
 IMAGE_FILENAME := $(RESDIR)/BELL.FLI
 MAIN_RESOURCES := zzz/IMAGE.FLI
 
+TEST_FILENAME := $(RESDIR)/test.txt
+TEST_RESOURCES := zzz/TEST.TXT
+
 #------------------------------------------------------------------
 # Includes
 #------------------------------------------------------------------
@@ -34,7 +37,7 @@ TEST_LIBS := zzz/test.lib $(MAIN_LIBS)
 #------------------------------------------------------------------
 # Target test (default), debug, clean, run
 #------------------------------------------------------------------
-test: zzz/TEST.PRG
+test: zzz/TEST.PRG $(TEST_RESOURCES)
 	cd zzz && x16emu -run -debug 080D -prg TEST.PRG
 
 run: zzz/MAIN.PRG $(MAIN_RESOURCES)
@@ -46,6 +49,9 @@ debug: zzz/MAIN.PRG $(MAIN_RESOURCES)
 
 clean:
 	rm -rf zzz
+
+zzz/TEST.TXT: $(TEST_FILENAME)
+	cp $(TEST_FILENAME) $@
 
 zzz/IMAGE.FLI: $(IMAGE_FILENAME)
 	cp $(IMAGE_FILENAME) $@

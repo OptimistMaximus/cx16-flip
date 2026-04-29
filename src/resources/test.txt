@@ -1,0 +1,10 @@
+abcdefghijklmnopqrstuvwxyz
+
+This is a test file for purpose of testing macros in file.inc
+and subroutines in file.asm
+
+The test logic expects the first 26 bytes to be the PETSCII
+alphabet, which happens to match ASCII in this range, so it
+is quite convenient. The rest of the file can look like anything.
+Just make sure those first 26 bytes are the alphabet!
+

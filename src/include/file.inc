@@ -3,6 +3,7 @@
 
 .include "kernal.inc"
 .include "math.inc"
+.include "petscii.inc"
 
 ;==============================================================================
 ; SLURP_INTO_A

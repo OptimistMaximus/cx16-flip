@@ -65,6 +65,19 @@
 .endmacro
 
 ;=============================================================================
+; ASSERT_A_EQUALS_IMM - assert .A
+;                       equals the specified immediate value
+;=============================================================================
+.macro ASSERT_A_EQUALS_IMM testId, expectValue
+.scope
+   cmp #expectValue
+   beq @ok
+   FAIL testId
+@ok:
+.endscope
+.endmacro
+
+;=============================================================================
 ; ASSERT_VAR_U8_EQUALS_IMM - assert 8-bit value at addr
 ;                            equals the specified immediate value
 ;=============================================================================
