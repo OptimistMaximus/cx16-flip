@@ -102,15 +102,16 @@ CHUNK_FLI_COPY  := $0010 ; FLI uncompressed
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
 ;------------------------------------------------------------------------------
 RC_SUCCESS                    := 0
-RC_CANNOT_OPEN_FILE           := 1 ; .X is CHKIN status, .Y is OPEN status
-RC_UNSUPPORTED_FILE_TYPE      := 2 ; type
-RC_UNSUPPORTED_FRAME_TYPE     := 3 ; type
-RC_UNSUPPORTED_CHUNK_TYPE     := 4 ; type
-RC_WIDTH_TOO_BIG              := 5 ; width
-RC_HEIGHT_TOO_BIG             := 6 ; height
-RC_DEPTH_TOO_BIG              := 7 ; depth
-RC_SPEED_TOO_HIGH             := 8 ; FLI speed, lower half of 32-bit value
-RC_DELAY_TOO_LONG             := 9 ; FLC delay
+RC_CANNOT_OPEN_FILE           := 1  ; .X is CHKIN status, .Y is OPEN status
+RC_UNSUPPORTED_FILE_TYPE      := 2  ; type
+RC_UNSUPPORTED_FRAME_TYPE     := 3  ; type
+RC_UNSUPPORTED_CHUNK_TYPE     := 4  ; type
+RC_WIDTH_TOO_BIG              := 5  ; width
+RC_HEIGHT_TOO_BIG             := 6  ; height
+RC_DEPTH_TOO_BIG              := 7  ; depth
+RC_SPEED_TOO_HIGH             := 8  ; FLI speed, lower half of 32-bit value
+RC_DELAY_TOO_LONG             := 9  ; FLC delay
+RC_INVALID_CHUNK_TYPE         := 10 ; type
 
 
 ;==============================================================================
