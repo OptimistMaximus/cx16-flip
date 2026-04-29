@@ -65,12 +65,15 @@ RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP16_delaySyncs        := $40
-ZP16_width             := $42
-ZP8_height             := $44
-ZP8_depth              := $45
-ZP16_numFrames         := $46
-ZP8_activeLayer        := $49 ; 0 means Layer 0 is active, !0 means Layer 1
+ZP8_activeLayer        := $40 ; 0 means Layer 0 is active, !0 means Layer 1
+ZP8_height             := $41
+ZP8_depth              := $42
+
+ZP16_delaySyncs        := $50
+ZP16_width             := $52
+ZP16_numFrames         := $54
+ZP16_chunkType         := $56
+ZP32_chunkSize         := $58
 
 RAM16_fileType         := $500
 
