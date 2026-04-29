@@ -6,6 +6,10 @@
 .include "../include/kernal.inc"
 .include "../include/petscii.inc"
 
+BASIC_BUFFER    := $0200
+BASIC_TOKEN_RUN := $8A
+BASIC_TOKEN_REM := $8F
+
 ;==============================================================================
 ; func_find_arg
 ;
@@ -29,66 +33,75 @@
 ; @effect .Y is clobbered
 ;==============================================================================
 .proc func_find_arg: near
-   stx ZP_VOLATILE_CD+0                ; squirrel away the target address
+   stx ZP_VOLATILE_CD+0          ; squirrel away the target address
    sty ZP_VOLATILE_CD+1
-   sta ZP_VOLATILE_A                    ; squirrel away desired arg index
-   lda #$FD                              ; establish current index as -3
-   sta ZP_VOLATILE_B                    ; (i.e. RUN:REM are args -3, -2, -1)
+   sta ZP_VOLATILE_A             ; squirrel away desired arg index
+   stz ZP_VOLATILE_B             ; initialize current arg index
 
-   ldx #$FF                              ; start at -1 because we INX first
-arg_matching_loop:                       ; this is the main loop for matching
+   ldx #1                        ; quick check for $8A,$00 which is what it
+   lda BASIC_BUFFER,x            ; looks like if someone just did "RUN"
+   bne @args_present
+   sec                           ; indicate failure
+   rts
+@args_present:
+   
+@preamble_loop:                  ; if we made it here, there should be a
+   inx                           ; colon and a REM token with some number of
+   lda BASIC_BUFFER,x            ; spaces. We'll advance to the REM token.
+   cmp #BASIC_TOKEN_REM
+   bne @preamble_loop
+
+@arg_matching_loop:              ; this is the main loop for matching
    inx
-   cpx #KERNAL_BASIC_BUFFER_LEN
-   beq arg_matching_done                 ; end of buffer encountered
-   lda KERNAL_BASIC_BUFFER,x
-   beq arg_matching_done                 ; null terminator encountered
+   lda BASIC_BUFFER,x
+   beq @arg_matching_done        ; null terminator encountered
    cmp #PETSCII_SPACE
-   beq arg_matching_loop                 ; advance if we're in delimiting space
-   lda ZP_VOLATILE_B                    ; we found an arg, so bump the found index
-   inc
-   sta ZP_VOLATILE_B
-   cmp ZP_VOLATILE_A                    ; if it matches the arg we want, we're done
-   beq arg_matching_done
+   beq @arg_matching_loop        ; advance if we're in delimiting space
 
-arg_skip_loop:                           ; if it didn't match then we fall through
-   inx                                   ; ... this is essentially the same code as
-   cpx #KERNAL_BASIC_BUFFER_LEN          ; above, but burning through non-space
-   beq arg_matching_done                 ; instead of space.  We still need to
-   lda KERNAL_BASIC_BUFFER,x             ; bail if NULL or end-of-buffer encounterd
-   beq arg_matching_done
+   lda ZP_VOLATILE_B             ; if we fall through to here, we're in an
+   cmp ZP_VOLATILE_A             ; actual arg. Is it desired?
+   beq @arg_matching_done        ; If so, we are done!
+    
+   inc                           ; else we fall through here. Take advantage
+   sta ZP_VOLATILE_B             ; of .A still holding the current arg index
+@arg_skip_undesired_loop:        ; and increment it now. Then burn through 
+   inx                           ; characters of the current (the ones that
+   lda BASIC_BUFFER,x            ; aren't a space) while also taking care to
+   beq @arg_matching_done        ; stop short if we hit the end of buffer or
+   cmp #PETSCII_SPACE            ; a NULL. As long as it isn't a space, it's
+   bne @arg_skip_undesired_loop  ; part of the undesired arg, so keep skipping
+   bra @arg_matching_loop        ; now try again in the big loop.
+@arg_matching_done:
+
+   lda ZP_VOLATILE_B             ; if we made it here but the current arg is
+   cmp ZP_VOLATILE_A             ; not desired, then return with error
+   beq @we_got_a_match
+   sec
+   rts
+@we_got_a_match:
+
+   lda BASIC_BUFFER,x            ; follow-up check: a literal edge case is
+   bne @not_an_edge_case         ; when we hit the null terminator, which
+   sec                           ; means this "matching" arg is effectively
+   rts                           ; null, so return with error.
+@not_an_edge_case:
+
+   dex                           ; dex to counteract next loop's inx
+   ldy #$FF                      ; -1 to accommodate next loop's iny
+@arg_copy_loop:                  ; now we can continue walking with .X
+   iny                           ; ... we are in the desired arg now!
+   inx                           ; So, walk and copy, as long as we have not
+   lda BASIC_BUFFER,x            ; yet hit a space, or the null terminator.
+   beq @arg_copy_done
    cmp #PETSCII_SPACE
-   bne arg_matching_loop
-   bra arg_matching_loop
-
-arg_matching_done:
-
-   lda ZP_VOLATILE_B                    ; if we didn't find it, bail
-   cmp ZP_VOLATILE_A
-   bne done
-
-   dex                                   ; dex to counteract next loop's inx
-   ldy #$FF                              ; -1 to accommodate next loop's iny
-arg_copy_loop:                           ; now we can continue walking with .X
-   iny
-   inx                                   ; and copying along the way
-   cpx #KERNAL_BASIC_BUFFER_LEN          ; ... making sure to stop in the
-   beq arg_copy_done                     ; literal edge case of hitting the
-   lda KERNAL_BASIC_BUFFER,x             ; end of the buffer, or the NULL
-   beq arg_copy_done                     ; terminator
-   cmp #PETSCII_SPACE
-   beq arg_copy_done
+   beq @arg_copy_done
    sta (ZP_VOLATILE_CD),y
-   bra arg_copy_loop
-arg_copy_done:
+   bra @arg_copy_loop
+@arg_copy_done:
 
-   lda #0                                ; null-terminate our copy
+   lda #0                        ; null-terminate our copy
    sta (ZP_VOLATILE_CD),y
-   clc                                   ; confirm success
-   bra done_success
-
-done:
-   sec                                   ; assume failure
-done_success:
+   clc                           ; indicate success
    rts
 .endproc
 

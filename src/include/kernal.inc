@@ -7,9 +7,6 @@ KERNAL_NMI_VECTOR         := $0318
 KERNAL_IOPEN_VECTOR       := $031A
 KERNAL_ICLOSE_VECTOR      := $031C
 
-KERNAL_BASIC_BUFFER       := $0200
-KERNAL_BASIC_BUFFER_LEN   := $81
-
 ;------------------------------------------------------------------------------
 ; Memory Banks ... RAM Bank 0 is reserved for KERNAL use
 ;------------------------------------------------------------------------------
