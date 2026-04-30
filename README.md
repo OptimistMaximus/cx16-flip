@@ -16,16 +16,16 @@ will return to BASIC.
 
 ### Caveats and Return Codes
 
-Note that the parser that interprets the REM suffix is fairly simplistic
-and has undefined behavior if you have any spaces around the colon, or
-multiple spaces between arguments. For example, do NOT run it like this:
-`RUN :  REM     FOO`
-
 Upon returning to BASIC, it sents the .A register to the return code,
 and the .X and .Y registers hold extra details.  You can examine these
 via `PRINT PEEK(780)`,  `PRINT PEEK(781)`, and `PRINT PEEK(782)`,
 respectively.  The .X and .Y value usually holds the low and high bytes
 of a 16-bit detail value.
+
+If the return code wasn't success, the error will be printed to screen
+as `ERROR AA [XXYY]`
+
+They are also printed to screen as hex string representation: "AA [XXYY]"
 
 | .A | .A meaning                | .X and .Y meaning                     |
 |----|---------------------------|---------------------------------------|

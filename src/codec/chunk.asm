@@ -2,15 +2,29 @@
 
 .export func_slurp_chunk
 
+.import handle_invalid
+.import handle_unsupported
+.import handle_frame_type
+.import handle_color_256
+.import handle_color_64
+.import handle_delta_fli
+.import handle_black
+.import handle_byte_run
+.import handle_fli_copy
+
 .segment "RODATA"
 
 ;##############################################################################
-; there are some "holes" in the frame type identifiers.  These are
-; represented by a jump to a subroutine that always returns an error.
+; There are quite a few holes in the chunk type numbers if  arranged in order
+; but not so many as to make a jump table out of the question.  These "holes"
+; will jump to a  there are some "holes" in the frame type identifiers.  These
+; are represented by a jump to "handle_invalid" that always returns an error.
 ;
 ; For now, we only support the subset for FLI files.  Basic FLC might
-; be supported next. It's unlikely any of the fancy extensions will
-; be supported, but just in case, they are all listed here with placeholders.
+; be supported next. Unsupported chunk types jump to "handle_unsupported"
+;
+; There are 5 more chunk types with a 16-bit value that all have high byte $F1.
+; That's not enough to warrant a jump table so they are handled via CMP.
 ;##############################################################################
 
 chunk_type_jump_table:
@@ -127,42 +141,6 @@ chunk_type_jump_table:
    jmp handle_unsupported  
 :
    
-   jmp handle_unsupported
+   jmp handle_invalid
 
-.endproc
-
-.proc handle_invalid: near
-   RTS_VAR16_DETAIL RC_INVALID_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_unsupported: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_frame_type: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_color_256: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_color_64: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_delta_fli: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_black: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_byte_run: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
-.endproc
-
-.proc handle_fli_copy: near
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_CHUNK_TYPE, ZP16_chunkType 
 .endproc
