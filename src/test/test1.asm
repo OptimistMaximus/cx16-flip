@@ -45,7 +45,7 @@ expect_comma:  .byte $6C,$6D,$6E,$6F,$70,$2C,$57,$00 ; ,w
    ; func_close_inputstream
    ;
    ; APPEND_ACCESS_MODE_TO_FILENAME
-   ; SLURP_INTO_A  
+   ; SLURP_INTO_A
    ; SLURP_ARRAY
    ; SLURP_VAR8
    ; SLURP_VAR16
@@ -61,15 +61,15 @@ expect_comma:  .byte $6C,$6D,$6E,$6F,$70,$2C,$57,$00 ; ,w
    SLURP_VAR24 ZP_VOLATILE_GHI    ; next 3 chars are "ghi"
    SLURP_VAR8  ZP_VOLATILE_J      ; next 1 char is "j"
    SLURP_INTO_A                   ; next 1 char is "k"
-   sta ZP_VOLATILE_K  
+   sta ZP_VOLATILE_K
    lda #5
    SLURP_ARRAY RAM_VOLATILE_BUF   ; next 5 chars are "lmnop"
    jsr func_close_inputstream
 
    ; values A to J loaded into the "vars", and K was plunked in
-   ; right after that, so we can validate in one contiguous chunk    
+   ; right after that, so we can validate in one contiguous chunk
    ASSERT_RAM_EQUALS_ARRAY $1100, $0A, expect_varsa, ZP_VOLATILE_A
-   
+
    ; values L to O went to the array
    ASSERT_RAM_EQUALS_ARRAY $1101, $04, expect_array, RAM_VOLATILE_BUF
 
@@ -79,8 +79,8 @@ expect_comma:  .byte $6C,$6D,$6E,$6F,$70,$2C,$57,$00 ; ,w
    stz RAM_VOLATILE_BUF+5
    APPEND_ACCESS_MODE_TO_FILENAME RAM_VOLATILE_BUF, 'w'
    ASSERT_RAM_EQUALS_ARRAY $1102, $06, expect_comma, RAM_VOLATILE_BUF
-   
-   
+
+
    ;---------------------------------------------------------------------------
    ; TEST 12 (string stuff)
    ;

@@ -97,50 +97,50 @@ chunk_type_jump_table:
    SLURP_VAR32 ZP32_chunkSize
    SLURP_VAR16 ZP16_chunkType
 
-   ;--------------------------------------------------------------------------- 
+   ;---------------------------------------------------------------------------
    ; High byte $00 means we can use the jump table.  The low byte should be a
    ; value from $00 to $2B, so we can safely multiply it by 2 to get the jump
    ; table offset.
-   ;--------------------------------------------------------------------------- 
+   ;---------------------------------------------------------------------------
    lda ZP16_chunkType+1
    bne @fancy_f1_type
    lda ZP16_chunkType+0
    asl
    tax
    jmp (chunk_type_jump_table,x)
-   
+
 @fancy_f1_type:
-   ;--------------------------------------------------------------------------- 
+   ;---------------------------------------------------------------------------
    ; If the high byte wasn't zero, we'll assume it was $F1, so we only need to
    ; check the low byte to see how to handle it.  Since this isn't a simple
    ; jump table, we'll check in order of popularity.
-   ;--------------------------------------------------------------------------- 
+   ;---------------------------------------------------------------------------
    lda ZP16_chunkType+0
    cmp #$FA                        ; $F1FA FRAME_TYPE     frame chunk
    bne :+
-   jmp handle_frame_type  
+   jmp handle_frame_type
 :
-      
+
    cmp #$00                        ; $F100 PREFIX_TYPE
    bne :+
-   jmp handle_unsupported  
+   jmp handle_unsupported
 :
 
    cmp #$FC                        ; $F1FC HUFFMAN_TABLE
    bne :+
-   jmp handle_unsupported  
+   jmp handle_unsupported
 :
 
    cmp #$E0                        ; $F1F0 SCRIPT_CHUNK
    bne :+
-   jmp handle_unsupported  
+   jmp handle_unsupported
 :
 
    cmp #$FB                        ; $F1FB SEGMENT_TABLE
    bne :+
-   jmp handle_unsupported  
+   jmp handle_unsupported
 :
-   
+
    jmp handle_invalid
 
 .endproc

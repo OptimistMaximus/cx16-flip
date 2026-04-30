@@ -74,6 +74,7 @@ ZP16_width             := $52
 ZP16_numFrames         := $54
 ZP16_chunkType         := $56
 ZP32_chunkSize         := $58
+ZP16_currFrame         := $5A
 
 RAM16_fileType         := $500
 
@@ -124,8 +125,8 @@ RC_INVALID_CHUNK_TYPE         := 10 ; type
 ; action. So, callers can do a quick BEQ or BNE to detect success or failure.
 ;==============================================================================
 .macro RTS_VAR16_DETAIL rc, detailAddr
-   ldx #<detailAddr
-   ldy #>detailAddr
+   ldx detailAddr+0
+   ldy detailAddr+1
    lda #rc
    rts
 .endmacro

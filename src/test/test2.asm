@@ -58,7 +58,7 @@ test_arg_expect_bb: .asciiz "bb"
    FIND_ARG 0
    ASSERT_BCC $2010
    ASSERT_RAM_EQUALS_ARRAY $2011, 2, test_arg_expect_aa, RAM_VOLATILE_BUF
-   
+
    FIND_ARG 1
    ASSERT_BCC $2012
    ASSERT_RAM_EQUALS_ARRAY $2013, 2, test_arg_expect_bb, RAM_VOLATILE_BUF
@@ -70,7 +70,7 @@ test_arg_expect_bb: .asciiz "bb"
    FIND_ARG 0
    ASSERT_BCC $2020
    ASSERT_RAM_EQUALS_ARRAY $2021, 2, test_arg_expect_aa, RAM_VOLATILE_BUF
-   
+
    FIND_ARG 1
    ASSERT_BCC $2022
    ASSERT_RAM_EQUALS_ARRAY $2023, 2, test_arg_expect_bb, RAM_VOLATILE_BUF

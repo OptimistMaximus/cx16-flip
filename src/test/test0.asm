@@ -86,7 +86,7 @@ test_array_data: .byte $11,$22,$33,$44
    U32_COPY_VAR ZP_VOLATILE_ABCD, ZP_VOLATILE_EFGH
    ASSERT_VAR_U16_EQUALS_IMM $0023, $AABB, ZP_VOLATILE_AB
    ASSERT_VAR_U16_EQUALS_IMM $0024, $CCDD, ZP_VOLATILE_CD
-   
+
    ;---------------------------------------------------------------------------
    ; TEST 01 (add, subtract)
    ;

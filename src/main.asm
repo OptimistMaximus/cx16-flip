@@ -7,6 +7,7 @@
 .import func_vera_setup
 .import func_vera_restore
 .import func_slurp_header
+.import func_slurp_chunk
 
 .segment "INIT"
 .segment "STARTUP"
@@ -69,50 +70,28 @@ default_image_filename: .byte "image.fli,r"
 
 start:
 
-   ;---------------------------------------------------------------------------
-   ; Establish the filename by looking for a custom argument. If no such arg
-   ; was found, then we'll use our default value.  Then, open the file.
-   ;---------------------------------------------------------------------------
-   lda #0
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
-   jsr func_find_arg
-   bcc @arg_was_cool              ; .C=0 means it was found
-   ldx #<default_image_filename
-   ldy #>default_image_filename
-   bra @filename_established
-@arg_was_cool:
-   APPEND_ACCESS_MODE_TO_FILENAME RAM_VOLATILE_BUF, PETSCII_LOWER_R
-   tya ; new string length
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
-@filename_established:
-
-   ;---------------------------------------------------------------------------
-   ; Open the file as an input stream
-   ;---------------------------------------------------------------------------
+   jsr func_vera_setup
+   jsr sub_establish_filename
    jsr func_open_inputstream
    beq @inputstream_is_cool
    RTS_BSOD
 @inputstream_is_cool:
 
-   ;---------------------------------------------------------------------------
-   ; Now we can enter the main part of the program.
-   ;---------------------------------------------------------------------------
    jsr func_slurp_header
    beq @header_is_cool
    RTS_BSOD
 @header_is_cool:
 
-   jsr func_vera_setup
+   U16_STZ ZP16_currFrame
+@frame_loop:
+   jsr func_slurp_chunk
+   beq @chunk_is_cool
+   RTS_BSOD
+@chunk_is_cool:
+   U16_INC ZP16_currFrame
+   U16_CMP_VAR ZP16_currFrame, ZP16_numFrames
+   bne @frame_loop
 
-
-
-
-
-   ;---------------------------------------------------------------------------
-   ; Finally, close the file stream, wait for "any key" then return to BASIC
-   ;---------------------------------------------------------------------------
    jsr func_close_inputstream
 
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
@@ -120,3 +99,28 @@ start:
 
    jsr func_vera_restore        ; restore vera to text mode
    RTS_NO_DETAIL RC_SUCCESS
+
+;------------------------------------------------------------------------------
+; Establish the filename by looking for a custom argument. If no such arg
+; was found, then we'll use our default value.  Then, open the file.
+;
+; @effect .A length of the filename
+; @effect .X low byte of filename address
+; @effect .Y high byte of filename address
+;------------------------------------------------------------------------------
+.proc sub_establish_filename: near
+   lda #0
+   ldx #<RAM_VOLATILE_BUF
+   ldy #>RAM_VOLATILE_BUF
+   jsr func_find_arg
+   bcc @arg_was_cool              ; .C=0 means it was found
+   ldx #<default_image_filename
+   ldy #>default_image_filename
+   rts
+@arg_was_cool:
+   APPEND_ACCESS_MODE_TO_FILENAME RAM_VOLATILE_BUF, PETSCII_LOWER_R
+   tya ; new string length
+   ldx #<RAM_VOLATILE_BUF
+   ldy #>RAM_VOLATILE_BUF
+   rts
+.endproc

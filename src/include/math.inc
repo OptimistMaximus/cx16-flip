@@ -186,6 +186,20 @@
 .endmacro
 
 ;==============================================================================
+; U16_INC
+;
+; Increment the value in a variable
+;
+; @param targetAddr the value's address
+;==============================================================================
+.macro U16_INC targetAddr
+    inc targetAddr+0
+    bne :+
+    inc targetAddr+1
+:
+.endmacro
+
+;==============================================================================
 ; U16_SUB_IMM
 ;
 ; Subtract out of a target variable an immediate value
@@ -264,19 +278,6 @@
 
 
 
-;==============================================================================
-; U16_INC
-;
-; Increment the value in a variable
-;
-; @param targetAddr the value's address
-;==============================================================================
-.macro U16_INC targetAddr
-    inc targetAddr+0
-    bne :+
-    inc targetAddr+1
-:
-.endmacro
 
 
 

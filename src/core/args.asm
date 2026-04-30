@@ -44,7 +44,7 @@ BASIC_TOKEN_REM := $8F
    sec                           ; indicate failure
    rts
 @args_present:
-   
+
 @preamble_loop:                  ; if we made it here, there should be a
    inx                           ; colon and a REM token with some number of
    lda BASIC_BUFFER,x            ; spaces. We'll advance to the REM token.
@@ -61,10 +61,10 @@ BASIC_TOKEN_REM := $8F
    lda ZP_VOLATILE_B             ; if we fall through to here, we're in an
    cmp ZP_VOLATILE_A             ; actual arg. Is it desired?
    beq @arg_matching_done        ; If so, we are done!
-    
+
    inc                           ; else we fall through here. Take advantage
    sta ZP_VOLATILE_B             ; of .A still holding the current arg index
-@arg_skip_undesired_loop:        ; and increment it now. Then burn through 
+@arg_skip_undesired_loop:        ; and increment it now. Then burn through
    inx                           ; characters of the current (the ones that
    lda BASIC_BUFFER,x            ; aren't a space) while also taking care to
    beq @arg_matching_done        ; stop short if we hit the end of buffer or
