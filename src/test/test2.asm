@@ -4,6 +4,16 @@
 .import func_open_inputstream
 .import func_close_inputstream
 .import func_slurp_header
+.import func_slurp_chunk
+.import handle_invalid
+.import handle_unsupported
+.import handle_frame_type
+.import handle_color_256
+.import handle_color_64
+.import handle_delta_fli
+.import handle_black
+.import handle_byte_run
+.import handle_fli_copy
 
 .include "../include/global.inc"
 .include "../include/math.inc"
@@ -13,6 +23,7 @@
 .segment "RODATA"     ; Read-Only data
 
 fn_header_x: .asciiz "headerx.bin,r"
+fn_frame:    .asciiz "frame.bin,r"
 
 
 
@@ -48,10 +59,41 @@ test_arg_expect_bb: .asciiz "bb"
    jsr func_find_arg
 .endmacro
 
-.macro PREP_HEADER_FILENAME number
-   U8_COPY_IMM fn_header_x+6, '0'
-   ldx #<fn_header_x
-   ldy #>fn_header_x
+; for unit tests we need to preserve .A .X .Y
+.macro OPEN_INPUTSTREAM_R filenameLabel, replacementOffset, replacementChar
+   pha
+      phx
+         phy
+            U8_COPY_IMM filenameLabel+replacementOffset, replacementChar
+            ldx #<filenameLabel
+            ldy #>filenameLabel
+            jsr func_open_inputstream
+         ply
+      plx
+   pla
+.endmacro
+
+.macro OPEN_INPUTSTREAM filenameLabel
+   pha
+      phx
+         phy
+            ldx #<filenameLabel
+            ldy #>filenameLabel
+            jsr func_open_inputstream
+         ply
+      plx
+   pla
+.endmacro
+
+; for unit tests we need to preserve .A .X .Y
+.macro CLOSE_INPUTSTREAM
+   pha
+      phx
+         phy
+            jsr func_close_inputstream
+         ply
+      plx
+   pla
 .endmacro
 
 .proc test_suite_2: near
@@ -94,10 +136,9 @@ test_arg_expect_bb: .asciiz "bb"
    ;---------------------------------------------------------------------------
    ; TEST 30 - slurp_header
    ;---------------------------------------------------------------------------
-   PREP_HEADER_FILENAME '0'
-   jsr func_open_inputstream
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '0'
    jsr func_slurp_header
-   jsr func_close_inputstream
+   CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM       $3000,        RC_SUCCESS
    ASSERT_VAR_U16_EQUALS_IMM $3001, $04A1, ZP16_delaySyncs
    ASSERT_VAR_U16_EQUALS_IMM $3002, $0024, ZP16_numFrames
@@ -106,48 +147,67 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VAR_U8_EQUALS_IMM  $3005, $08,   ZP8_depth
    ASSERT_VAR_U8_EQUALS_IMM  $3006, $00,   ZP8_activeLayer
    
-   PREP_HEADER_FILENAME '1'
-   jsr func_open_inputstream
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
-   jsr func_close_inputstream
-   ASSERT_A_EQUALS_IMM $3010, RC_DEPTH_TOO_BIG
-   ASSERT_X_EQUALS_IMM $3011, $B0
-   ASSERT_Y_EQUALS_IMM $3012, $0B
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE
+   ASSERT_X_EQUALS_IMM $3011, $12 
+   ASSERT_Y_EQUALS_IMM $3012, $AF
 
-   PREP_HEADER_FILENAME '2'
-   jsr func_open_inputstream
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
    jsr func_slurp_header
-   jsr func_close_inputstream
-   ASSERT_A_EQUALS_IMM $3020, RC_HEIGHT_TOO_BIG
-   ASSERT_X_EQUALS_IMM $3021, $B0
-   ASSERT_Y_EQUALS_IMM $3022, $0B
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3020, RC_WIDTH_TOO_BIG
+   ASSERT_X_EQUALS_IMM $3021, $80
+   ASSERT_Y_EQUALS_IMM $3022, $02
 
-   PREP_HEADER_FILENAME '3'
-   jsr func_open_inputstream
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '3'
    jsr func_slurp_header
-   jsr func_close_inputstream
-   ASSERT_A_EQUALS_IMM $3030, RC_SPEED_TOO_HIGH
-   ASSERT_X_EQUALS_IMM $3031, $12
-   ASSERT_Y_EQUALS_IMM $3032, $34
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3030, RC_HEIGHT_TOO_BIG
+   ASSERT_X_EQUALS_IMM $3031, $B0
+   ASSERT_Y_EQUALS_IMM $3032, $0B
 
-   PREP_HEADER_FILENAME '4'
-   jsr func_open_inputstream
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '4'
    jsr func_slurp_header
-   jsr func_close_inputstream
-   ASSERT_A_EQUALS_IMM $3040, RC_UNSUPPORTED_FILE_TYPE
-   ASSERT_X_EQUALS_IMM $3041, $12 
-   ASSERT_Y_EQUALS_IMM $3042, $AF
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3040, RC_DEPTH_TOO_BIG
+   ASSERT_X_EQUALS_IMM $3041, $B0
+   ASSERT_Y_EQUALS_IMM $3042, $0B
 
-   PREP_HEADER_FILENAME '5'
-   jsr func_open_inputstream
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '5'
    jsr func_slurp_header
-   jsr func_close_inputstream
-   ASSERT_A_EQUALS_IMM $3050, RC_WIDTH_TOO_BIG
-   ASSERT_X_EQUALS_IMM $3051, $80
-   ASSERT_Y_EQUALS_IMM $3052, $02
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3050, RC_SPEED_TOO_HIGH
+   ASSERT_X_EQUALS_IMM $3051, $12
+   ASSERT_Y_EQUALS_IMM $3052, $34
 
+   ;---------------------------------------------------------------------------
+   ; TEST 31 - handle_invalid
+   ;           handle_unsupported
+   ;           handle_frame_type
+   ;---------------------------------------------------------------------------
+   U16_COPY_IMM ZP16_chunkType, $AABB
+   jsr handle_invalid
+   ASSERT_A_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE
+   ASSERT_X_EQUALS_IMM $3101, $BB
+   ASSERT_Y_EQUALS_IMM $3102, $AA
 
+   jsr handle_unsupported
+   ASSERT_A_EQUALS_IMM $3103, RC_UNSUPPORTED_CHUNK_TYPE
+   ASSERT_X_EQUALS_IMM $3104, $BB
+   ASSERT_Y_EQUALS_IMM $3105, $AA
 
+   OPEN_INPUTSTREAM fn_frame
+   jsr handle_frame_type
+   stp
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3106, RC_SUCCESS
+   ASSERT_VAR_U16_EQUALS_IMM $3107, $1234, ZP16_frameType
+
+   
+   
+   
    PASS
 
 .endproc

@@ -1,10 +1,10 @@
-# Header (height is 256)
+# Header (width is 640)
 
 32D60000   # DWORD file size
 11AF       #  WORD file type
 2400       #  WORD number of frames in first segment
-4001       #  WORD width
-B00B       #  WORD height
+8002       #  WORD width
+C800       #  WORD height
 0800       #  WORD depth
 0000       #  WORD flags (meaning unknown)
 08000000   # DWORD speed

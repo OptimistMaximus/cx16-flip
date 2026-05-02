@@ -1,11 +1,11 @@
-# Header (depth is 9)
+# Header (file type is FLC)
 
 32D60000   # DWORD file size
-11AF       #  WORD file type $AF11 means FLC
+12AF       #  WORD file type $AF12 means FLC
 2400       #  WORD number of frames in first segment
 4001       #  WORD width
 C800       #  WORD height
-B00B       #  WORD depth
+0800       #  WORD depth
 0000       #  WORD flags (meaning unknown)
 08000000   # DWORD speed
 0000       #  WORD reserved

@@ -71,10 +71,6 @@ sub_handle_color:
    SLURP_VAR16 ZP_VOLATILE_CD
    ldx ZP_VOLATILE_C              ; .X is the packet count (0 means 256)
    
-   stp
-   nop
-   nop
-   
 packet_loop:
    SLURP_VAR16 innerCounts
    U16_ADD_VAR8 stagingArea, innerCountSkip
@@ -117,11 +113,6 @@ smc_anchor_b_shift:
    dex
    bne packet_loop
 
-   stp
-   nop
-   nop
-   nop
-   
    ;---------------------------------------------------------------------------
    ; now copy the staging area to the palette
    ;---------------------------------------------------------------------------

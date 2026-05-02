@@ -1,13 +1,13 @@
-# Header (width is 640)
+# Header (speed too high)
 
 32D60000   # DWORD file size
-11AF       #  WORD file type
+11AF       #  WORD file type $AF11 means FLI
 2400       #  WORD number of frames in first segment
-8002       #  WORD width
+4001       #  WORD width
 C800       #  WORD height
 0800       #  WORD depth
 0000       #  WORD flags (meaning unknown)
-08000000   # DWORD speed
+12345678   # DWORD speed
 0000       #  WORD reserved
 00010000   # DWORD [FLC] created date
 00000000   # DWORD [FLC] creator serial number

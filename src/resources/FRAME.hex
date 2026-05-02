@@ -1,0 +1,9 @@
+# Frame Type
+
+          ; DWORD size (already streamed)
+          ;  WORD type (already streamed)
+1234      ;  WORD number of subchunks
+0000      ;  WORD delay in millis
+0000      ;  WORD reserved
+0000      ;  WORD frame width override
+0000      ;  WORD frame height override

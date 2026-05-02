@@ -9,6 +9,7 @@
 ; SLURP_INTO_A
 ;
 ; @effect  .A holds the slurped byte
+; @cycles 9 + whatever KERNAL's ACPTR uses
 ;==============================================================================
 .macro SLURP_INTO_A
    jsr KERNAL_ACPTR
@@ -19,15 +20,11 @@
 ;
 ; Reads a number of bytes specified in .A into memory at the target address.
 ;
-; This does a PHX/PHY/PLY/PLX which costs 14 cycles, so slurping into an array
-; of length 1 is slower than using SLURP_VAR8. Slurping into an array of
-; length 2 is faster than using SLURP_VAR16 since 2 SLURP_INTO_A calls would
-; require two JSR/RTS which is already 18 cycles.
-;
 ; @param  .A holds the number of bytes to read
 ; @param  targetAddr is the destination address
 ; @effect .X clobbered
 ; @effect .Y clobbered
+; @cycles 14 + whatever KERNAL's MACPTR uses
 ;==============================================================================
 .macro SLURP_ARRAY targetAddr
    clc                ; clear means advance destination after each read
@@ -45,6 +42,7 @@
 ; @param  targetAddr is the destination address
 ; @effect .X clobbered
 ; @effect .Y clobbered
+; @cycles 16 + whatever KERNAL's MACPTR uses
 ;==============================================================================
 .macro SLURP_ARRAY_IMM length, targetAddr
    lda #length
@@ -55,6 +53,7 @@
 ; SLURP_VAR8
 ;
 ; @param  targetAddr is where the 1 byte will be slurped into
+; @cycles 16 + whatever KERNAL's MACPTR uses
 ;==============================================================================
 .macro SLURP_VAR8 targetAddr
    SLURP_INTO_A
@@ -62,39 +61,36 @@
 .endmacro
 
 ;==============================================================================
-; SLURP_VAR16
+; SLURP_VAR16 (little endian)
 ;
 ; @param  targetAddr is where the 2 bytes will be slurped into
 ; @effect .X clobbered
 ; @effect .Y clobbered
 ;==============================================================================
 .macro SLURP_VAR16 targetAddr
-   lda #2
-   SLURP_ARRAY targetAddr
+   SLURP_ARRAY_IMM 2, targetAddr
 .endmacro
 
 ;==============================================================================
-; SLURP_VAR24
+; SLURP_VAR24 (little endian)
 ;
 ; @param  targetAddr is where the 3 bytes will be slurped into
 ; @effect .X clobbered
 ; @effect .Y clobbered
 ;==============================================================================
 .macro SLURP_VAR24 targetAddr
-   lda #3
-   SLURP_ARRAY targetAddr
+   SLURP_ARRAY_IMM 3, targetAddr
 .endmacro
 
 ;==============================================================================
-; SLURP_VAR32
+; SLURP_VAR32 (little endian)
 ;
 ; @param  targetAddr is where the 4 bytes will be slurped into
 ; @effect .X clobbered
 ; @effect .Y clobbered
 ;==============================================================================
 .macro SLURP_VAR32 targetAddr
-   lda #4
-   SLURP_ARRAY targetAddr
+   SLURP_ARRAY_IMM 4, targetAddr
 .endmacro
 
 ;==============================================================================

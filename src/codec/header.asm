@@ -93,18 +93,9 @@
    varMultiplier = ZP_VOLATILE_E
    
    U8_COPY_IMM varMultiplier, 6
-stp
-nop
    U16_SLOW_MULTIPLY varTemp, dwordPointerSpeed, varMultiplier
    U16_COPY_IMM varDivisor, 7
-stp
-nop
-nop
    U16_SLOW_DIVIDE ZP16_delaySyncs, varTemp, varDivisor
-stp
-nop
-nop
-nop
    
    ;---------------------------------------------------------------------------
    ; copy important data out of the volatile buffer and into our ZP vars 
