@@ -17,25 +17,29 @@
 ;##############################################################################
 ; There are quite a few holes in the chunk type numbers if  arranged in order
 ; but not so many as to make a jump table out of the question.  These "holes"
-; will jump to a  there are some "holes" in the frame type identifiers.  These
-; are represented by a jump to "handle_invalid" that always returns an error.
+; will jump to a subroutine that always returns an error.
 ;
-; For now, we only support the subset for FLI files.  Basic FLC might
-; be supported next. Unsupported chunk types jump to "handle_unsupported"
+; We only support FLI, and the header validator is expected to error out if
+; the header's file type indicates FLC.  Given that, and assuming the file is
+; properly encoded, we should only ever encounter FLI chunk types.  So, the
+; jump table only needs to go as high as the FLI chunk numbers go.
 ;
-; There are 5 more chunk types with a 16-bit value that all have high byte $F1.
-; That's not enough to warrant a jump table so they are handled via CMP.
+; There are 5 more chunk types with a 16-bit value that all have high byte $F1,
+; and only one of them is appropriate for FLI files. So, in keeping with the
+; "trust me, bro" mentality we'll just check to see if the high byte is zero
+; or not. If it's zero, we'll assume it's a valid FLI chunk, else we'll assume
+; it's $F1FA.
 ;##############################################################################
 
 chunk_type_jump_table:
 .word handle_invalid       ; $00
 .word handle_invalid       ; $01
 .word handle_invalid       ; $02
-.word handle_unsupported   ; $03 CEL_DATA    registration and transparency
+.word handle_unsupported   ; $03 CEL_DATA    (FLC only)
 .word handle_color_256     ; $04 COLOR_256   256-level colour palette
 .word handle_invalid       ; $05
 .word handle_invalid       ; $06
-.word handle_unsupported   ; $07 DELTA_FLC   delta image, word oriented RLE
+.word handle_unsupported   ; $07 DELTA_FLC   (FLC only)
 .word handle_invalid       ; $08
 .word handle_invalid       ; $09
 .word handle_invalid       ; $0A
@@ -45,33 +49,6 @@ chunk_type_jump_table:
 .word handle_invalid       ; $0E
 .word handle_byte_run      ; $0F BYTE_RUN    full image, byte oriented RLE
 .word handle_fli_copy      ; $10 FLI_COPY    uncompressed image (rare)
-.word handle_invalid       ; $11
-.word handle_unsupported   ; $12 PSTAMP      postage stamp
-.word handle_invalid       ; $13
-.word handle_invalid       ; $14
-.word handle_invalid       ; $15
-.word handle_invalid       ; $16
-.word handle_invalid       ; $17
-.word handle_invalid       ; $18
-.word handle_unsupported   ; $19 DTA_BRUN    full image, pixel oriented RLE
-.word handle_unsupported   ; $1A DTA_COPY    uncompressed image
-.word handle_unsupported   ; $1B DTA_LC      delta image, pixel oriented RLE
-.word handle_invalid       ; $1C
-.word handle_invalid       ; $1D
-.word handle_invalid       ; $1E
-.word handle_unsupported   ; $1F LABEL       frame label
-.word handle_unsupported   ; $20 BMP_MASK    bitmap mask
-.word handle_unsupported   ; $21 MLEV_MASK   multilevel mask
-.word handle_unsupported   ; $22 SEGMENT     segment information
-.word handle_unsupported   ; $23 KEY_IMAGE   key image
-.word handle_unsupported   ; $24 KEY_PAL     key palette
-.word handle_unsupported   ; $25 REGION      region of frame differences
-.word handle_unsupported   ; $26 WAVE        digitized audio
-.word handle_unsupported   ; $27 USERSTRING  general purpose user data
-.word handle_unsupported   ; $28 RGN_MASK    region mask
-.word handle_unsupported   ; $29 LABELEX     extended frame label
-.word handle_unsupported   ; $2A SHIFT       scanline delta shifts
-.word handle_unsupported   ; $2B PATHMAP     path map
 
 .segment "CODE"
 
@@ -100,47 +77,27 @@ chunk_type_jump_table:
    ;---------------------------------------------------------------------------
    ; High byte $00 means we can use the jump table.  The low byte should be a
    ; value from $00 to $2B, so we can safely multiply it by 2 to get the jump
-   ; table offset.
+   ; table offset. The FLI subset of chunk types is $10 or less.
+   ;
+   ; We only get as far as parsing chunks if we already passed header
+   ; validation. Header validation already made sure the type was FLI, not FLC.
+   ; We'll trust that the file was properly encoded, so only FLI chunk types
+   ; will be encountered.
    ;---------------------------------------------------------------------------
    lda ZP16_chunkType+1
-   bne @fancy_f1_type
+   bne @two_byte_chunk_type
    lda ZP16_chunkType+0
    asl
    tax
    jmp (chunk_type_jump_table,x)
 
-@fancy_f1_type:
+@two_byte_chunk_type:
    ;---------------------------------------------------------------------------
-   ; If the high byte wasn't zero, we'll assume it was $F1, so we only need to
-   ; check the low byte to see how to handle it.  Since this isn't a simple
-   ; jump table, we'll check in order of popularity.
+   ; There are 5 chunk types whose value is more than $FF, and only one of them
+   ; is valid for FLI files. In keeping with the "trust me, bro" mentality,
+   ; we assume the file was properly encoded. That means any chunk type whose
+   ; high byte wasn't zero MUST be the $F1FA chunk. 
    ;---------------------------------------------------------------------------
-   lda ZP16_chunkType+0
-   cmp #$FA                        ; $F1FA FRAME_TYPE     frame chunk
-   bne :+
    jmp handle_frame_type
-:
-
-   cmp #$00                        ; $F100 PREFIX_TYPE
-   bne :+
-   jmp handle_unsupported
-:
-
-   cmp #$FC                        ; $F1FC HUFFMAN_TABLE
-   bne :+
-   jmp handle_unsupported
-:
-
-   cmp #$E0                        ; $F1F0 SCRIPT_CHUNK
-   bne :+
-   jmp handle_unsupported
-:
-
-   cmp #$FB                        ; $F1FB SEGMENT_TABLE
-   bne :+
-   jmp handle_unsupported
-:
-
-   jmp handle_invalid
 
 .endproc

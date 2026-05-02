@@ -46,22 +46,18 @@
 ; ASSERT_BCS - assert .P flag C is set, such that a bcs would branch
 ;=============================================================================
 .macro ASSERT_BCS testId
-.scope
-    bcs @ok
+    bcs :+
     FAIL testId
-@ok:
-.endscope
+:
 .endmacro
 
 ;=============================================================================
 ; ASSERT_BCC - assert .P flag C is clear, such that a bcc would branch
 ;=============================================================================
 .macro ASSERT_BCC testId
-.scope
-    bcc @ok
+    bcc :+
     FAIL testId
-@ok:
-.endscope
+:
 .endmacro
 
 ;=============================================================================
@@ -69,12 +65,32 @@
 ;                       equals the specified immediate value
 ;=============================================================================
 .macro ASSERT_A_EQUALS_IMM testId, expectValue
-.scope
    cmp #expectValue
-   beq @ok
+   beq :+
    FAIL testId
-@ok:
-.endscope
+:
+.endmacro
+
+;=============================================================================
+; ASSERT_X_EQUALS_IMM - assert .X
+;                       equals the specified immediate value
+;=============================================================================
+.macro ASSERT_X_EQUALS_IMM testId, expectValue
+   cpx #expectValue
+   beq :+
+   FAIL testId
+:
+.endmacro
+
+;=============================================================================
+; ASSERT_Y_EQUALS_IMM - assert .Y
+;                       equals the specified immediate value
+;=============================================================================
+.macro ASSERT_Y_EQUALS_IMM testId, expectValue
+   cpy #expectValue
+   beq :+
+   FAIL testId
+:
 .endmacro
 
 ;=============================================================================
@@ -82,13 +98,11 @@
 ;                            equals the specified immediate value
 ;=============================================================================
 .macro ASSERT_VAR_U8_EQUALS_IMM testId, expectValue, actualAddr
-.scope
    lda #expectValue
    cmp actualAddr
-   beq @ok
+   beq :+
    FAIL testId
-@ok:
-.endscope
+:
 .endmacro
 
 ;=============================================================================
@@ -96,18 +110,16 @@
 ;                             equals the specified immediate value
 ;=============================================================================
 .macro ASSERT_VAR_U16_EQUALS_IMM testId, expectValue, actualAddr
-.scope
    lda actualAddr+0
    cmp #<expectValue
-   beq @ok_low
+   beq :+
    FAIL testId
-@ok_low:
+:
    lda actualAddr+1
    cmp #>expectValue
-   beq @ok_high
+   beq :+
    FAIL testId
-@ok_high:
-.endscope
+:
 .endmacro
 
 ;=============================================================================
@@ -115,23 +127,21 @@
 ;                             equals the specified immediate value
 ;=============================================================================
 .macro ASSERT_VAR_U24_EQUALS_IMM testId,expectValue,actualAddr
-.scope
    lda actualAddr+0
    cmp #<expectValue
-   beq @ok_low
+   beq :+
    FAIL testId
-@ok_low:
+:
    lda actualAddr+1
    cmp #>expectValue
-   beq @ok_mid
+   beq :+
    FAIL testId
-@ok_mid:
+:
    lda actualAddr+2
    cmp #^expectValue
-   beq @ok_high
+   beq :+
    FAIL testId
-@ok_high:
-.endscope
+:
 .endmacro
 
 ;=============================================================================

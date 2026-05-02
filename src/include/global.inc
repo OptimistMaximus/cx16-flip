@@ -56,7 +56,7 @@ ZP_VOLATILE_N    := $3D
 ZP_VOLATILE_O    := $3E
 ZP_VOLATILE_P    := $3F
 
-RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
+RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES
@@ -65,7 +65,7 @@ RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP8_activeLayer        := $40 ; 0 means Layer 0 is active, !0 means Layer 1
+ZP8_activeLayer        := $40 ; even means Layer 0, odd means Layer 1
 ZP8_height             := $41
 ZP8_depth              := $42
 
@@ -75,10 +75,12 @@ ZP16_numFrames         := $54
 ZP16_chunkType         := $56
 ZP32_chunkSize         := $58
 ZP16_currFrame         := $5A
+ZP16_numSubChunks      := $5C
 
 RAM16_fileType         := $500
 
-RAM_stagingArea        := $600 ; $600-$7FF for staging data
+
+RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 
 ;------------------------------------------------------------------------------
 ; FLI CONSTANTS

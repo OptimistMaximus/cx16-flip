@@ -222,7 +222,7 @@
 ;==============================================================================
 ; U16_ADD_VAR
 ;
-; Add into a target variable the value in another variable
+; Add into a target variable the value in another 16-bit variable
 ;
 ; @param targetAddr the target value's address
 ; @param otherAddr  the other value's address
@@ -238,6 +238,29 @@
    adc valueAddress+1
    sta targetAddr+1
 .endmacro
+
+;==============================================================================
+; U16_ADD_VAR8
+;
+; Add into a target variable the value in an 8-bit variable
+;
+; @param targetAddr the target value's address
+; @param otherAddr  the other value's address
+;
+; Note, this macro will clear the carry bit before adding.
+;==============================================================================
+.macro U16_ADD_VAR8 targetAddr, valueAddress
+   clc
+   lda targetAddr+0
+   adc valueAddress+0
+   sta targetAddr+0
+   lda targetAddr+1
+   adc #0
+   sta targetAddr+1
+.endmacro
+
+
+
 
 ;==============================================================================
 ; U16_SUB_VAR

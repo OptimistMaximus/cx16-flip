@@ -1,0 +1,9 @@
+# SLURP test inputs
+
+61626364   # U32
+6566       # U16
+676869     # U24
+6A         # U8
+6B         # .A
+6C6D6E6F70 # ARRAY (5 bytes)
+20         # extra

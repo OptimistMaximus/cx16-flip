@@ -35,8 +35,11 @@ FAF1     -> $F1FA chunk type
 0080: 1A260000 FAF1 0200 0000 0000 0000 0000
 
 ######################################
-# Chunk: Frame 0 Subchunk 0/1
+# Chunk: Frame 0 Subchunk 1/2
 ######################################
+
+0A030000 -> $030A chunk size
+0B00     -> $000B chunk type (Color 64) 
 
 
 

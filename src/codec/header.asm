@@ -16,58 +16,53 @@
 ;==============================================================================
 .proc func_slurp_header: near
 
-   varSpeed     = ZP_VOLATILE_ABCD
-   varHeight    = ZP_VOLATILE_EF
-   varDepth     = ZP_VOLATILE_GH
-   varTemp1     = ZP_VOLATILE_IJ
-   varTemp2     = ZP_VOLATILE_KL
+   SLURP_ARRAY_IMM 128, RAM_VOLATILE_BUF              ; header is 128 bytes
 
-   lda #128 ; header is always 128 bytes
-   SLURP_ARRAY RAM_stagingArea
-
-   U16_COPY_VAR RAM16_fileType,   RAM_stagingArea+4
-   U16_COPY_VAR ZP16_numFrames,   RAM_stagingArea+6
-   U16_COPY_VAR ZP16_width,       RAM_stagingArea+8
-   U16_COPY_VAR varHeight,        RAM_stagingArea+10 ; for validation
-   U8_COPY_VAR  ZP8_height,       RAM_stagingArea+10
-   U16_COPY_VAR varDepth,         RAM_stagingArea+12 ; for validation
-   U8_COPY_VAR  ZP8_depth,        RAM_stagingArea+12
-   U32_COPY_VAR varSpeed,         RAM_stagingArea+16
+   ;---------------------------------------------------------------------------
+   ; Rather than waste time copying values only to bail out during validation,
+   ; first just use symbols as effective pointers into the header buffer.
+   ; These will be used for validation. After that, we can copy stuff into ZP.
+   ;---------------------------------------------------------------------------
+   wordPointerFileType  =         RAM_VOLATILE_BUF+4  ; pointer to file type
+   wordPointerNumFrames =         RAM_VOLATILE_BUF+6  ; pointer to frames 
+   wordPointerWidth     =         RAM_VOLATILE_BUF+8  ; pointer to width
+   wordPointerHeight    =         RAM_VOLATILE_BUF+10 ; pointer to height
+   wordPointerDepth     =         RAM_VOLATILE_BUF+12 ; pointer to depth
+   dwordPointerSpeed    =         RAM_VOLATILE_BUF+16 ; pointer to speed
 
    ;---------------------------------------------------------------------------
    ; validate file type
    ;
-   ; for now, only FLI is supported, so we can just either bail or keep going.
-   ; eventually we probably want a ZPBOOL flag where b7 means FLI and b6 means
-   ; FLC
+   ; This is a bit of overkill since we don't support FLC yet, but just for
+   ; fun we'll establish the FLI vs FLC bit in the flags now.
    ;---------------------------------------------------------------------------
-   U16_CMP_IMM RAM16_fileType, FILE_TYPE_FLI
-   beq @fileType_is_cool
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_FILE_TYPE, RAM16_fileType
-@fileType_is_cool:
-
+   U16_CMP_IMM wordPointerFileType, FILE_TYPE_FLI
+   beq @fileType_is_fli
+   RTS_VAR16_DETAIL RC_UNSUPPORTED_FILE_TYPE, wordPointerFileType
+@fileType_is_fli:
+   
    ;---------------------------------------------------------------------------
    ; validate width
    ;---------------------------------------------------------------------------
-   U16_CMP_IMM ZP16_width, 321
+   U16_CMP_IMM wordPointerWidth, 321
    bcc @width_is_cool
-   RTS_VAR16_DETAIL RC_WIDTH_TOO_BIG, ZP16_width
+   RTS_VAR16_DETAIL RC_WIDTH_TOO_BIG, wordPointerWidth
 @width_is_cool:
 
    ;---------------------------------------------------------------------------
    ; validate height
    ;---------------------------------------------------------------------------
-   U16_CMP_IMM varHeight, 201
+   U16_CMP_IMM wordPointerHeight, 201
    bcc @height_is_cool
-   RTS_VAR16_DETAIL RC_HEIGHT_TOO_BIG, varHeight
+   RTS_VAR16_DETAIL RC_HEIGHT_TOO_BIG, wordPointerHeight
 @height_is_cool:
 
    ;---------------------------------------------------------------------------
    ; validate depth
    ;---------------------------------------------------------------------------
-   U16_CMP_IMM varDepth, 256
+   U16_CMP_IMM wordPointerDepth, 256
    bcc @depth_is_cool
-   RTS_VAR16_DETAIL RC_DEPTH_TOO_BIG, varDepth
+   RTS_VAR16_DETAIL RC_DEPTH_TOO_BIG, wordPointerDepth
 @depth_is_cool:
 
    ;---------------------------------------------------------------------------
@@ -76,13 +71,10 @@
    ; FLI has a 32-bit speed variable whose unit is seventieth-of-a-second. The
    ; max value is equivalent to almost 2 years.  That's just plain silly. We'll
    ; make sure it is within reason: 2293 seventieths is 32 seconds.
-   ;
-   ; TODO: for eventual FLC support, make this check conditional on FLI type.
-   ;       for FLC, the delay time (in millis) overrides the speed.
    ;---------------------------------------------------------------------------
-   U32_CMP_IMM varSpeed, 2293
+   U32_CMP_IMM dwordPointerSpeed, 2293
    bcc @speed_is_cool
-   RTS_VAR16_DETAIL RC_SPEED_TOO_HIGH, varSpeed
+   RTS_VAR16_DETAIL RC_SPEED_TOO_HIGH, dwordPointerSpeed
 @speed_is_cool:
 
    ;---------------------------------------------------------------------------
@@ -94,13 +86,34 @@
    ; header, so it should not be noticeable.
    ;
    ; We'll keep using the 32-bit variable, which will be fine because we know
-   ; the upper 2 bytes are zeros, and we only care about the lower 2 anyway.
+   ; the upper 2 bytes are zeros (having just done a validation above).
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM varTemp1, 6
-   U16_SLOW_MULTIPLY varTemp2, varSpeed, varTemp1
-   U16_COPY_IMM varTemp1, 7
-   U16_SLOW_DIVIDE ZP16_delaySyncs, varTemp2, varTemp1
-
+   varTemp      = ZP_VOLATILE_AB
+   varDivisor   = ZP_VOLATILE_CD
+   varMultiplier = ZP_VOLATILE_E
+   
+   U8_COPY_IMM varMultiplier, 6
+stp
+nop
+   U16_SLOW_MULTIPLY varTemp, dwordPointerSpeed, varMultiplier
+   U16_COPY_IMM varDivisor, 7
+stp
+nop
+nop
+   U16_SLOW_DIVIDE ZP16_delaySyncs, varTemp, varDivisor
+stp
+nop
+nop
+nop
+   
+   ;---------------------------------------------------------------------------
+   ; copy important data out of the volatile buffer and into our ZP vars 
+   ;---------------------------------------------------------------------------
+   U16_COPY_VAR ZP16_numFrames,   wordPointerNumFrames
+   U16_COPY_VAR ZP16_width,       wordPointerWidth
+   U8_COPY_VAR  ZP8_height,       wordPointerHeight ; copy height (low byte)
+   U8_COPY_VAR  ZP8_depth,        wordPointerDepth  ; copy depth (low byte)
+   
    RTS_NO_DETAIL RC_SUCCESS
 .endproc
 

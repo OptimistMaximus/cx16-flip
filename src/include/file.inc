@@ -37,6 +37,21 @@
 .endmacro
 
 ;==============================================================================
+; SLURP_ARRAY_IMM
+;
+; Reads an immediate number of bytes (convenience macro calling SLURP_ARRAY)
+;
+; @param  length the number of bytes to read
+; @param  targetAddr is the destination address
+; @effect .X clobbered
+; @effect .Y clobbered
+;==============================================================================
+.macro SLURP_ARRAY_IMM length, targetAddr
+   lda #length
+   SLURP_ARRAY targetAddr
+.endmacro
+
+;==============================================================================
 ; SLURP_VAR8
 ;
 ; @param  targetAddr is where the 1 byte will be slurped into

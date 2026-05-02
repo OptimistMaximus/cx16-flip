@@ -88,6 +88,9 @@ start:
    beq @chunk_is_cool
    RTS_BSOD
 @chunk_is_cool:
+
+   ; TODO decide if we need to adjust for odd chunk alignment
+   
    U16_INC ZP16_currFrame
    U16_CMP_VAR ZP16_currFrame, ZP16_numFrames
    bne @frame_loop

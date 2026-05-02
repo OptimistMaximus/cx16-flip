@@ -10,8 +10,16 @@ INCDIR := $(SOURCE)/include
 IMAGE_FILENAME := $(RESDIR)/BELL.FLI
 MAIN_RESOURCES := zzz/IMAGE.FLI
 
-TEST_FILENAME := $(RESDIR)/test.txt
-TEST_RESOURCES := zzz/TEST.TXT
+TEST_DATA_FILES := \
+$(RESDIR)/HEADER0.hex \
+$(RESDIR)/HEADER1.hex \
+$(RESDIR)/HEADER2.hex \
+$(RESDIR)/HEADER3.hex \
+$(RESDIR)/HEADER4.hex \
+$(RESDIR)/HEADER5.hex \
+$(RESDIR)/SLURP.hex
+
+TEST_RESOURCES := $(TEST_DATA_FILES:$(RESDIR)/%.hex=zzz/%.BIN)
 
 #------------------------------------------------------------------
 # Includes
@@ -121,5 +129,8 @@ zzz/main.o: $(SOURCE)/main.asm $(INCLUDES) | zzz
 zzz/test.o: $(SOURCE)/test.asm $(INCLUDES) | zzz
 	cl65 -t cx16 -o $@ -c $<
 
-
-
+#------------------------------------------------------------------
+# Targets to build test inputs
+#------------------------------------------------------------------
+zzz/%.BIN: $(RESDIR)/%.hex | $(TARGET)
+	sh hex2bin.sh $< $@

@@ -6,7 +6,7 @@
 
 .segment "RODATA"
 
-test_filename: .asciiz "test.txt,r"
+test_filename: .asciiz "slurp.bin,r"
 expect_varsa:  .byte $61,$62,$63,$64,$65,$66,$67,$68,$69,$6A,$6B,$00
 expect_array:  .byte $6C,$6D,$6E,$6F,$70,$00
 expect_comma:  .byte $6C,$6D,$6E,$6F,$70,$2C,$57,$00 ; ,w
