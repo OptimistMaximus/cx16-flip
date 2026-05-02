@@ -1,6 +1,7 @@
 .export func_vera_setup
 .export func_vera_restore
 .export func_print_hex
+.export func_load_palette
 
 .segment "CODE"
 
@@ -82,5 +83,25 @@
 ;==============================================================================
 .proc func_vera_restore: near
    jmp KERNAL_CINT
+.endproc
+
+;==============================================================================
+; func_load_palette
+;
+; This loads the 512 byte palette buffer into VERA's actual palette
+;==============================================================================
+.proc func_load_palette: near
+   SET_VERA_ADDR24_IMM $00, VRAM_PALETTE_BUFFER, $10 ; source DATA0 stride 1
+   SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE,   $10 ; target DATA1 stride 1
+
+   ldy #0
+@loop:
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   iny
+   bne @loop
+   rts
 .endproc
 

@@ -10,23 +10,13 @@
 .include "../include/math.inc"
 .include "../include/vera.inc"
 
-   stagingArea       = ZP_VOLATILE_AB
-   numPackets        = ZP_VOLATILE_CD
-   numPacketsLo      = ZP_VOLATILE_C   ; 0 means 256 (since 16-bit was $0100)
-   innerCounts       = ZP_VOLATILE_EF
-   innerCountSkip    = ZP_VOLATILE_E   ; 0 means 256, but that'd be silly
-   innerCountCopy    = ZP_VOLATILE_F   ; 0 means 256 (i.e. all 1 color)
-   tempColor         = ZP_VOLATILE_GHI
-   tempColorRed      = ZP_VOLATILE_G
-   tempColorGreen    = ZP_VOLATILE_H
-   tempColorBlue     = ZP_VOLATILE_I
-   veraColor         = ZP_VOLATILE_KL
-   veraColorGB       = ZP_VOLATILE_K
-   veraColorR        = ZP_VOLATILE_L
-   tempGreenNibble   = ZP_VOLATILE_M
    paletteCopyAddr   = ZP_VOLATILE_OP
    
-
+;------------------------------------------------------------------------------
+; handle_color_64
+;
+; Parses color chunk and populates RAM_paletteStagingArea
+;------------------------------------------------------------------------------
 .proc handle_color_64: near
    lda #$EA ; NOP
    sta smc_anchor_r_shift+0
@@ -39,6 +29,11 @@
    jmp sub_handle_color
 .endproc
 
+;------------------------------------------------------------------------------
+; handle_color_256
+;
+; Parses color chunk and populates RAM_paletteStagingArea
+;------------------------------------------------------------------------------
 .proc handle_color_256: near
    lda #$4A ; LSR
    sta smc_anchor_r_shift+0
@@ -51,9 +46,17 @@
    jmp sub_handle_color
 .endproc
 
-
 sub_handle_color:
 
+   tempColor      = ZP_VOLATILE_ABC
+   tempColorRed   = ZP_VOLATILE_A
+   tempColorGreen = ZP_VOLATILE_B
+   tempColorBlue  = ZP_VOLATILE_C
+   tempVeraRed    = ZP_VOLATILE_E
+   tempVeraGreen  = ZP_VOLATILE_F
+   numPackets     = ZP_VOLATILE_GH
+   copyCount      = ZP_VOLATILE_I
+   
    ;---------------------------------------------------------------------------
    ; Although packet count is 16-bit, it doesn't make sense for the size to be
    ; anything other than 1 to 256. Zero packets would be silly, because if
@@ -61,75 +64,76 @@ sub_handle_color:
    ; color chunk in the first place.  Similarly, 257 or more entries would be
    ; ridiculous because the FLI format only supports 256 colors.  That said,
    ; we can safely ignore the high byte of the packet count and treat the low
-   ; byte's zero as meaning 256.
+   ; byte's zero as meaning 256.  It would be highly inefficient to have 256
+   ; packets each encoding a skip count of 0 and a run count of 1, but it is
+   ; technically a spec-compliant thing to do.
    ;
    ; We still need to slurp 16-bit values, of course.  We'll walk the packets
    ; and account for the runs as we go, updating the palette staging area.
+   ;
+   ; Each packet has a skip count and a copy count. A skip count of zero means
+   ; zero (don't skip) but a copy count of zero means 256 (i.e. a full palette
+   ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM stagingArea, RAM_paletteStagingArea
+   SET_VERA_ADDR24_IMM $00, VRAM_PALETTE_BUFFER, $10 ; DATA0, stride 1
    
-   SLURP_VAR16 ZP_VOLATILE_CD
-   ldx ZP_VOLATILE_C              ; .X is the packet count (0 means 256)
-   
+   SLURP_VAR16 numPackets
+   ldx #0
 packet_loop:
-   SLURP_VAR16 innerCounts
-   U16_ADD_VAR8 stagingArea, innerCountSkip
-   ldy innerCountCopy
+
+   SLURP_INTO_A ; skip count
+   beq @skip_done
+   tay
+@skip_loop:
+   lda VERA_DATA0 ; burn low
+   lda VERA_DATA0 ; burn high
+   dey
+   bne @skip_loop
+@skip_done:
+
+   SLURP_INTO_A ; copy count     
+   sta copyCount
+   ldy #0
 
       copy_loop:
-         SLURP_VAR24 tempColor
-
-         lda tempColorRed
+         phx
+            phy
+               SLURP_VAR24 tempColor
+               lda tempColorRed
 smc_anchor_r_shift:
-         lsr                      ; nop if 6-bit
-         lsr                      ; nop if 6-bit
-         lsr
-         lsr
-         phy
-            ldy #1
-            sta (stagingArea),y
-         ply
+               lsr                      ; nop if 6-bit
+               lsr                      ; nop if 6-bit
+               lsr
+               lsr
+               sta tempVeraRed
    
-         lda tempColorGreen
+               lda tempColorGreen
 smc_anchor_g_shift:
-         nop                      ; asl if 6-bit
-         nop                      ; asl if 6-bit
-         and #$F0
-         sta tempGreenNibble
+               nop                      ; asl if 6-bit
+               nop                      ; asl if 6-bit
+               and #$F0
+               sta tempVeraGreen
    
-         lda tempColorBlue
+               lda tempColorBlue
 smc_anchor_b_shift:
-         lsr                      ; nop if 6-bit
-         lsr                      ; nop if 6-bit
-         lsr
-         lsr
-         ora tempGreenNibble
-         sta (stagingArea)
+               lsr                      ; nop if 6-bit
+               lsr                      ; nop if 6-bit
+               lsr
+               lsr
+               ora tempVeraGreen
+               sta VERA_DATA0           ; store VERA color (GB)
+               lda tempVeraRed          ; store VERA color (R)
+               sta VERA_DATA0
+            ply
+         plx
          
-         U16_ADD_IMM stagingArea, 2 ; advance to next palette entry
-         dey
+         iny
+         cpy copyCount
          bne copy_loop
 
-   dex
+   inx
+   cpx numPackets                       ; just the low byte
    bne packet_loop
 
-   ;---------------------------------------------------------------------------
-   ; now copy the staging area to the palette
-   ;---------------------------------------------------------------------------
-   SET_VERA_ADDR24_IMM $00, VERA_ADDR_PALETTE, $10 ; DATA0, stride 1
-   U16_COPY_IMM paletteCopyAddr, RAM_paletteStagingArea+$0000
-   ldx #0
-@palette_copy_outer_loop:
-   ldy #0
-@palette_copy_inner_loop:
-   lda (paletteCopyAddr),y
-   sta VERA_DATA0
-   iny
-   bne @palette_copy_inner_loop
-
-   inc paletteCopyAddr+1
-   dex
-   bne @palette_copy_outer_loop
-      
    RTS_NO_DETAIL RC_SUCCESS
 

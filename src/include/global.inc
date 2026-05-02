@@ -58,6 +58,11 @@ ZP_VOLATILE_P    := $3F
 
 RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 
+VRAM_BITMAP_LAYER_0 := $00000 ; 00000-0F9FF (layer 0, 320x200 pixels)
+VRAM_BITMAP_LAYER_1 := $0FA00 ; 0FA00-1F3FF (layer 1, 320x200 pixels)
+VRAM_PALETTE_BUFFER := $1F400 ; 1F400-1F7FF (palette staging area)
+VRAM_SCRATCH_AREA   := $1F800 ; 1F800-1F9BF (unused)
+
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES
 ;

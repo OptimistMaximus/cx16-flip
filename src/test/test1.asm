@@ -90,6 +90,7 @@ expect_comma:  .byte $6C,$6D,$6E,$6F,$70,$2C,$57,$00 ; ,w
    ldy #>expect_array
    jsr func_strlen
    ASSERT_A_EQUALS_IMM $1200, $05
+   
 
    PASS
 

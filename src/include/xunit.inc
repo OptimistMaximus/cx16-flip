@@ -72,6 +72,17 @@
 .endmacro
 
 ;=============================================================================
+; ASSERT_A_EQUALS_VAR - assert .A
+;                       equals the value at the specified immediate address
+;=============================================================================
+.macro ASSERT_A_EQUALS_VAR testId, expectAddr
+   cmp expectAddr
+   beq :+
+   FAIL testId
+:
+.endmacro
+
+;=============================================================================
 ; ASSERT_X_EQUALS_IMM - assert .X
 ;                       equals the specified immediate value
 ;=============================================================================
@@ -145,23 +156,53 @@
 .endmacro
 
 ;=============================================================================
-; ASSERT_RAM_EQUALS_ARRAY - assumes addresses are absolute addresses
+; ASSERT_RAM_EQUALS_ARRAY - assumes expectAddr and actuaAddr are absolute
 ;=============================================================================
 .macro ASSERT_RAM_EQUALS_ARRAY testId, maxOffset, expectAddr, actualAddr
    phx
    ldx #0
-:
-   lda actualAddr,x
+:  lda actualAddr,x
    cmp expectAddr,x
    bne :+
    cpx #maxOffset
    beq :++
    inx
    bra :-
-:
-   plx
+:  plx
    FAIL testId
 :  plx
+.endmacro
+
+;=============================================================================
+; ASSERT_VRAM_U8_EQUALS_IMM
+;
+; This assumes VERA address is established, data channel 1, stride 1
+;=============================================================================
+.macro ASSERT_VRAM_U8_EQUALS_IMM testId, expectValue, actualAddr
+   lda VERA_DATA1
+   ASSERT_A_EQUALS_IMM testId, expectValue
+.endmacro
+
+;=============================================================================
+; ASSERT_VRAM_U8_EQUALS_VAR
+;
+; This assumes VERA address is established, data channel 1, stride 1
+;=============================================================================
+.macro ASSERT_VRAM_U8_EQUALS_VAR testId, expectAddr, actualAddr
+   lda VERA_DATA1
+   ASSERT_A_EQUALS_VAR testId, expectAddr
+.endmacro
+
+;=============================================================================
+; ASSERT_VRAM_U16_EQUALS_IMM
+;
+; This assumes VERA address is established, data channel 1, stride 1
+;=============================================================================
+.macro ASSERT_VRAM_U16_EQUALS_IMM testId, expectValue
+   lda VERA_DATA1
+   ASSERT_A_EQUALS_IMM testId, <expectValue
+   lda VERA_DATA1
+   ASSERT_A_EQUALS_IMM testId, >expectValue
 .endmacro
 
 .endif
