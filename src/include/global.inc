@@ -68,11 +68,6 @@ ZP_VOLATILE_P    := $3F
 
 RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 
-VRAM_BITMAP_LAYER_0 := $00000 ; 00000-0F9FF (layer 0, 320x200 pixels)
-VRAM_BITMAP_LAYER_1 := $0FA00 ; 0FA00-1F3FF (layer 1, 320x200 pixels)
-VRAM_PALETTE_BUFFER := $1F400 ; 1F400-1F7FF (palette staging area)
-VRAM_SCRATCH_AREA   := $1F800 ; 1F800-1F9BF (unused)
-
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES
 ;
@@ -80,17 +75,19 @@ VRAM_SCRATCH_AREA   := $1F800 ; 1F800-1F9BF (unused)
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP8_activeLayer        := $40 ; even means Layer 0, odd means Layer 1
+ZP8_activeLayer        := $40
 ZP8_height             := $41
 ZP8_depth              := $42
 
-ZP16_delaySyncs        := $50
-ZP16_width             := $52
-ZP16_numFrames         := $54
-ZP16_chunkType         := $56
-ZP32_chunkSize         := $58
-ZP16_currFrame         := $5A
-ZP16_numSubChunks      := $5C
+ZP32_chunkSize         := $50
+ZP16_chunkType         := $54
+ZP16_delaySyncs        := $56
+ZP16_width             := $58
+ZP16_numFrames         := $5A
+ZP16_currFrame         := $5C
+ZP16_numSubChunks      := $5E
+
+ZP32_slurpCount        := $70
 
 RAM16_fileType         := $500
 
@@ -159,46 +156,6 @@ RC_INVALID_CHUNK_TYPE         := 10 ; type
    ldy #0
    lda #rc
    rts
-.endmacro
-
-;==============================================================================
-; ESTABLISH_VERA_ADDRESS
-;
-; If Layer 0 is active then we should stage data into Layer 1
-; Otherwise (i.e. Layer 1 is active) we fall through and stage to Layer 0 
-;==============================================================================
-.macro ESTABLISH_VERA_ADDRESS
-.scope
-   lda ZP8_activeLayer
-   beq @handle_layer_0_active
-      SET_VERA_ADDR24_IMM $00, VRAM_BITMAP_LAYER_0, $10
-      bra @handle_layer_done
-@handle_layer_0_active:
-      SET_VERA_ADDR24_IMM $00, VRAM_BITMAP_LAYER_1, $10
-@handle_layer_done:
-.endscope
-.endmacro
-
-;==============================================================================
-; FLIP_LAYERS
-;
-; If Layer 0 is active then make it inactive and make Layer 1 active, by 
-; setting VERA_CTRL, where b6 is sprites, b5 is Layer 1, b4 is Layer 0.
-;==============================================================================
-.macro FLIP_LAYERS
-.scope
-   lda ZP8_activeLayer
-   beq @handle_layer_0_active
-      dec ZP8_activeLayer       ; it was $01, so change it to $00
-      lda #%00010000            ; sprites off, layer 1 off, layer 0 on
-      bra @handle_layer_done
-@handle_layer_0_active:
-      inc ZP8_activeLayer       ; it was $00, so change it to $01
-      lda #%00100000            ; sprites off, layer 1 on, layer 0 off
-@handle_layer_done:
-   stz VERA_CTRL                ; Establish DCSEL=0
-   sta VERA_DC0_VIDEO           ; apply control settings
-.endscope
 .endmacro
 
 .endif

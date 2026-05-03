@@ -8,6 +8,7 @@
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/vera.inc"
+.include "../include/video.inc"
 
 ;==============================================================================
 ; print byte as hex text to screen (assuming text mode)
@@ -42,15 +43,17 @@
 ; func_vera_setup
 ;
 ; Initialize VERA conditions (do this once at startup, after reading and
-; validating the header).  We begin with Layer 0 active, holding whatever
-; was on the screen from before we started.
+; validating the header).  We begin with Layer 1 "active", in that that's
+; where we buffer the first image, while Layer 0 remains the one being shown
+; on-screen,
 ;
 ; TODO: create sprites, enable sprites here, and  use them to cover up the
 ;       pixelated mess that will be shown below the 320x200 line.
 ;==============================================================================
 .proc func_vera_setup: near
 
-   stz ZP8_activeLayer               ; Layer 0 is active
+   lda #$FA
+   sta ZP8_activeLayer               ; Layer 1 is active
 
    stz VERA_CTRL                     ; Establish DCSEL=0
    lda #%00010000                    ; Layer 1 disabled, Layer 0 enabled
@@ -91,9 +94,8 @@
 ; This loads the 512 byte palette buffer into VERA's actual palette
 ;==============================================================================
 .proc func_load_palette: near
-   SET_VERA_ADDR24_IMM $00, VRAM_PALETTE_BUFFER, $10 ; source DATA0 stride 1
-   SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE,   $10 ; target DATA1 stride 1
-
+   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
+   SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE, $10
    ldy #0
 @loop:
    lda VERA_DATA0

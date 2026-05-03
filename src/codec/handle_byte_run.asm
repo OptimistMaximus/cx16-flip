@@ -4,7 +4,7 @@
 
 .include "../include/file.inc"
 .include "../include/global.inc"
-.include "../include/vera.inc"
+.include "../include/video.inc"
 
 ; this runs within an .X and .Y loop so it must preserve .X and .Y
 ; It is invoked after having just loaded the byte count into .A
@@ -40,9 +40,11 @@
 
 .proc handle_byte_run: near
 
-   copyCount = ZP_VOLATILE_C
-
-   ESTABLISH_VERA_ADDRESS
+   vramOffset = ZP_VOLATILE_ABC
+   copyCount  = ZP_VOLATILE_D
+   
+   CALC_VRAM_OFFSET_FOR_FULL vramOffset
+   SET_VERA_ADDR24_VAR $00, vramOffset, $10
 
    ldx ZP8_height                     ; .X is the line countdown
 @line_loop:

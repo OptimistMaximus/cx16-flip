@@ -89,7 +89,15 @@ start:
    RTS_BSOD
 @chunk_is_cool:
 
-   ; TODO decide if we need to adjust for odd chunk alignment
+   stp
+   nop
+   nop
+   lda ZP32_slurpCount+0       ; if the chunk size was odd, then the encoder
+   and #%00000001              ; should have added a padding byte, so we need
+   beq @padding_mitigated      ; to burn it before proceeding to the next chunk
+   SLURP_INTO_A                ; burn it
+   
+@padding_mitigated:
    
    U16_INC ZP16_currFrame
    U16_CMP_VAR ZP16_currFrame, ZP16_numFrames

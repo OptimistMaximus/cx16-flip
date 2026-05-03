@@ -7,6 +7,7 @@
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/vera.inc"
+.include "../include/video.inc"
 
    paletteCopyAddr   = ZP_VOLATILE_OP
    
@@ -73,7 +74,7 @@ sub_handle_color:
    ; zero (don't skip) but a copy count of zero means 256 (i.e. a full palette
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
-   SET_VERA_ADDR24_IMM $00, VRAM_PALETTE_BUFFER, $10 ; DATA0, stride 1
+   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
    
    SLURP_VAR16 numPackets
    ldx #0

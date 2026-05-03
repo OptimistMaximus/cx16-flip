@@ -73,6 +73,8 @@ chunk_type_jump_table:
 
    SLURP_VAR32 ZP32_chunkSize
    SLURP_VAR16 ZP16_chunkType
+   stp
+   nop
 
    ;---------------------------------------------------------------------------
    ; High byte $00 means we can use the jump table.  The low byte should be a

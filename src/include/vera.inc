@@ -110,11 +110,11 @@ VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attributes for Sprite 2
                                   ;            ... et cetera ...
 
 ;------------------------------------------------------------------------------
-; MACRO set VERA address for transfer                                [Test 2-1]
+; SET_VERA_ADDR24_IMM
 ;
-; param controlValue what to pass to VERA_CTRL (e.g. ADDRSEL)
-; param addressValue the immediate value of the 24-bit VRAM address
-; param optionValue the options to OR into the high byte (e.g. stride)
+; @param controlValue what to pass to VERA_CTRL (e.g. ADDRSEL)
+; @param addressValue the immediate value of the 24-bit VRAM address
+; @param optionValue the options to OR into the high byte (e.g. stride)
 ;------------------------------------------------------------------------------
 .macro SET_VERA_ADDR24_IMM controlValue, addressValue, optionValue
     lda #controlValue
@@ -124,6 +124,25 @@ VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attributes for Sprite 2
     lda #>addressValue
     sta VERA_ADDRx_M
     lda #^addressValue
+    ora #optionValue
+    sta VERA_ADDRx_H
+.endmacro
+
+;------------------------------------------------------------------------------
+; SET_VERA_ADDR24_VAR
+;
+; @param controlValue what to pass to VERA_CTRL (e.g. ADDRSEL)
+; @param addressAddr where the 24-bit VRAM address is located
+; @param optionValue the options to OR into the high byte (e.g. stride)
+;------------------------------------------------------------------------------
+.macro SET_VERA_ADDR24_VAR controlValue, addressAddr, optionValue
+    lda #controlValue
+    sta VERA_CTRL
+    lda addressAddr+0
+    sta VERA_ADDRx_L
+    lda addressAddr+1
+    sta VERA_ADDRx_M
+    lda addressAddr+2
     ora #optionValue
     sta VERA_ADDRx_H
 .endmacro

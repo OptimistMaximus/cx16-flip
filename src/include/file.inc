@@ -5,6 +5,42 @@
 .include "math.inc"
 .include "petscii.inc"
 
+.proc narf_bump_by_a: near
+   pha
+      clc
+      adc ZP32_slurpCount+0
+      sta ZP32_slurpCount+0
+      lda ZP32_slurpCount+1
+      adc #0
+      sta ZP32_slurpCount+1
+      lda ZP32_slurpCount+2
+      adc #0
+      sta ZP32_slurpCount+2
+      lda ZP32_slurpCount+3
+      adc #0
+      sta ZP32_slurpCount+3
+   pla
+.endproc
+
+.proc narf_bump_by_1: near
+   pha
+      clc
+      lda ZP32_slurpCount+0
+      adc #1
+      sta ZP32_slurpCount+0
+      lda ZP32_slurpCount+1
+      adc #0
+      sta ZP32_slurpCount+1
+      lda ZP32_slurpCount+2
+      adc #0
+      sta ZP32_slurpCount+2
+      lda ZP32_slurpCount+3
+      adc #0
+      sta ZP32_slurpCount+3
+   pla
+.endproc
+
+
 ;==============================================================================
 ; SLURP_INTO_A
 ;

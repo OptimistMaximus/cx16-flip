@@ -1,0 +1,30 @@
+# Delta (FLI)
+
+0400       # line number (i.e. initial line skip)
+0200       # line count (number of lines in this chunk)
+
+           #-------------------------------------------------------------------
+           # Line 5
+03         # packet count 3
+           #-------------------------------------------------------------------
+
+04         # column skip (0 means 0)
+FD         # byte count (-3 means absolute value is the replication count)
+AA         # data bytes (AA is to be replicated 3 times)
+
+01         # column skip
+03         # byte count (+3 means copy next 3 bytes)
+BBCCDD     # data bytes
+
+01         # column skip
+FE         # byte count (-2 means absolute value is the replication count)
+EE         # data bytes (EE to be replicated 2 times)
+
+           #-------------------------------------------------------------------
+           # Line 6
+01         # packet count 1
+           #-------------------------------------------------------------------
+
+00         # column skip (0 means 0)
+FD         # byte count (-3 means absolute value is the replication count)
+55         # data bytes (555 is to be replicated 3 times)

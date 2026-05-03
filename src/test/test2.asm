@@ -20,6 +20,7 @@
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/vera.inc"
+.include "../include/video.inc"
 .include "../include/xunit.inc"
 
 .segment "RODATA"     ; Read-Only data
@@ -28,6 +29,7 @@ fn_header_x: .asciiz "headerx.bin,r"
 fn_frame:    .asciiz "frame.bin,r"
 fn_color_x:  .asciiz "colorx.bin,r"
 fn_byterun:  .asciiz "byterun.bin,r"
+fn_deltafli: .asciiz "deltafli.bin,r"
 
 
 
@@ -100,14 +102,34 @@ test_arg_expect_bb: .asciiz "bb"
    pla
 .endmacro
 
-; set palette buffer to all zeros
-.proc sub_prep_palette_buffer: near
-   SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
-   ldx #0
-:  stx VERA_DATA1
-   stx VERA_DATA1
-   inx
-   bne :-
+; simple subroutine to zero out $00000 to $1F400
+; this covers both bitmaps and the palette buffer
+;
+; 250 * 256 * 2 = 128000 = $1F400 
+.proc sub_zero_bitmaps: near
+   SET_VERA_ADDR24_IMM $00, $00000, $10
+   lda #0
+   ldx #251
+@outer_loop:
+   ldy #0
+@inner_loop:
+   sta VERA_DATA0
+   sta VERA_DATA0
+   dey
+   bne @inner_loop
+   dex
+   bne @outer_loop      
+   rts
+.endproc
+
+.proc sub_init_palette_buffer: near
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   ldy #0
+@loop:
+   sty VERA_DATA0
+   sty VERA_DATA0
+   iny
+   bne @loop
    rts
 .endproc
 
@@ -160,7 +182,6 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VAR_U16_EQUALS_IMM $3003, $0140, ZP16_width
    ASSERT_VAR_U8_EQUALS_IMM  $3004, $C8,   ZP8_height
    ASSERT_VAR_U8_EQUALS_IMM  $3005, $08,   ZP8_depth
-   ASSERT_VAR_U8_EQUALS_IMM  $3006, $00,   ZP8_activeLayer
    
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
@@ -233,25 +254,25 @@ test_arg_expect_bb: .asciiz "bb"
    ; ridiculous edge case that probably no encoder would use, but it's legal. 
    ;---------------------------------------------------------------------------
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
-   jsr sub_prep_palette_buffer
+   jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3300, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
+   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
    ASSERT_VRAM_U16_EQUALS_IMM $3301, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3302, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $33203, $0EA7 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3303, $0EA7 ; color 2
    ASSERT_VRAM_U16_EQUALS_IMM $3304, $0303 ; color 3 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3305, $0666 ; color 4
    ASSERT_VRAM_U16_EQUALS_IMM $3306, $0BBB ; color 5
    ASSERT_VRAM_U16_EQUALS_IMM $3307, $0606 ; color 6 untouched
    
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
-   jsr sub_prep_palette_buffer
+   jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3310, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
+   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
    ASSERT_VRAM_U16_EQUALS_IMM $3311, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3312, $0101 ; color 1 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3313, $0321 ; color 2
@@ -261,11 +282,11 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VRAM_U16_EQUALS_IMM $3317, $0606 ; color 6 untouched
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
-   jsr sub_prep_palette_buffer
+   jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3320, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
+   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
    lda #0
 @test32_copy_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3321, $0111  ; color 0,2,4,etc
@@ -276,11 +297,11 @@ test_arg_expect_bb: .asciiz "bb"
 
    
    OPEN_INPUTSTREAM_R fn_color_x, 5, '2'
-   jsr sub_prep_palette_buffer
+   jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3330, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
+   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
    lda #0
 @test32_verify_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3331, $0111  ; color 0,2,4,etc
@@ -292,17 +313,17 @@ test_arg_expect_bb: .asciiz "bb"
    ;---------------------------------------------------------------------------
    ; TEST 34 - func_load_palette
    ;---------------------------------------------------------------------------
-   jsr sub_prep_palette_buffer
+   jsr sub_init_palette_buffer
    jsr func_load_palette
-   SET_VERA_ADDR24_IMM $01, $1FA00, $10
+   SET_VERA_ADDR24_IMM $00, $1FA00, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3400, $0000
    ASSERT_VRAM_U16_EQUALS_IMM $3401, $0101
    ASSERT_VRAM_U16_EQUALS_IMM $3402, $0202
-   SET_VERA_ADDR24_IMM $01, $1FB00, $10
+   SET_VERA_ADDR24_IMM $00, $1FB00, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3403, $8080
    ASSERT_VRAM_U16_EQUALS_IMM $3404, $8181
    ASSERT_VRAM_U16_EQUALS_IMM $3405, $8282
-   SET_VERA_ADDR24_IMM $01, $1FBFA, $10
+   SET_VERA_ADDR24_IMM $00, $1FBFA, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3406, $FDFD
    ASSERT_VRAM_U16_EQUALS_IMM $3407, $FEFE
    ASSERT_VRAM_U16_EQUALS_IMM $3408, $FFFF
@@ -320,16 +341,9 @@ test_arg_expect_bb: .asciiz "bb"
    ; Expect Layer 0 to be untouched, Layer 1 to have the byte run, and the
    ; layer switched from 0 to 1. 
    ;---------------------------------------------------------------------------
-   SET_VERA_ADDR24_IMM $00, VRAM_BITMAP_LAYER_0, $10
-   SET_VERA_ADDR24_IMM $01, VRAM_BITMAP_LAYER_1, $10
-   ldy #6
-:  stz VERA_DATA0
-   stz VERA_DATA1
-   dey
-   bne :-
-   
-   U8_COPY_IMM ZP8_activeLayer, 0 ; establish layer 0 as active
-   U8_COPY_IMM ZP8_height, 1      ; input data represents 1 line
+   jsr sub_zero_bitmaps
+   U8_COPY_IMM ZP8_activeLayer, $FA ; establish layer 0 as active
+   U8_COPY_IMM ZP8_height, 1        ; input data represents 1 line
 
    OPEN_INPUTSTREAM fn_byterun
    jsr handle_byte_run
@@ -339,17 +353,10 @@ test_arg_expect_bb: .asciiz "bb"
    stz VERA_CTRL                        ; assert that we switched layers
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
-   ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprints, L1, L0 
+   ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprints, L1, L0
+   ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeLayer 
 
-   SET_VERA_ADDR24_IMM $01, VRAM_BITMAP_LAYER_0, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $3510, $00 ; pixel 0
-   ASSERT_VRAM_U8_EQUALS_IMM $3511, $00 ; pixel 1
-   ASSERT_VRAM_U8_EQUALS_IMM $3512, $00 ; pixel 2
-   ASSERT_VRAM_U8_EQUALS_IMM $3513, $00 ; pixel 3
-   ASSERT_VRAM_U8_EQUALS_IMM $3514, $00 ; pixel 4
-   ASSERT_VRAM_U8_EQUALS_IMM $3515, $00 ; pixel 5
-   
-   SET_VERA_ADDR24_IMM $01, VRAM_BITMAP_LAYER_1, $10
+   SET_VERA_ADDR24_IMM $00, $0FA00, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3521, $BB ; pixel 1
    ASSERT_VRAM_U8_EQUALS_IMM $3522, $CC ; pixel 2
@@ -359,8 +366,63 @@ test_arg_expect_bb: .asciiz "bb"
    
    
    ;---------------------------------------------------------------------------
-   ; TEST 35 - 
+   ; TEST 36 - handle_delta_fli
+   ;
+   ; The test data establishes the initial line number as line 4, with line
+   ; count 2.  This test establishes Layer 1 as active, so expect data to be 
+   ; written to Layer 0 at the following offsets.
+   ;
+   ; line 0 -> 0000 + FA00 = 0FA00 
+   ; line 1 -> 0140 + FA00 = 0FB40
+   ; line 2 -> 0280 + FA00 = 0FC80
+   ; line 3 -> 03C0 + FA00 = 0FDC0
+   ; line 4 -> 0500 + FA00 = 0FF00   <--- enter delta
+   ; line 5 -> 0640 + FA00 = 10040   <--- leave delta
    ;---------------------------------------------------------------------------
+   jsr sub_zero_bitmaps
+   U8_COPY_IMM ZP8_activeLayer, $00 ; establish layer 0 as active
+
+   OPEN_INPUTSTREAM fn_deltafli
+   jsr handle_delta_fli
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3600, RC_SUCCESS
+   
+   stz VERA_CTRL                        ; assert that we switched layers
+   lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
+   and #%01110000                       ; then mask out all but bits 6,5,4
+   ASSERT_A_EQUALS_IMM $3601, %00010000 ; then verify sprints, L1, L0
+   ASSERT_VAR_U8_EQUALS_IMM $3602, $FA, ZP8_activeLayer 
+   
+   SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
+   ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3611, $00 ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3612, $00 ; pixel 2
+
+   SET_VERA_ADDR24_IMM $00, $00500, $10 ; line 5
+   ASSERT_VRAM_U8_EQUALS_IMM $3613, $00 ; pixel 0 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3614, $00 ; pixel 1 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3615, $00 ; pixel 2 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3616, $00 ; pixel 3 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3617, $AA ; pixel 4
+   ASSERT_VRAM_U8_EQUALS_IMM $3618, $AA ; pixel 5
+   ASSERT_VRAM_U8_EQUALS_IMM $3619, $AA ; pixel 6
+   ASSERT_VRAM_U8_EQUALS_IMM $3620, $00 ; pixel 7 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3621, $BB ; pixel 8
+   ASSERT_VRAM_U8_EQUALS_IMM $3622, $CC ; pixel 9
+   ASSERT_VRAM_U8_EQUALS_IMM $3623, $DD ; pixel 10
+   ASSERT_VRAM_U8_EQUALS_IMM $3624, $00 ; pixel 11 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3625, $EE ; pixel 12
+   ASSERT_VRAM_U8_EQUALS_IMM $3626, $EE ; pixel 13
+   ASSERT_VRAM_U8_EQUALS_IMM $3627, $00 ; pixel 14 (untouched)
+   SET_VERA_ADDR24_IMM $00, $00640, $10 ; line 6
+   ASSERT_VRAM_U8_EQUALS_IMM $3630, $55 ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3631, $55 ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3632, $55 ; pixel 2
+
+   SET_VERA_ADDR24_IMM $00, $00780, $10 ; line 7
+   ASSERT_VRAM_U8_EQUALS_IMM $3640, $00 ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3641, $00 ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3642, $00 ; pixel 2
 
    ;---------------------------------------------------------------------------
    ; TEST 36 - 

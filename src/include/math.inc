@@ -57,6 +57,18 @@
 .endmacro
 
 ;==============================================================================
+; U16_ASL
+;
+; Left-Shift the value in a 16-bit variable
+;
+; @param targetAddr the value's address
+;==============================================================================
+.macro U16_ASL targetAddr
+   asl targetAddr+0
+   rol targetAddr+1
+.endmacro
+
+;==============================================================================
 ; U8_COPY_IMM
 ;
 ; Add into a target variable an immediate value
@@ -237,6 +249,52 @@
    lda targetAddr+1
    adc valueAddress+1
    sta targetAddr+1
+.endmacro
+
+;==============================================================================
+; U24_ADD_VAR
+;
+; Add into a target 24-bit variable the value in another 24-bit variable
+;
+; @param targetAddr the target value's address
+; @param otherAddr  the other value's address
+;
+; Note, this macro will clear the carry bit before adding.
+;==============================================================================
+.macro U24_ADD_VAR targetAddr, valueAddress
+   clc
+   lda targetAddr+0
+   adc valueAddress+0
+   sta targetAddr+0
+   lda targetAddr+1
+   adc valueAddress+1
+   sta targetAddr+1
+   lda targetAddr+2
+   adc valueAddress+2
+   sta targetAddr+2
+.endmacro
+
+;==============================================================================
+; U24_ADD_IMM
+;
+; Add into a target 24-bit variable an immediate 24-bit variable
+;
+; @param targetAddr the target value's address
+; @param otherValue  the other value
+;
+; Note, this macro will clear the carry bit before adding.
+;==============================================================================
+.macro U24_ADD_IMM targetAddr, otherValue
+   clc
+   lda targetAddr+0
+   adc #<otherValue
+   sta targetAddr+0
+   lda targetAddr+1
+   adc #>otherValue
+   sta targetAddr+1
+   lda targetAddr+2
+   adc #^otherValue
+   sta targetAddr+2
 .endmacro
 
 ;==============================================================================
