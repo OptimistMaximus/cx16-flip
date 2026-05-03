@@ -1,5 +1,3 @@
-.segment "CODE"
-
 .export handle_unsupported
 
 .segment "CODE"

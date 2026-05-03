@@ -1,5 +1,3 @@
-.segment "CODE"
-
 .export func_slurp_header
 
 .include "../include/file.inc"

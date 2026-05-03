@@ -3,6 +3,16 @@
 
 .include "./kernal.inc"
 
+; IDEAS:
+;
+; 114,286 CPU cycles occur during 1/70  of a second at 8 MHz.
+; 133,333 CPU cycles occur during 1/60  of a second at 8 MHz.
+;  44,444 CPU cycles occur during 1/180 of a second at 8 MHz.
+;
+; 297 seventieths = 255 sixtieths
+
+
+
 ;------------------------------------------------------------------------------
 ; GLOBAL "VOLATILE" VARIABLES
 ;
@@ -151,7 +161,44 @@ RC_INVALID_CHUNK_TYPE         := 10 ; type
    rts
 .endmacro
 
+;==============================================================================
+; ESTABLISH_VERA_ADDRESS
+;
+; If Layer 0 is active then we should stage data into Layer 1
+; Otherwise (i.e. Layer 1 is active) we fall through and stage to Layer 0 
+;==============================================================================
+.macro ESTABLISH_VERA_ADDRESS
+.scope
+   lda ZP8_activeLayer
+   beq @handle_layer_0_active
+      SET_VERA_ADDR24_IMM $00, VRAM_BITMAP_LAYER_0, $10
+      bra @handle_layer_done
+@handle_layer_0_active:
+      SET_VERA_ADDR24_IMM $00, VRAM_BITMAP_LAYER_1, $10
+@handle_layer_done:
+.endscope
+.endmacro
 
-
+;==============================================================================
+; FLIP_LAYERS
+;
+; If Layer 0 is active then make it inactive and make Layer 1 active, by 
+; setting VERA_CTRL, where b6 is sprites, b5 is Layer 1, b4 is Layer 0.
+;==============================================================================
+.macro FLIP_LAYERS
+.scope
+   lda ZP8_activeLayer
+   beq @handle_layer_0_active
+      dec ZP8_activeLayer       ; it was $01, so change it to $00
+      lda #%00010000            ; sprites off, layer 1 off, layer 0 on
+      bra @handle_layer_done
+@handle_layer_0_active:
+      inc ZP8_activeLayer       ; it was $00, so change it to $01
+      lda #%00100000            ; sprites off, layer 1 on, layer 0 off
+@handle_layer_done:
+   stz VERA_CTRL                ; Establish DCSEL=0
+   sta VERA_DC0_VIDEO           ; apply control settings
+.endscope
+.endmacro
 
 .endif

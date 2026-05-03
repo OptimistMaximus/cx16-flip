@@ -27,6 +27,7 @@
 fn_header_x: .asciiz "headerx.bin,r"
 fn_frame:    .asciiz "frame.bin,r"
 fn_color_x:  .asciiz "colorx.bin,r"
+fn_byterun:  .asciiz "byterun.bin,r"
 
 
 
@@ -199,7 +200,6 @@ test_arg_expect_bb: .asciiz "bb"
    ;---------------------------------------------------------------------------
    ; TEST 31 - handle_invalid
    ;           handle_unsupported
-   ;           handle_frame_type
    ;---------------------------------------------------------------------------
    U16_COPY_IMM ZP16_chunkType, $AABB
    jsr handle_invalid
@@ -212,14 +212,17 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_X_EQUALS_IMM $3104, $BB
    ASSERT_Y_EQUALS_IMM $3105, $AA
 
+   ;---------------------------------------------------------------------------
+   ; TEST 32 - handle_frame_type
+   ;---------------------------------------------------------------------------
    OPEN_INPUTSTREAM fn_frame
    jsr handle_frame_type
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3106, RC_SUCCESS
-   ASSERT_VAR_U16_EQUALS_IMM $3107, $3412, ZP16_numSubChunks
+   ASSERT_A_EQUALS_IMM $3200, RC_SUCCESS
+   ASSERT_VAR_U16_EQUALS_IMM $3201, $3412, ZP16_numSubChunks
 
    ;---------------------------------------------------------------------------
-   ; TEST 32 - handle_color_64
+   ; TEST 33 - handle_color_64
    ;           handle_color_256
    ;
    ; COLOR0.BIN is tested once with 64 color parsing, and once with 256.
@@ -233,40 +236,40 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_prep_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3200, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3300, RC_SUCCESS
    SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3201, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3202, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3203, $0EA7 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3204, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3205, $0666 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3206, $0BBB ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3207, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3301, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3302, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $33203, $0EA7 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3304, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3305, $0666 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3306, $0BBB ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3307, $0606 ; color 6 untouched
    
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_prep_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3210, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3310, RC_SUCCESS
    SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3211, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3212, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3213, $0321 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3214, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3215, $0111 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3216, $0222 ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3217, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3311, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3312, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3313, $0321 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3314, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3315, $0111 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3316, $0222 ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3317, $0606 ; color 6 untouched
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
    jsr sub_prep_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3220, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3320, RC_SUCCESS
    SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
    lda #0
 @test32_copy_packet_count_loop:
-   ASSERT_VRAM_U16_EQUALS_IMM $3221, $0111  ; color 0,2,4,etc
-   ASSERT_VRAM_U16_EQUALS_IMM $3222, $0222  ; color 1,3,5,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3321, $0111  ; color 0,2,4,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3322, $0222  ; color 1,3,5,etc
    iny
    cpy #128
    bne @test32_copy_packet_count_loop
@@ -276,41 +279,85 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_prep_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3230, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3330, RC_SUCCESS
    SET_VERA_ADDR24_IMM $01, VRAM_PALETTE_BUFFER, $10
    lda #0
 @test32_verify_packet_count_loop:
-   ASSERT_VRAM_U16_EQUALS_IMM $3231, $0111  ; color 0,2,4,etc
-   ASSERT_VRAM_U16_EQUALS_IMM $3232, $0222  ; color 1,3,5,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3331, $0111  ; color 0,2,4,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3332, $0222  ; color 1,3,5,etc
    iny
    cpy #128
    bne @test32_verify_packet_count_loop
 
    ;---------------------------------------------------------------------------
-   ; TEST 33 - func_load_palette
+   ; TEST 34 - func_load_palette
    ;---------------------------------------------------------------------------
    jsr sub_prep_palette_buffer
    jsr func_load_palette
    SET_VERA_ADDR24_IMM $01, $1FA00, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3300, $0000
-   ASSERT_VRAM_U16_EQUALS_IMM $3301, $0101
-   ASSERT_VRAM_U16_EQUALS_IMM $3302, $0202
+   ASSERT_VRAM_U16_EQUALS_IMM $3400, $0000
+   ASSERT_VRAM_U16_EQUALS_IMM $3401, $0101
+   ASSERT_VRAM_U16_EQUALS_IMM $3402, $0202
    SET_VERA_ADDR24_IMM $01, $1FB00, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3303, $8080
-   ASSERT_VRAM_U16_EQUALS_IMM $3304, $8181
-   ASSERT_VRAM_U16_EQUALS_IMM $3305, $8282
+   ASSERT_VRAM_U16_EQUALS_IMM $3403, $8080
+   ASSERT_VRAM_U16_EQUALS_IMM $3404, $8181
+   ASSERT_VRAM_U16_EQUALS_IMM $3405, $8282
    SET_VERA_ADDR24_IMM $01, $1FBFA, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3306, $FDFD
-   ASSERT_VRAM_U16_EQUALS_IMM $3307, $FEFE
-   ASSERT_VRAM_U16_EQUALS_IMM $3308, $FFFF
-   
-   
-
+   ASSERT_VRAM_U16_EQUALS_IMM $3406, $FDFD
+   ASSERT_VRAM_U16_EQUALS_IMM $3407, $FEFE
+   ASSERT_VRAM_U16_EQUALS_IMM $3408, $FFFF
 
    ;---------------------------------------------------------------------------
-   ; TEST 34 - 
+   ; TEST 35 - handle_byte_run
+   ;
+   ; This test zeros out the first 6 bytes of both the layer 0 and layer 1
+   ; bitmaps, then establishes layer 0 as active (so we expect updates to
+   ; happen to layer 1).
+   ;
+   ; The simulated data represents a height 1 image, so establish height 1
+   ; before processing the input stream.
+   ;
+   ; Expect Layer 0 to be untouched, Layer 1 to have the byte run, and the
+   ; layer switched from 0 to 1. 
    ;---------------------------------------------------------------------------
+   SET_VERA_ADDR24_IMM $00, VRAM_BITMAP_LAYER_0, $10
+   SET_VERA_ADDR24_IMM $01, VRAM_BITMAP_LAYER_1, $10
+   ldy #6
+:  stz VERA_DATA0
+   stz VERA_DATA1
+   dey
+   bne :-
+   
+   U8_COPY_IMM ZP8_activeLayer, 0 ; establish layer 0 as active
+   U8_COPY_IMM ZP8_height, 1      ; input data represents 1 line
 
+   OPEN_INPUTSTREAM fn_byterun
+   jsr handle_byte_run
+   CLOSE_INPUTSTREAM
+   ASSERT_A_EQUALS_IMM $3500, RC_SUCCESS
+
+   stz VERA_CTRL                        ; assert that we switched layers
+   lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
+   and #%01110000                       ; then mask out all but bits 6,5,4
+   ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprints, L1, L0 
+
+   SET_VERA_ADDR24_IMM $01, VRAM_BITMAP_LAYER_0, $10
+   ASSERT_VRAM_U8_EQUALS_IMM $3510, $00 ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3511, $00 ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3512, $00 ; pixel 2
+   ASSERT_VRAM_U8_EQUALS_IMM $3513, $00 ; pixel 3
+   ASSERT_VRAM_U8_EQUALS_IMM $3514, $00 ; pixel 4
+   ASSERT_VRAM_U8_EQUALS_IMM $3515, $00 ; pixel 5
+   
+   SET_VERA_ADDR24_IMM $01, VRAM_BITMAP_LAYER_1, $10
+   ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3521, $BB ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3522, $CC ; pixel 2
+   ASSERT_VRAM_U8_EQUALS_IMM $3523, $EE ; pixel 3
+   ASSERT_VRAM_U8_EQUALS_IMM $3524, $EE ; pixel 4
+   ASSERT_VRAM_U8_EQUALS_IMM $3525, $00 ; pixel 5 (untouched)
+   
+   
    ;---------------------------------------------------------------------------
    ; TEST 35 - 
    ;---------------------------------------------------------------------------

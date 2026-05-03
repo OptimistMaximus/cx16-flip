@@ -8,6 +8,9 @@
 ;==============================================================================
 ; SLURP_INTO_A
 ;
+; Note that unlike opcodes (e.g. LDA) the status flags aren't set based on
+; what just got loaded into .A
+;
 ; @effect  .A holds the slurped byte
 ; @cycles 9 + whatever KERNAL's ACPTR uses
 ;==============================================================================

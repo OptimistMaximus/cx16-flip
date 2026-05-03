@@ -1,5 +1,3 @@
-.segment "CODE"
-
 .export handle_color_64
 .export handle_color_256
 

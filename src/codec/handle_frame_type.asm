@@ -1,5 +1,3 @@
-.segment "CODE"
-
 .export handle_frame_type
 
 .segment "CODE"

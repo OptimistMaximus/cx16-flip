@@ -21,6 +21,7 @@ $(RESDIR)/FRAME.hex \
 $(RESDIR)/COLOR0.hex \
 $(RESDIR)/COLOR1.hex \
 $(RESDIR)/COLOR2.hex \
+$(RESDIR)/BYTERUN.hex \
 $(RESDIR)/SLURP.hex
 
 TEST_RESOURCES := $(TEST_DATA_FILES:$(RESDIR)/%.hex=zzz/%.BIN)
