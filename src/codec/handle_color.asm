@@ -1,16 +1,33 @@
 .export handle_color_64
 .export handle_color_256
 
+.import func_load_palette
+.import func_slurp_into_buffer
+.import func_slurp_into_a
+
 .segment "CODE"
 
-.include "../include/file.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
 
-   paletteCopyAddr   = ZP_VOLATILE_OP
-   
+   paletteCopyAddr = ZP_VOLATILE_OP
+
+.macro SLURP_INTO_VAR16 targetAddr
+   jsr func_slurp_into_a
+   sta targetAddr+0
+   jsr func_slurp_into_a
+   sta targetAddr+1
+.endmacro
+
+.macro SLURP_INTO_VAR8 targetAddr
+   jsr func_slurp_into_a
+   sta targetAddr
+.endmacro
+
+
+
 ;------------------------------------------------------------------------------
 ; handle_color_64
 ;
@@ -55,7 +72,7 @@ sub_handle_color:
    tempVeraGreen  = ZP_VOLATILE_F
    numPackets     = ZP_VOLATILE_GH
    copyCount      = ZP_VOLATILE_I
-   
+
    ;---------------------------------------------------------------------------
    ; Although packet count is 16-bit, it doesn't make sense for the size to be
    ; anything other than 1 to 256. Zero packets would be silly, because if
@@ -75,45 +92,36 @@ sub_handle_color:
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
    SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-   
-   SLURP_VAR16 numPackets
+
+   SLURP_INTO_VAR16 numPackets
+
    ldx #0
 packet_loop:
 
-   SLURP_INTO_A ; skip count
-   beq @skip_done
-   tay
-@skip_loop:
-   lda VERA_DATA0 ; burn low
-   lda VERA_DATA0 ; burn high
-   dey
-   bne @skip_loop
-@skip_done:
+   jsr sub_skip_colors
 
-   SLURP_INTO_A ; copy count     
-   sta copyCount
+   SLURP_INTO_VAR8 copyCount
    ldy #0
 
       copy_loop:
          phx
             phy
-               SLURP_VAR24 tempColor
-               lda tempColorRed
+               SLURP_INTO_VAR8 tempColorRed
 smc_anchor_r_shift:
                lsr                      ; nop if 6-bit
                lsr                      ; nop if 6-bit
                lsr
                lsr
                sta tempVeraRed
-   
-               lda tempColorGreen
+
+               SLURP_INTO_VAR8 tempColorGreen
 smc_anchor_g_shift:
                nop                      ; asl if 6-bit
                nop                      ; asl if 6-bit
                and #$F0
                sta tempVeraGreen
-   
-               lda tempColorBlue
+
+               SLURP_INTO_VAR8 tempColorBlue
 smc_anchor_b_shift:
                lsr                      ; nop if 6-bit
                lsr                      ; nop if 6-bit
@@ -125,7 +133,7 @@ smc_anchor_b_shift:
                sta VERA_DATA0
             ply
          plx
-         
+
          iny
          cpy copyCount
          bne copy_loop
@@ -134,5 +142,19 @@ smc_anchor_b_shift:
    cpx numPackets                       ; just the low byte
    bne packet_loop
 
+   jsr func_load_palette
+
    RTS_NO_DETAIL RC_SUCCESS
 
+; @effect .Y clobbered
+sub_skip_colors:
+   jsr func_slurp_into_a ; skip count
+   beq @skip_done
+   tay
+@skip_loop:
+   lda VERA_DATA0 ; burn low
+   lda VERA_DATA0 ; burn high
+   dey
+   bne @skip_loop
+@skip_done:
+   rts

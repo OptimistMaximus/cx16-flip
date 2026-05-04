@@ -1,6 +1,7 @@
 .export func_slurp_header
 
-.include "../include/file.inc"
+.import func_slurp_into_buffer
+
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
@@ -14,7 +15,8 @@
 ;==============================================================================
 .proc func_slurp_header: near
 
-   SLURP_ARRAY_IMM 128, RAM_VOLATILE_BUF              ; header is 128 bytes
+   lda #128 ; header is 128 bytes
+   jsr func_slurp_into_buffer
 
    ;---------------------------------------------------------------------------
    ; Rather than waste time copying values only to bail out during validation,
@@ -22,7 +24,7 @@
    ; These will be used for validation. After that, we can copy stuff into ZP.
    ;---------------------------------------------------------------------------
    wordPointerFileType  =         RAM_VOLATILE_BUF+4  ; pointer to file type
-   wordPointerNumFrames =         RAM_VOLATILE_BUF+6  ; pointer to frames 
+   wordPointerNumFrames =         RAM_VOLATILE_BUF+6  ; pointer to frames
    wordPointerWidth     =         RAM_VOLATILE_BUF+8  ; pointer to width
    wordPointerHeight    =         RAM_VOLATILE_BUF+10 ; pointer to height
    wordPointerDepth     =         RAM_VOLATILE_BUF+12 ; pointer to depth
@@ -38,7 +40,7 @@
    beq @fileType_is_fli
    RTS_VAR16_DETAIL RC_UNSUPPORTED_FILE_TYPE, wordPointerFileType
 @fileType_is_fli:
-   
+
    ;---------------------------------------------------------------------------
    ; validate width
    ;---------------------------------------------------------------------------
@@ -89,20 +91,20 @@
    varTemp      = ZP_VOLATILE_AB
    varDivisor   = ZP_VOLATILE_CD
    varMultiplier = ZP_VOLATILE_E
-   
+
    U8_COPY_IMM varMultiplier, 6
    U16_SLOW_MULTIPLY varTemp, dwordPointerSpeed, varMultiplier
    U16_COPY_IMM varDivisor, 7
    U16_SLOW_DIVIDE ZP16_delaySyncs, varTemp, varDivisor
-   
+
    ;---------------------------------------------------------------------------
-   ; copy important data out of the volatile buffer and into our ZP vars 
+   ; copy important data out of the volatile buffer and into our ZP vars
    ;---------------------------------------------------------------------------
    U16_COPY_VAR ZP16_numFrames,   wordPointerNumFrames
    U16_COPY_VAR ZP16_width,       wordPointerWidth
    U8_COPY_VAR  ZP8_height,       wordPointerHeight ; copy height (low byte)
    U8_COPY_VAR  ZP8_depth,        wordPointerDepth  ; copy depth (low byte)
-   
+
    RTS_NO_DETAIL RC_SUCCESS
 .endproc
 

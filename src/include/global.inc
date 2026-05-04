@@ -78,19 +78,14 @@ RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 ZP8_activeLayer        := $40
 ZP8_height             := $41
 ZP8_depth              := $42
+ZP8_slurpTracker       := $43
 
-ZP32_chunkSize         := $50
-ZP16_chunkType         := $54
-ZP16_delaySyncs        := $56
-ZP16_width             := $58
-ZP16_numFrames         := $5A
-ZP16_currFrame         := $5C
-ZP16_numSubChunks      := $5E
-
-ZP32_slurpCount        := $70
-
-RAM16_fileType         := $500
-
+ZP16_chunkType         := $50
+ZP16_delaySyncs        := $52
+ZP16_width             := $54
+ZP16_numFrames         := $56
+ZP16_currFrame         := $58
+ZP16_numSubChunks      := $5A
 
 RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 

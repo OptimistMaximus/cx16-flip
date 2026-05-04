@@ -3,6 +3,8 @@
 .import func_find_arg
 .import func_open_inputstream
 .import func_close_inputstream
+.import func_append_access_mode
+.import func_slurp_into_a
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore
@@ -14,7 +16,6 @@
 .segment "ONCE"
 .segment "CODE"
 
-.include "include/file.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"
 .include "include/petscii.inc"
@@ -89,16 +90,12 @@ start:
    RTS_BSOD
 @chunk_is_cool:
 
-   stp
-   nop
-   nop
-   lda ZP32_slurpCount+0       ; if the chunk size was odd, then the encoder
-   and #%00000001              ; should have added a padding byte, so we need
+   lda ZP8_slurpTracker
+   bit #%00000001              ; should have added a padding byte, so we need
    beq @padding_mitigated      ; to burn it before proceeding to the next chunk
-   SLURP_INTO_A                ; burn it
-   
+   jsr func_slurp_into_a
 @padding_mitigated:
-   
+
    U16_INC ZP16_currFrame
    U16_CMP_VAR ZP16_currFrame, ZP16_numFrames
    bne @frame_loop
@@ -129,8 +126,8 @@ start:
    ldy #>default_image_filename
    rts
 @arg_was_cool:
-   APPEND_ACCESS_MODE_TO_FILENAME RAM_VOLATILE_BUF, PETSCII_LOWER_R
-   tya ; new string length
+   lda #PETSCII_LOWER_R
+   jsr func_append_access_mode
    ldx #<RAM_VOLATILE_BUF
    ldy #>RAM_VOLATILE_BUF
    rts

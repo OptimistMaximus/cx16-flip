@@ -90,14 +90,14 @@
    stz resultAddr+2
 .endmacro
 
-      
+
 ;==============================================================================
 ; FLIP_LAYERS
 ;
 ; If Layer 0 is active, that means we've been buffering to it, so now it is
 ; time to enable Layer 0, disable Layer 1, and change the active layer value
 ; so we'll start buffering to to Layer 1 next.  If Layer 1 then essentially do
-; the opposite. 
+; the opposite.
 ;==============================================================================
 .macro FLIP_LAYERS
    lda ZP8_activeLayer
@@ -105,12 +105,41 @@
       stz ZP8_activeLayer              ; flipping from 1 to 0 ...
       lda #%00100000                   ; sprites off, layer 1 on, layer 0 off
       bra @flip_layers_done
-@flip_layers_from_layer_0:          
+@flip_layers_from_layer_0:
       U8_COPY_IMM ZP8_activeLayer, $FA ; flip from 0 to 1 ...
       lda #%00010000                   ; sprites off, layer 1 off, layer 0 on
 @flip_layers_done:
    stz VERA_CTRL                       ; Establish DCSEL=0
    sta VERA_DC0_VIDEO                  ; apply control settings
+.endmacro
+
+.macro COPY_LAYER
+   lda ZP8_activeLayer
+   beq @copy_layer_source_is_layer_1
+   SET_VERA_ADDR24_IMM $00, $00000, $10 ; source is layer 0
+   SET_VERA_ADDR24_IMM $01, $0FA00, $10 ; target is layer 1
+   bra @copy_layer_source_and_target_established
+@copy_layer_source_is_layer_1:
+   SET_VERA_ADDR24_IMM $00, $0FA00, $10 ; source is layer 1
+   SET_VERA_ADDR24_IMM $01, $00000, $10 ; target is layer 0
+@copy_layer_source_and_target_established:
+
+   ldx #200
+@row_loop:
+   ldy #80
+@column_loop:
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   dey
+   bne @column_loop
+   dex
+   bne @row_loop
 .endmacro
 
 .endif

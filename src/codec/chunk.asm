@@ -2,6 +2,7 @@
 
 .export func_slurp_chunk
 
+.import func_slurp_into_buffer
 .import handle_invalid
 .import handle_unsupported
 .import handle_frame_type
@@ -52,7 +53,6 @@ chunk_type_jump_table:
 
 .segment "CODE"
 
-.include "../include/file.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
@@ -71,10 +71,9 @@ chunk_type_jump_table:
 ;==============================================================================
 .proc func_slurp_chunk: near
 
-   SLURP_VAR32 ZP32_chunkSize
-   SLURP_VAR16 ZP16_chunkType
-   stp
-   nop
+   lda #6 ; 32-bit chunk size, followed by 16-bit chunk type
+   jsr func_slurp_into_buffer
+   U16_COPY_VAR ZP16_chunkType, RAM_VOLATILE_BUF+4
 
    ;---------------------------------------------------------------------------
    ; High byte $00 means we can use the jump table.  The low byte should be a
@@ -98,7 +97,7 @@ chunk_type_jump_table:
    ; There are 5 chunk types whose value is more than $FF, and only one of them
    ; is valid for FLI files. In keeping with the "trust me, bro" mentality,
    ; we assume the file was properly encoded. That means any chunk type whose
-   ; high byte wasn't zero MUST be the $F1FA chunk. 
+   ; high byte wasn't zero MUST be the $F1FA chunk.
    ;---------------------------------------------------------------------------
    jmp handle_frame_type
 

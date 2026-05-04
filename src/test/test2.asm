@@ -105,7 +105,7 @@ test_arg_expect_bb: .asciiz "bb"
 ; simple subroutine to zero out $00000 to $1F400
 ; this covers both bitmaps and the palette buffer
 ;
-; 250 * 256 * 2 = 128000 = $1F400 
+; 250 * 256 * 2 = 128000 = $1F400
 .proc sub_zero_bitmaps: near
    SET_VERA_ADDR24_IMM $00, $00000, $10
    lda #0
@@ -118,7 +118,7 @@ test_arg_expect_bb: .asciiz "bb"
    dey
    bne @inner_loop
    dex
-   bne @outer_loop      
+   bne @outer_loop
    rts
 .endproc
 
@@ -169,7 +169,7 @@ test_arg_expect_bb: .asciiz "bb"
 
    FIND_ARG 2
    ASSERT_BCS $2024
-   
+
    ;---------------------------------------------------------------------------
    ; TEST 30 - slurp_header
    ;---------------------------------------------------------------------------
@@ -182,12 +182,12 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VAR_U16_EQUALS_IMM $3003, $0140, ZP16_width
    ASSERT_VAR_U8_EQUALS_IMM  $3004, $C8,   ZP8_height
    ASSERT_VAR_U8_EQUALS_IMM  $3005, $08,   ZP8_depth
-   
+
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE
-   ASSERT_X_EQUALS_IMM $3011, $12 
+   ASSERT_X_EQUALS_IMM $3011, $12
    ASSERT_Y_EQUALS_IMM $3012, $AF
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
@@ -251,7 +251,7 @@ test_arg_expect_bb: .asciiz "bb"
    ;
    ; COLOR1.BIN tests that a single packet with copy count 256 works fine.
    ; COLOR2.BIN tests that 256 packets of copy  count 1 works fine. This is a
-   ; ridiculous edge case that probably no encoder would use, but it's legal. 
+   ; ridiculous edge case that probably no encoder would use, but it's legal.
    ;---------------------------------------------------------------------------
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
@@ -266,7 +266,7 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VRAM_U16_EQUALS_IMM $3305, $0666 ; color 4
    ASSERT_VRAM_U16_EQUALS_IMM $3306, $0BBB ; color 5
    ASSERT_VRAM_U16_EQUALS_IMM $3307, $0606 ; color 6 untouched
-   
+
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_256
@@ -295,7 +295,7 @@ test_arg_expect_bb: .asciiz "bb"
    cpy #128
    bne @test32_copy_packet_count_loop
 
-   
+
    OPEN_INPUTSTREAM_R fn_color_x, 5, '2'
    jsr sub_init_palette_buffer
    jsr handle_color_256
@@ -339,7 +339,7 @@ test_arg_expect_bb: .asciiz "bb"
    ; before processing the input stream.
    ;
    ; Expect Layer 0 to be untouched, Layer 1 to have the byte run, and the
-   ; layer switched from 0 to 1. 
+   ; layer switched from 0 to 1.
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
    U8_COPY_IMM ZP8_activeLayer, $FA ; establish layer 0 as active
@@ -354,7 +354,7 @@ test_arg_expect_bb: .asciiz "bb"
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
    ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprints, L1, L0
-   ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeLayer 
+   ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeLayer
 
    SET_VERA_ADDR24_IMM $00, $0FA00, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
@@ -363,16 +363,16 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VRAM_U8_EQUALS_IMM $3523, $EE ; pixel 3
    ASSERT_VRAM_U8_EQUALS_IMM $3524, $EE ; pixel 4
    ASSERT_VRAM_U8_EQUALS_IMM $3525, $00 ; pixel 5 (untouched)
-   
-   
+
+
    ;---------------------------------------------------------------------------
    ; TEST 36 - handle_delta_fli
    ;
    ; The test data establishes the initial line number as line 4, with line
-   ; count 2.  This test establishes Layer 1 as active, so expect data to be 
+   ; count 2.  This test establishes Layer 1 as active, so expect data to be
    ; written to Layer 0 at the following offsets.
    ;
-   ; line 0 -> 0000 + FA00 = 0FA00 
+   ; line 0 -> 0000 + FA00 = 0FA00
    ; line 1 -> 0140 + FA00 = 0FB40
    ; line 2 -> 0280 + FA00 = 0FC80
    ; line 3 -> 03C0 + FA00 = 0FDC0
@@ -386,13 +386,13 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_delta_fli
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3600, RC_SUCCESS
-   
+
    stz VERA_CTRL                        ; assert that we switched layers
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
    ASSERT_A_EQUALS_IMM $3601, %00010000 ; then verify sprints, L1, L0
-   ASSERT_VAR_U8_EQUALS_IMM $3602, $FA, ZP8_activeLayer 
-   
+   ASSERT_VAR_U8_EQUALS_IMM $3602, $FA, ZP8_activeLayer
+
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3611, $00 ; pixel 1
@@ -425,10 +425,10 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VRAM_U8_EQUALS_IMM $3642, $00 ; pixel 2
 
    ;---------------------------------------------------------------------------
-   ; TEST 36 - 
+   ; TEST 36 -
    ;---------------------------------------------------------------------------
 
-         
+
    PASS
 
 .endproc

@@ -2,21 +2,22 @@
 
 .import func_open_inputstream
 .import func_close_inputstream
+.import func_slurp_into_buffer
+.import func_slurp_into_a
+.import func_append_access_mode
 .import func_strlen
 
 .segment "RODATA"
 
 test_filename: .asciiz "slurp.bin,r"
-expect_varsa:  .byte $61,$62,$63,$64,$65,$66,$67,$68,$69,$6A,$6B,$00
-expect_array:  .byte $6C,$6D,$6E,$6F,$70,$00
-expect_comma:  .byte $6C,$6D,$6E,$6F,$70,$2C,$57,$00 ; ,w
+expect_abcdw:  .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
 
 .segment "CODE"
 
-.include "../include/file.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
+.include "../include/petscii.inc"
 .include "../include/xunit.inc"
 
 .proc test_suite_1: near
@@ -43,54 +44,44 @@ expect_comma:  .byte $6C,$6D,$6E,$6F,$70,$2C,$57,$00 ; ,w
    ;
    ; func_open_inputstream
    ; func_close_inputstream
-   ;
-   ; APPEND_ACCESS_MODE_TO_FILENAME
-   ; SLURP_INTO_A
-   ; SLURP_ARRAY
-   ; SLURP_VAR8
-   ; SLURP_VAR16
-   ; SLURP_VAR24
-   ; SLURP_VAR32
+   ; func_slurp_into_a
+   ; func_slurp_into_buffer
+   ; func_append_access_mode
+   ; func_strlen
    ;---------------------------------------------------------------------------
    ldx #<test_filename
    ldy #>test_filename
    jsr func_open_inputstream
 
-   SLURP_VAR32 ZP_VOLATILE_ABCD   ; first for chars are "abcd"
-   SLURP_VAR16 ZP_VOLATILE_EF     ; next 2 chars are "ef"
-   SLURP_VAR24 ZP_VOLATILE_GHI    ; next 3 chars are "ghi"
-   SLURP_VAR8  ZP_VOLATILE_J      ; next 1 char is "j"
-   SLURP_INTO_A                   ; next 1 char is "k"
-   sta ZP_VOLATILE_K
-   lda #5
-   SLURP_ARRAY RAM_VOLATILE_BUF   ; next 5 chars are "lmnop"
-   jsr func_close_inputstream
+   lda #4
+   jsr func_slurp_into_buffer     ; should get first 4 chars "abcd"
+   jsr func_slurp_into_a          ; should get the next char "e"
+   pha
+      jsr func_close_inputstream
+   pla
 
-   ; values A to J loaded into the "vars", and K was plunked in
-   ; right after that, so we can validate in one contiguous chunk
-   ASSERT_RAM_EQUALS_ARRAY $1100, $0A, expect_varsa, ZP_VOLATILE_A
+   ASSERT_A_EQUALS_IMM      $1100, $65
+   ASSERT_VAR_U8_EQUALS_IMM $1101, $61, RAM_VOLATILE_BUF+0
+   ASSERT_VAR_U8_EQUALS_IMM $1102, $62, RAM_VOLATILE_BUF+1
+   ASSERT_VAR_U8_EQUALS_IMM $1103, $63, RAM_VOLATILE_BUF+2
+   ASSERT_VAR_U8_EQUALS_IMM $1104, $64, RAM_VOLATILE_BUF+3
 
-   ; values L to O went to the array
-   ASSERT_RAM_EQUALS_ARRAY $1101, $04, expect_array, RAM_VOLATILE_BUF
+   ; since the above test just passed, we know the first 4 bytes of the
+   ; volatile buffer are a,b,c,d. All that's missing is a null terminator!
+   ; After appending the access mode, it should be length 6: "abcd,w"
+   stz RAM_VOLATILE_BUF+4
+   lda #PETSCII_LOWER_W
+   ldx #<RAM_VOLATILE_BUF
+   ldy #>RAM_VOLATILE_BUF
+   jsr func_append_access_mode
+   ASSERT_A_EQUALS_IMM     $1110, 6
+   ASSERT_RAM_EQUALS_ARRAY $1111, $06, expect_abcdw, RAM_VOLATILE_BUF
 
-   ; important: this next test assumes the previous one established that
-   ; RAM_VOLATILE_BUF has the expected content. It's just missing a NULL
-   ; which we need for the next test, so we'll just slap a NULL in there.
-   stz RAM_VOLATILE_BUF+5
-   APPEND_ACCESS_MODE_TO_FILENAME RAM_VOLATILE_BUF, 'w'
-   ASSERT_RAM_EQUALS_ARRAY $1102, $06, expect_comma, RAM_VOLATILE_BUF
-
-
-   ;---------------------------------------------------------------------------
-   ; TEST 12 (string stuff)
-   ;
-   ; func_strlen
-   ;---------------------------------------------------------------------------
-   ldx #<expect_array
-   ldy #>expect_array
+   ldx #<RAM_VOLATILE_BUF
+   ldy #>RAM_VOLATILE_BUF
    jsr func_strlen
-   ASSERT_A_EQUALS_IMM $1200, $05
-   
+   ASSERT_A_EQUALS_IMM $1120, 6
+
 
    PASS
 

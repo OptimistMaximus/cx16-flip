@@ -1,6 +1,6 @@
-######################################
+###############################################################################
 # Header
-######################################
+###############################################################################
 
 32D60000 -> $D632 file size
 11AF     -> $AF11 file type
@@ -20,9 +20,9 @@ C800     -> $00C8 height (200)
 0060: 00000000000000000000000000000000
 0070: 00000000000000000000000000000000
 
-######################################
+###############################################################################
 # Chunk: Frame Type
-######################################
+###############################################################################
 
 1A260000 -> $261A chunk size
 FAF1     -> $F1FA chunk type
@@ -34,44 +34,20 @@ FAF1     -> $F1FA chunk type
 
 0080: 1A260000 FAF1 0200 0000 0000 0000 0000
 
-######################################
+###############################################################################
 # Chunk: Frame 0 Subchunk 1/2
-######################################
+###############################################################################
 
 0A030000 -> $030A chunk size
 0B00     -> $000B chunk type (Color 64) 
 0100     -> packet count
 00       -> skip count
 00       -> copy count (00 means 256)
-
-0000000202020404040606060808080A0A0A0C0C0C0E0E0E101010121212
-1414141616161818181A1A1A1C1C1C1E1E1E212121232323252525272727
-2929292B2B2B2D2D2D2F2F2F3131313333333535353737373939393B3B3B
-3D3D3D3F3F3F3F33333F3F33333F33333F3F33333F3F333F3F27273F3327
-3F3F27333F27273F27273F33273F3F27333F27273F33273F3F273F3F2733
-3F1B1B3F271B3F331B3F3F1B333F1B273F1B1B3F1B1B3F271B3F331B3F3F
-1B333F1B273F1B1B3F271B3F331B3F3F1B3F3F1B333F1B273F0F0F3F1B0F
-3F270F3F330F3F3F0F333F0F273F0F1B3F0F0F3F0F0F3F1B0F3F270F3F33
-0F3F3F0F333F0F273F0F1B3F0F0F3F1B0F3F270F3F330F3F3F0F3F3F0F33
-3F0F273F0F1B3F030F3F03033F0F033F1B033F27033F33033F3F03333F03
-
-273F031B3F030F3F03033F03033F0F033F1B033F27033F33033F3F03333F
-03273F031B3F030F3F03033F0F033F1B033F27033F33033F3F033F3F0333
-3F03273F031B33030F330303330F03331B033327033333032733031B3303
-0F330303330303330F03331B033327033333032733031B33030F33030333
-0F03331B033327033333033333032733031B27030F270303270F03271B03
-2727031B27030F270303270303270F03271B032727031B27030F27030327
-0F03271B032727032727031B1B030F1B03031B0F031B1B030F1B03031B03
-031B0F031B1B030F1B03031B0F031B1B031B0F03030F0F03030F03030F0F
-03030F0F030F1B0F0F1B1B0F0F1B0F0F1B1B0F0F1B1B0F1B270F0F271B0F
-27270F1B270F0F270F0F271B0F27270F1B270F0F271B0F27270F27270F1B
-
-330F0F331B0F33270F33330F27330F1B330F0F330F0F331B0F33270F3333
-0F27330F1B330F0F331B0F33270F33330F33330F27330F1B331B1B33271B
-33331B27331B1B331B1B33271B33331B27331B1B33271B33331B33331B27
-332727333327273327273333272733332733271B1B27271B1B271B1B2727
-1B1B27271B270303030F0F0F1B1B1B2727273333333F3F3F3F1603270705
-24243F0000001616162626263434343F0000
+000000   -> color 0
+020202   -> color 1
+            ...
+3F0000   -> color 255
+            
 
 0090: 0A0300000B0001000000000000020202
 00a0: 0404040606060808080A0A0A0C0C0C0E
@@ -123,14 +99,17 @@ FAF1     -> $F1FA chunk type
 0380: 3F3F3F160327070524243F0000001616
 0390: 162626263434343F0000
 
-######################################
+###############################################################################
 # Chunk: Frame 0 Subchunk 2/2
-######################################
+###############################################################################
+
 00230000 -> chunk size
 0F00     -> chunk type (byte run)
-00       -> packet count (0 means 256)
 
-
+            Line 0/199
+05       -> packet count
+35       -> RLE count (positive, repeat)
+00       -> data (data to repeat)
 
 
                           002300000F00
@@ -693,8 +672,27 @@ FAF1     -> $F1FA chunk type
 2660: 4200037F007F004200037F007F004200
 2670: 037F007F004200037F007F004200037F
 2680: 007F004200037F007F004200037F007F
-2690: 004200037F007F0042000A050000FAF1
-26a0: 01000000000000000000FA0400000C00
+2690: 004200037F007F004200
+
+###############################################################################
+# Frame Type
+###############################################################################
+0A050000 -> chunk size
+FAF1     -> chunk type (frame)
+0100     -> subchunk count
+
+                          0A050000FAF1
+26a0: 01000000000000000000
+
+###############################################################################
+# Sub-Chunk 1/1
+###############################################################################
+
+FA040000 -> chunk size
+0C00     -> chunk type (delta fli)
+
+
+                          FA0400000C00
 26b0: 22002F00013F012E014201F2013B07C4
 26c0: D51F2E1F1F2E033A02F2C404021F2E05
 26d0: 02F2F2023A010008082E2EB82E2E2EF2
@@ -774,7 +772,11 @@ FAF1     -> $F1FA chunk type
 2b70: 03052E2EF2F2F20001F200F7000628F7
 2b80: 000005F2F2F2C4C40402E1E100F92E00
 2b90: F7F200F500032DF90001F2F200F00001
-2ba0: 35EB00009E040000FAF1010000000000
+2ba0: 35EB0000
+
+
+
+              9E040000FAF1010000000000
 2bb0: 000000008E0400000C0022002E00013E
 2bc0: 01F2013C03F2B82E013B01F2033B01D5
 2bd0: 07012E0501F2023A02F2D50D022E2E02
@@ -3503,7 +3505,14 @@ d5f0: 2C0002F2F20728FBF20007D5E2E2E1E1
 d600: 2E2E00012E00EBE20001E000F82C00FC
 d610: F2062DF8F20003E2E2E10001E100F72E
 d620: 0008E02EE02EE0E02C2C05FCF20135EB
+
+
+
+
+
+-------------------------------------------------------------------------------
 Header:
+-------------------------------------------------------------------------------
   Size: 54834 bytes
   Type: FLI
   Dimension: 320x200
@@ -3513,10 +3522,17 @@ Header:
   Frame 2: 00000000
 Extensions:
 
+-------------------------------------------------------------------------------
 Frame Type: 2 subchunks, delay 0 ms
+-------------------------------------------------------------------------------
 Color 64: 1 packets
   Packet: 0,0 -> 000000 020202 040404 060606 080808 0A0A0A 0C0C0C 0E0E0E 101010 121212 141414 161616 181818 1A1A1A 1C1C1C 1E1E1E 212121 232323 252525 272727 292929 2B2B2B 2D2D2D 2F2F2F 313131 333333 353535 373737 393939 3B3B3B 3D3D3D 3F3F3F 3F3333 3F3F33 333F33 333F3F 33333F 3F333F 3F2727 3F3327 3F3F27 333F27 273F27 273F33 273F3F 27333F 27273F 33273F 3F273F 3F2733 3F1B1B 3F271B 3F331B 3F3F1B 333F1B 273F1B 1B3F1B 1B3F27 1B3F33 1B3F3F 1B333F 1B273F 1B1B3F 271B3F 331B3F 3F1B3F 3F1B33 3F1B27 3F0F0F 3F1B0F 3F270F 3F330F 3F3F0F 333F0F 273F0F 1B3F0F 0F3F0F 0F3F1B 0F3F27 0F3F33 0F3F3F 0F333F 0F273F 0F1B3F 0F0F3F 1B0F3F 270F3F 330F3F 3F0F3F 3F0F33 3F0F27 3F0F1B 3F030F 3F0303 3F0F03 3F1B03 3F2703 3F3303 3F3F03 333F03 273F03 1B3F03 0F3F03 033F03 033F0F 033F1B 033F27 033F33 033F3F 03333F 03273F 031B3F 030F3F 03033F 0F033F 1B033F 27033F 33033F 3F033F 3F0333 3F0327 3F031B 33030F 330303 330F03 331B03 332703 333303 273303 1B3303 0F3303 033303 03330F 03331B 033327 033333 032733 031B33 030F33 030333 0F0333 1B0333 270333 330333 330327 33031B 27030F 270303 270F03 271B03 272703 1B2703 0F2703 032703 03270F 03271B 032727 031B27 030F27 030327 0F0327 1B0327 270327 27031B 1B030F 1B0303 1B0F03 1B1B03 0F1B03 031B03 031B0F 031B1B 030F1B 03031B 0F031B 1B031B 0F0303 0F0F03 030F03 030F0F 03030F 0F030F 1B0F0F 1B1B0F 0F1B0F 0F1B1B 0F0F1B 1B0F1B 270F0F 271B0F 27270F 1B270F 0F270F 0F271B 0F2727 0F1B27 0F0F27 1B0F27 270F27 270F1B 330F0F 331B0F 33270F 33330F 27330F 1B330F 0F330F 0F331B 0F3327 0F3333 0F2733 0F1B33 0F0F33 1B0F33 270F33 330F33 330F27 330F1B 331B1B 33271B 33331B 27331B 1B331B 1B3327 1B3333 1B2733 1B1B33 271B33 331B33 331B27 332727 333327 273327 273333 272733 332733 271B1B 27271B 1B271B 1B2727 1B1B27 271B27 030303 0F0F0F 1B1B1B 272727 333333 3F3F3F 3F1603 270705 24243F 000000 161616 262626 343434 3F0000
+
+  
+  
+-------------------------------------------------------------------------------
 Byte Run: 200 lines
+-------------------------------------------------------------------------------
   line 000: 5 packets
     copy 35 (53) of 00
     data FD (3) of [3] -> 161F1F
@@ -5980,8 +5996,15 @@ Byte Run: 200 lines
     copy 7F (127) of 00
     copy 42 (66) of 00
 
+    
+    
+-------------------------------------------------------------------------------
 Frame Type: 1 subchunks, delay 0 ms
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
 Delta FLI: lineNumber 34, lineCount 47
+-------------------------------------------------------------------------------
   line 0 -> 1 packets
     packet 0 -> skip 63 columns, then data[1] of 2E
   line 1 -> 1 packets
@@ -6328,8 +6351,16 @@ Delta FLI: lineNumber 34, lineCount 47
     packet 2 -> skip 0 columns, then copy run 16 of 00
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of 00
+   
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 
+
+
+
+
+-------------------------------------------------------------------------------
 Frame Type: 1 subchunks, delay 0 ms
+-------------------------------------------------------------------------------
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
     packet 0 -> skip 62 columns, then data[1] of F2
@@ -6664,6 +6695,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 52 columns, then copy run 15 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -6946,6 +6978,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 73 columns, then copy run 6 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -7228,6 +7261,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 73 columns, then copy run 6 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -7547,6 +7581,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 52 columns, then copy run 15 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -8210,6 +8245,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 2 packets
@@ -8518,6 +8554,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 63 columns, then copy run 7 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -9877,6 +9914,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -10226,6 +10264,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -10561,6 +10600,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 52 columns, then copy run 15 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -10843,6 +10883,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 73 columns, then copy run 6 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -11125,6 +11166,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 73 columns, then copy run 6 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -11444,6 +11486,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 52 columns, then copy run 15 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -12107,6 +12150,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 2 packets
@@ -12415,6 +12459,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 63 columns, then copy run 7 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -13774,6 +13819,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -14123,6 +14169,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -14458,6 +14505,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 52 columns, then copy run 15 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -14740,6 +14788,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 73 columns, then copy run 6 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -15022,6 +15071,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 73 columns, then copy run 6 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 46
   line 0 -> 1 packets
@@ -15341,6 +15391,7 @@ Delta FLI: lineNumber 34, lineCount 46
   line 45 -> 1 packets
     packet 0 -> skip 52 columns, then copy run 15 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -16004,6 +16055,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of 00
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 2 packets
@@ -16312,6 +16364,7 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 63 columns, then copy run 7 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 Frame Type: 1 subchunks, delay 0 ms
 Delta FLI: lineNumber 34, lineCount 47
   line 0 -> 1 packets
@@ -17671,4 +17724,5 @@ Delta FLI: lineNumber 34, lineCount 47
   line 46 -> 1 packets
     packet 0 -> skip 53 columns, then copy run 21 of F2
 
+---~~~< BURN ODD BYTE OF CHUNK ABOVE >~~~---
 slurped 54834 of 54834

@@ -1,11 +1,20 @@
 .export handle_delta_fli
 
+.import func_slurp_into_buffer
+.import func_slurp_into_a
+
 .segment "CODE"
 
-.include "../include/file.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/video.inc"
+
+.macro SLURP_INTO_VAR16 targetAddr
+   jsr func_slurp_into_a
+   sta targetAddr+0
+   jsr func_slurp_into_a
+   sta targetAddr+1
+.endmacro
 
 ; this runs within an .X and .Y loop so it must preserve .X and .Y
 ; It is invoked after having just loaded the byte count into .A
@@ -14,7 +23,7 @@
 
    phx
       phy
-         SLURP_ARRAY RAM_VOLATILE_BUF
+         jsr func_slurp_into_buffer
          ldy #0
       :  lda RAM_VOLATILE_BUF,y
          sta VERA_DATA0
@@ -26,21 +35,24 @@
 .endmacro
 
 ; same comment as for positive count macro
-.macro PROCESS_NEGATIVE_COUNT 
+.macro PROCESS_NEGATIVE_COUNT
    eor #$FF ; for negative values, two's compliment gets the absolute value
    inc      ; (unless special case of -128 which an encoder should never do)
    phy
    tay                          ; .Y now becomes the repeat count
-   SLURP_INTO_A                 ; .A now becomes the byte to repeat
+   jsr func_slurp_into_a        ; .A now becomes the byte to repeat
 :  sta VERA_DATA0
    dey
    bne :-
    ply
 .endmacro
 
-; skip column by doing reads (.A holds skip count, where 0 means 0)
-.macro BURN_PIXELS
-   beq @burn_done
+.proc sub_skip_columns: near
+   jsr func_slurp_into_a ; (.A holds skip count, where 0 means 0)
+   bne @proceed_to_skip
+   rts
+
+@proceed_to_skip:
    phy
    tay
 @burn_loop:
@@ -48,8 +60,8 @@
    dey
    bne @burn_loop
    ply
-@burn_done:
-.endmacro
+   rts
+.endproc
 
 
 .proc handle_delta_fli: near
@@ -60,25 +72,24 @@
    lineSkip   = ZP_VOLATILE_EF        ; for FLI, only low byte is relevant
    lineCount  = ZP_VOLATILE_GH        ; for FLI, only low byte is relevant
    scratch    = ZP_VOLATILE_IJ
-   
-   SLURP_VAR16 lineSkip
-   SLURP_VAR16 lineCount
-   
+
+   SLURP_INTO_VAR16 lineSkip
+   SLURP_INTO_VAR16 lineCount
+
    CALC_VRAM_OFFSET_FOR_DELTA vramOffset, lineSkip, scratch
    SET_VERA_ADDR24_VAR $00, vramOffset, $10
 
    ldx lineCount                      ; .X is the line countdown
 @line_loop:
 
-      SLURP_INTO_A                    ; packet count
+      jsr func_slurp_into_a           ; packet count
       tay                             ; .Y is the packet countdown
       @packet_loop:
-         SLURP_INTO_A                 ; column skip
-         BURN_PIXELS                  ; actually skip
-         SLURP_INTO_A                 ; byte count
+         jsr sub_skip_columns
+         jsr func_slurp_into_a        ; byte count
          bit #%10000000
-         beq @process_positive_count  ; i.e. bit 7 was clear         
-            PROCESS_NEGATIVE_COUNT 
+         beq @process_positive_count  ; i.e. bit 7 was clear
+            PROCESS_NEGATIVE_COUNT
             bra @process_count_done
          @process_positive_count:
             PROCESS_POSITIVE_COUNT copyCount
@@ -91,8 +102,9 @@
 
    dex
    bne @line_loop
-   
+
    FLIP_LAYERS
+   COPY_LAYER
 
    RTS_NO_DETAIL RC_SUCCESS
 .endproc
