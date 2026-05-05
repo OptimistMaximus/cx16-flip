@@ -41,6 +41,19 @@ They are also printed to screen as hex string representation: "AA [XXYY]"
 | 9  | delay too long            | the FLC delay                         |
 
 
+### Version History
+
+- 2026/04/02 Version 0.0.2
+  - basic functionality established
+  - pixelated mess shows on-screen
+  - ignores "speed" field of header
+  - crashes on second running
+
+
+
+
+
+
 
 
 
