@@ -53,31 +53,19 @@
 ;       pixelated mess that will be shown below the 320x200 line.
 ;==============================================================================
 .proc func_vera_setup: near
-
-   lda #LAYER_1_ACTIVE               ; Start with Layer 1 "active"
-   sta ZP8_activeLayer
-
-   stz VERA_CTRL                     ; Establish DCSEL=0
-   lda #%00010000                    ; Layer 1 disabled, Layer 0 enabled
-   sta VERA_DC0_VIDEO                ; Sprites disabled, Output Mode VGA
-
-   lda #64                           ; scaling to 2:1
-   sta VERA_DC0_HSCALE               ; 640 -> 320
-   sta VERA_DC0_VSCALE               ; 480 -> 240
-
-   lda #%00000111                    ; Bitmap Mode, color depth 8bpp
-   sta VERA_L0_CONFIG
-   sta VERA_L1_CONFIG
-
-   stz VERA_L0_TILEBASE
-   lda LAYER_1_TILEBASE
-   sta VERA_L1_TILEBASE
-
-   stz VERA_L0_HSCROLL_L             ; (unused)
-   stz VERA_L0_HSCROLL_H             ; Palette Offset 0
-   stz VERA_L1_HSCROLL_L             ; (unused)
-   stz VERA_L1_HSCROLL_H             ; Palette Offset 0
-
+   U8_COPY_IMM ZP8_activeLayer,   LAYER_1_ACTIVE
+   U8_COPY_IMM VERA_CTRL,         $00              ; DCSEL=0
+   U8_COPY_IMM VERA_DC0_VIDEO,    LAYER_0_ENABLED
+   U8_COPY_IMM VERA_DC0_HSCALE,   64               ; 640 -> 320
+   U8_COPY_IMM VERA_DC0_VSCALE,   64               ; 480 -> 240
+   U8_COPY_IMM VERA_L0_CONFIG,    %00000111        ; bitmap mode, 8bpp color
+   U8_COPY_IMM VERA_L1_CONFIG,    %00000111        ; bitmap mode, 8bpp color
+   U8_COPY_IMM VERA_L0_TILEBASE,  LAYER_0_TILEBASE
+   U8_COPY_IMM VERA_L1_TILEBASE,  LAYER_1_TILEBASE
+   U8_COPY_IMM VERA_L0_HSCROLL_L, $00              ; (unused)
+   U8_COPY_IMM VERA_L0_HSCROLL_H, $00              ; Palette Offset 0
+   U8_COPY_IMM VERA_L1_HSCROLL_L, $00              ; (unused)
+   U8_COPY_IMM VERA_L1_HSCROLL_H, $00              ; Palette Offset 0
    jmp KERNAL_GRAPH_INIT
 .endproc
 
@@ -126,7 +114,7 @@
       ldx #LAYER_1_ENABLED      ; Layer 1 is active, so enable it to show it,
       ldy #LAYER_0_ACTIVE       ;         and make Layer 0 become active
       bra @prep_done
-@prep_when_0_active:             
+@prep_when_0_active:
       ldx #LAYER_0_ENABLED      ; Layer 0 is active, so enable it to show it,
       ldy #LAYER_1_ACTIVE       ;         and make Layer 1 become active
 @prep_done:

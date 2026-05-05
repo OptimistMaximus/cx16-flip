@@ -39,8 +39,8 @@
 LAYER_0_ADDRESS  := $00000
 LAYER_1_ADDRESS  := $0F800
 
-LAYER_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr 
-LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr 
+LAYER_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
+LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
 
 LAYER_0_ACTIVE   := $00       ; middle byte of 17-bit address
 LAYER_1_ACTIVE   := $F8       ; middle byte of 17-bit address
