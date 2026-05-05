@@ -1,0 +1,34 @@
+# Header (width is 640)
+
+32D60000   # DWORD file size
+11AF       #  WORD file type
+2400       #  WORD number of frames in first segment
+8002       #  WORD width
+C800       #  WORD height
+0800       #  WORD depth
+0000       #  WORD flags (meaning unknown)
+08000000   # DWORD speed
+0000       #  WORD reserved
+00010000   # DWORD [FLC] created date
+00000000   # DWORD [FLC] creator serial number
+00000000   # DWORD [FLC] updated date
+00000000   # DWORD [FLC] updater serial number
+0000       #  WORD [FLC] aspect dx
+0000       #  WORD [FLC] aspect dx
+0000       #  WORD [EGI] ext_flags
+0000       #  WORD [EGI] key image frequency
+0000       #  WORD [EGI] total number of segments 
+00000000   # DWORD [EGI] required memory
+0000       #  WORD [EGI] max regions
+0000       #  WORD [EGI] number of transparent levels
+
+000000000000000000000000  # Reserved
+000000000000000000000000  # (24 bytes)
+
+00000000   # DWORD [FLC] offset to frame 1
+00000000   # DWORD [FLC] offset to frame 2
+
+00000000000000000000      # Reserved
+00000000000000000000      # (40 bytes)
+00000000000000000000
+00000000000000000000

@@ -1,0 +1,142 @@
+SOURCE := ./src
+RESDIR := $(SOURCE)/resources
+INCDIR := $(SOURCE)/include
+
+.PHONY: run debug clean test 
+
+#------------------------------------------------------------------
+# Resources
+#------------------------------------------------------------------
+IMAGE_FILENAME := $(RESDIR)/BELL.FLI
+MAIN_RESOURCES := zzz/IMAGE.FLI
+
+TEST_DATA_FILES := \
+$(RESDIR)/HEADER0.hex \
+$(RESDIR)/HEADER1.hex \
+$(RESDIR)/HEADER2.hex \
+$(RESDIR)/HEADER3.hex \
+$(RESDIR)/HEADER4.hex \
+$(RESDIR)/HEADER5.hex \
+$(RESDIR)/FRAME.hex \
+$(RESDIR)/COLOR0.hex \
+$(RESDIR)/COLOR1.hex \
+$(RESDIR)/COLOR2.hex \
+$(RESDIR)/BYTERUN.hex \
+$(RESDIR)/DELTAFLI.hex \
+$(RESDIR)/SLURP.hex
+
+TEST_RESOURCES := $(TEST_DATA_FILES:$(RESDIR)/%.hex=zzz/%.BIN)
+
+#------------------------------------------------------------------
+# Includes
+#------------------------------------------------------------------
+INCLUDES := $(wildcard $(INCDIR)/*.inc)
+
+#------------------------------------------------------------------
+# Libraries
+#------------------------------------------------------------------
+LIB_CORE_SOURCES  := $(wildcard $(SOURCE)/core/*.asm)
+LIB_CORE_OBJECTS  := $(LIB_CORE_SOURCES:$(SOURCE)/core/%.asm=zzz/core/%.o)
+
+LIB_CODEC_SOURCES := $(wildcard $(SOURCE)/codec/*.asm)
+LIB_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=zzz/codec/%.o)
+
+LIB_TEST_SOURCES := $(wildcard $(SOURCE)/test/*.asm)
+LIB_TEST_OBJECTS := $(LIB_TEST_SOURCES:$(SOURCE)/test/%.asm=zzz/test/%.o)
+
+# ca65 seems to need this in reverse-dependency order
+MAIN_LIBS := zzz/core.lib zzz/codec.lib
+TEST_LIBS := zzz/test.lib $(MAIN_LIBS)
+
+#------------------------------------------------------------------
+# Target test (default), debug, clean, run
+#------------------------------------------------------------------
+test: zzz/TEST.PRG $(TEST_RESOURCES)
+	cd zzz && x16emu -run -debug 080D -prg TEST.PRG
+
+run: zzz/MAIN.PRG $(MAIN_RESOURCES)
+	cd zzz && x16emu -run -prg MAIN.PRG
+
+debug: zzz/MAIN.PRG $(MAIN_RESOURCES)
+	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG
+	ls -l $<
+
+clean:
+	rm -rf zzz
+
+zzz/TEST.TXT: $(TEST_FILENAME)
+	cp $(TEST_FILENAME) $@
+
+zzz/IMAGE.FLI: $(IMAGE_FILENAME)
+	cp $(IMAGE_FILENAME) $@
+
+#------------------------------------------------------------------
+# Targets to create directories
+#------------------------------------------------------------------
+zzz:
+	mkdir -p $@
+
+zzz/core:
+	mkdir -p $@
+
+zzz/codec:
+	mkdir -p $@
+
+zzz/test:
+	mkdir -p $@
+
+#------------------------------------------------------------------
+# Targets to build programs
+#------------------------------------------------------------------
+zzz/MAIN.PRG: zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
+	cl65 -o $@ $< $(MAIN_LIBS)
+
+zzz/TEST.PRG: zzz/test.o $(TEST_LIBS) | zzz
+	cl65 -o $@ $< $(TEST_LIBS)
+
+#------------------------------------------------------------------
+# Targets to build libraries
+#------------------------------------------------------------------
+zzz/core.lib: $(LIB_CORE_OBJECTS) | zzz
+	ar65 a $@ zzz/core/*.o
+
+zzz/codec.lib: $(LIB_CODEC_OBJECTS) | zzz
+	ar65 a $@ zzz/codec/*.o
+
+zzz/test.lib: $(LIB_TEST_OBJECTS) | zzz
+	ar65 a $@ zzz/test/*.o
+
+#------------------------------------------------------------------
+# Targets to build sources
+#
+# Note, cl65 is very picky about order of arguments.
+#
+#       cl65 -t cx16 -c src/bar.asm -o zzz/bar.o
+#
+# will ignore the output path and just put the object in the same
+# directory as the source.  But if you use the following order
+# then it works as you would intuitively expect:
+#
+#       cl65 -t cx16 -o zzz/bar.o -c src/bar.asm
+#
+#------------------------------------------------------------------
+zzz/core/%.o: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
+	cl65 -t cx16 -o $@ -c $<
+
+zzz/codec/%.o: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
+	cl65 -t cx16 -o $@ -c $<
+
+zzz/test/%.o: $(SOURCE)/test/%.asm $(INCLUDES) | zzz/test
+	cl65 -t cx16 -o $@ -c $<
+
+zzz/main.o: $(SOURCE)/main.asm $(INCLUDES) | zzz
+	cl65 -t cx16 -o $@ -c $<
+
+zzz/test.o: $(SOURCE)/test.asm $(INCLUDES) | zzz
+	cl65 -t cx16 -o $@ -c $<
+
+#------------------------------------------------------------------
+# Targets to build test inputs
+#------------------------------------------------------------------
+zzz/%.BIN: $(RESDIR)/%.hex | $(TARGET)
+	sh hex2bin.sh $< $@

@@ -1,0 +1,14 @@
+# Byte Run (FLI)
+
+# Each "line" of the image is compressed separately. This file
+# represents one line.  For FLI files, the first byte means the packet count.
+
+02         # packet count (relevant for FLI files, not FLC)
+
+           # Packet 0 with negative byte count
+FD         # $FD, unsigned, is -3. So, expect ABS(-3) bytes
+AABBCC     # 3 bytes of data
+
+           # Packet 1 with positive byte count
+02         # $02, unsigned, is 2. So, repeat next byte 2 times
+EE         # 1 byte of data, to be repeated

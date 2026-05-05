@@ -1,0 +1,41 @@
+# Color (reasonable delta table)
+#
+# Packet 1's skip count has been carefully chosen as $10
+# so that during testing (assuming no bugs) the first 16
+# colors in the VERA palette will not be affected.  This
+# saves us from the colors going wonky during testing,
+# and it also tests the skip functionality.
+
+          # DWORD size (already streamed)
+          #  WORD type (already streamed)
+0200      #  WORD number of packets
+
+          # Packet 0
+02        #  BYTE skip count
+01        #  BYTE copy count
+3A2B1C    #       r,g,b for first color
+
+          # Packet 1
+01        #  BYTE skip count
+02        #  BYTE copy count
+191919    #       r,g,b for first color
+2C2C2C    #       r,g,b for second color
+
+# We expect different VERA RGB values for 64 and 256 color.
+# In both cases, the most significant 4 bits of RGB color are used.
+#
+# 3A2B1C is 00111010 00101011 00011100
+#  6-bit is   1110     1010     0111   -> VERA A70E
+#  8-bit is 0011     0010     0001     -> VERA 2103
+#
+# 191919 is 00011001 00011001 00011001
+#  6-bit is   0110     0110     0110   -> VERA 6606
+#  8-bit is 0001     0001     0001     -> VERA 1101
+#
+# 2C2C2C is 00101100 00101100 00101100
+#  6-bit is   1011     1011     1011   -> VERA BB0B
+#  8-bit is 0010     0010     0010     -> VERA 2202
+
+
+
+    
