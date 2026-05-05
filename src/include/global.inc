@@ -90,25 +90,6 @@ ZP16_numSubChunks      := $5A
 RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 
 ;------------------------------------------------------------------------------
-; FLI CONSTANTS
-;------------------------------------------------------------------------------
-FILE_TYPE_FLI   := $AF11
-FILE_TYPE_FLC   := $AF12
-
-FRAME_TYPE      := $F1FA
-
-CHUNK_COLOR_256 := $0004 ; FLI palette info, RGB values from 0-255
-CHUNK_COLOR_64  := $000B ; FLI palette info, RGB values from 0-63
-CHUNK_DELTA_FLI := $000C ; FLI compressed via deltas
-CHUNK_BLACK     := $000D ; FLI all pixels implicitly color zero)
-CHUNK_BYTE_RUN  := $000F ; FLI byte run
-CHUNK_FLI_COPY  := $0010 ; FLI uncompressed
-
-;------------------------------------------------------------------------------
-; SYMBOLS
-;------------------------------------------------------------------------------
-
-;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
 ;------------------------------------------------------------------------------
 RC_SUCCESS                    := 0

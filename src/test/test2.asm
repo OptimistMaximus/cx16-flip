@@ -342,7 +342,7 @@ test_arg_expect_bb: .asciiz "bb"
    ; layer switched from 0 to 1.
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
-   U8_COPY_IMM ZP8_activeLayer, $FA ; establish layer 0 as active
+   U8_COPY_IMM ZP8_activeLayer, $F8 ; establish layer 1 as active
    U8_COPY_IMM ZP8_height, 1        ; input data represents 1 line
 
    OPEN_INPUTSTREAM fn_byterun
@@ -355,8 +355,7 @@ test_arg_expect_bb: .asciiz "bb"
    and #%01110000                       ; then mask out all but bits 6,5,4
    ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprints, L1, L0
    ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeLayer
-
-   SET_VERA_ADDR24_IMM $00, $0FA00, $10
+   SET_VERA_ADDR24_IMM $00, $0F800, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3521, $BB ; pixel 1
    ASSERT_VRAM_U8_EQUALS_IMM $3522, $CC ; pixel 2
@@ -372,12 +371,12 @@ test_arg_expect_bb: .asciiz "bb"
    ; count 2.  This test establishes Layer 1 as active, so expect data to be
    ; written to Layer 0 at the following offsets.
    ;
-   ; line 0 -> 0000 + FA00 = 0FA00
-   ; line 1 -> 0140 + FA00 = 0FB40
-   ; line 2 -> 0280 + FA00 = 0FC80
-   ; line 3 -> 03C0 + FA00 = 0FDC0
-   ; line 4 -> 0500 + FA00 = 0FF00   <--- enter delta
-   ; line 5 -> 0640 + FA00 = 10040   <--- leave delta
+   ; line 0 -> 0000 + F800 = 0F800
+   ; line 1 -> 0140 + F800 = 0F940
+   ; line 2 -> 0280 + F800 = 0FA80
+   ; line 3 -> 03C0 + F800 = 0FBC0
+   ; line 4 -> 0500 + F800 = 0FD00   <--- enter delta
+   ; line 5 -> 0640 + F800 = 0FE40   <--- leave delta
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
    U8_COPY_IMM ZP8_activeLayer, $00 ; establish layer 0 as active
@@ -391,7 +390,7 @@ test_arg_expect_bb: .asciiz "bb"
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
    ASSERT_A_EQUALS_IMM $3601, %00010000 ; then verify sprints, L1, L0
-   ASSERT_VAR_U8_EQUALS_IMM $3602, $FA, ZP8_activeLayer
+   ASSERT_VAR_U8_EQUALS_IMM $3602, $F8, ZP8_activeLayer
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0
@@ -414,6 +413,7 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VRAM_U8_EQUALS_IMM $3625, $EE ; pixel 12
    ASSERT_VRAM_U8_EQUALS_IMM $3626, $EE ; pixel 13
    ASSERT_VRAM_U8_EQUALS_IMM $3627, $00 ; pixel 14 (untouched)
+
    SET_VERA_ADDR24_IMM $00, $00640, $10 ; line 6
    ASSERT_VRAM_U8_EQUALS_IMM $3630, $55 ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3631, $55 ; pixel 1

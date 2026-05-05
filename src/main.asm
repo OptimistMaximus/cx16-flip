@@ -18,6 +18,7 @@
 
 .include "include/global.inc"
 .include "include/kernal.inc"
+.include "include/math.inc"
 .include "include/petscii.inc"
 .include "include/vera.inc"
 .include "include/zeropage.inc"

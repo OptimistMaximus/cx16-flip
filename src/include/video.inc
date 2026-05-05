@@ -6,22 +6,47 @@
 .include "./vera.inc"
 
 ;##############################################################################
-; Logic in this include file knows the secret of how the active layer is
-; determined, and how to calculate memory offsets for each layer.  Unit tests
-; notwithstanding, only this include file should need such secret information.
+; Due to VERA limitations, bitmap layers must start at an $800 aligned address.
+; Part of the rendering trick used by this player is to have two bitmap layers
+; that we keep flipping between (showing one while staging data into the other)
 ;
-; ZP8_activeLayer holds either the value $00 or $FA.  When it holds $00 it
-; implies that Layer 0 is "active", meaning that's where we should buffer
-; the actively-being-processed frame's pixel data.  That is (by design)
-; at Layer 0 address $000000. Note, the middle byte matches ZP8_activeLayer.
+; $00000-$0F800 will be Layer 0.
+; $0F800-$1F000 will be Layer 1.
 ;
-; When ZP8_activeLayer holds $FA it implies that Layer 1 is "active", which
-; means we should buffer data to Layer 1's address $00FA00.  Note, the middle
-; byte matches ZP8_activeLayer.
+; Thus, each layer can hold a 320x198 image. We'll need to cut corners a bit,
+; or rather cut lines. As a trick for now, the first and last lines of every
+; image will be parsed but not rendered to screen.
 ;
-; Using this convention, we "flip" layers by flipping ZP8_activeLayer between
-; $00 and $FA.
+; Ideally we'd do the following:
+; Height 200 ($C8) -> skip first and last lines
+; Height 199 ($C7) -> skip first line
+;                  -> else, don't skip any lines
+;
+; But for this first release, it will just always skip the first and last.
+;
+; Note that the low and high bytes of both addresses are always zero.  Only
+; the middle byte is different.  We'll use this to our advantage in code that
+; does math on the addresses. We only need to care about the middle byte of
+; the VRAM offset. It also means we can easily store the state of whic layer
+; is active by just storing its middle byte.  A value of $00 means Layer 0
+; is active.  The non-zero value means Layer 1 is active.
+;
+; TODO: consider maybe we can just have a single always-active layer at
+; $00000-$12C00 that we just update as we go. MAYBE we can update fast enough
+; that it isn't too crappy-looking. Probably not, so this is just a curiosity
+; to be explored at a later date.
 ;##############################################################################
+LAYER_0_ADDRESS  := $00000
+LAYER_1_ADDRESS  := $0F800
+
+LAYER_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr 
+LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr 
+
+LAYER_0_ACTIVE   := $00       ; middle byte of 17-bit address
+LAYER_1_ACTIVE   := $F8       ; middle byte of 17-bit address
+
+LAYER_0_ENABLED  := %00010000 ; sprites off, layer 1 off, layer 0 on
+LAYER_1_ENABLED  := %00100000 ; sprites off, layer 1 on, layer 0 off
 
 ;==============================================================================
 ; SET_VRAM_DATA0_FOR_PALETTE_BUFFER
@@ -91,55 +116,6 @@
 .endmacro
 
 
-;==============================================================================
-; FLIP_LAYERS
-;
-; If Layer 0 is active, that means we've been buffering to it, so now it is
-; time to enable Layer 0, disable Layer 1, and change the active layer value
-; so we'll start buffering to to Layer 1 next.  If Layer 1 then essentially do
-; the opposite.
-;==============================================================================
-.macro FLIP_LAYERS
-   lda ZP8_activeLayer
-   beq @flip_layers_from_layer_0
-      stz ZP8_activeLayer              ; flipping from 1 to 0 ...
-      lda #%00100000                   ; sprites off, layer 1 on, layer 0 off
-      bra @flip_layers_done
-@flip_layers_from_layer_0:
-      U8_COPY_IMM ZP8_activeLayer, $FA ; flip from 0 to 1 ...
-      lda #%00010000                   ; sprites off, layer 1 off, layer 0 on
-@flip_layers_done:
-   stz VERA_CTRL                       ; Establish DCSEL=0
-   sta VERA_DC0_VIDEO                  ; apply control settings
-.endmacro
 
-.macro COPY_LAYER
-   lda ZP8_activeLayer
-   beq @copy_layer_source_is_layer_1
-   SET_VERA_ADDR24_IMM $00, $00000, $10 ; source is layer 0
-   SET_VERA_ADDR24_IMM $01, $0FA00, $10 ; target is layer 1
-   bra @copy_layer_source_and_target_established
-@copy_layer_source_is_layer_1:
-   SET_VERA_ADDR24_IMM $00, $0FA00, $10 ; source is layer 1
-   SET_VERA_ADDR24_IMM $01, $00000, $10 ; target is layer 0
-@copy_layer_source_and_target_established:
-
-   ldx #200
-@row_loop:
-   ldy #80
-@column_loop:
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   dey
-   bne @column_loop
-   dex
-   bne @row_loop
-.endmacro
 
 .endif

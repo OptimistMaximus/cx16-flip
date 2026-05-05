@@ -8,6 +8,8 @@
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
 
+FILE_TYPE_FLI := $AF11
+
 ;==============================================================================
 ; func_slurp_header
 ;

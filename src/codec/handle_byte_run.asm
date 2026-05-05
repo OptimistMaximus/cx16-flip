@@ -2,6 +2,9 @@
 
 .import func_slurp_into_buffer
 .import func_slurp_into_a
+.import func_vera_flip_layer
+.import func_vera_copy_layer
+
 
 .segment "CODE"
 
@@ -44,7 +47,6 @@
 
    vramOffset = ZP_VOLATILE_ABC
    copyCount  = ZP_VOLATILE_D
-
    CALC_VRAM_OFFSET_FOR_FULL vramOffset
    SET_VERA_ADDR24_VAR $00, vramOffset, $10
 
@@ -68,8 +70,8 @@
    dex
    bne @line_loop
 
-   FLIP_LAYERS
-   COPY_LAYER
+   jsr func_vera_flip_layer
+   jsr func_vera_copy_layer
 
    RTS_NO_DETAIL RC_SUCCESS
 .endproc

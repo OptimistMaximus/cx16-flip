@@ -2,6 +2,8 @@
 
 .import func_slurp_into_buffer
 .import func_slurp_into_a
+.import func_vera_flip_layer
+.import func_vera_copy_layer
 
 .segment "CODE"
 
@@ -103,8 +105,8 @@
    dex
    bne @line_loop
 
-   FLIP_LAYERS
-   COPY_LAYER
+   jsr func_vera_flip_layer
+   jsr func_vera_copy_layer
 
    RTS_NO_DETAIL RC_SUCCESS
 .endproc
