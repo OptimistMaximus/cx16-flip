@@ -45,8 +45,8 @@ LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
 LAYER_0_ACTIVE   := $00       ; middle byte of 17-bit address
 LAYER_1_ACTIVE   := $F8       ; middle byte of 17-bit address
 
-LAYER_0_ENABLED  := %00010000 ; sprites off, layer 1 off, layer 0 on
-LAYER_1_ENABLED  := %00100000 ; sprites off, layer 1 on, layer 0 off
+LAYER_0_ENABLED  := %00010001 ; sprites off, layer 1 off, layer 0 on, VGA
+LAYER_1_ENABLED  := %00100001 ; sprites off, layer 1 on, layer 0 off, VGA
 
 ;==============================================================================
 ; SET_VRAM_DATA0_FOR_PALETTE_BUFFER
