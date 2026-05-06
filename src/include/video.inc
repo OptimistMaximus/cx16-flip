@@ -36,8 +36,10 @@
 ; that it isn't too crappy-looking. Probably not, so this is just a curiosity
 ; to be explored at a later date.
 ;##############################################################################
-LAYER_0_ADDRESS  := $00000
-LAYER_1_ADDRESS  := $0F800
+LAYER_0_ADDRESS  := $00000    ; $00000 to $0F7FF is layer 0 (320x198)
+LAYER_1_ADDRESS  := $0F800    ; $0F800 to $1EFFF is layer 1 (320x198)
+SPRITE_DATA      := $1F200    ; $1F200 to $1F3FF one sprite ( 32x32 )
+PALETTE_BUFFER   := $1F400    ; $1F400 to $1F7FF
 
 LAYER_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
 LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
@@ -45,14 +47,14 @@ LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
 LAYER_0_ACTIVE   := $00       ; middle byte of 17-bit address
 LAYER_1_ACTIVE   := $F8       ; middle byte of 17-bit address
 
-LAYER_0_ENABLED  := %00010001 ; sprites off, layer 1 off, layer 0 on, VGA
-LAYER_1_ENABLED  := %00100001 ; sprites off, layer 1 on, layer 0 off, VGA
+LAYER_0_ENABLED  := %01010001 ; sprites on, layer 1 off, layer 0 on, VGA
+LAYER_1_ENABLED  := %01100001 ; sprites on, layer 1 on, layer 0 off, VGA
 
 ;==============================================================================
 ; SET_VRAM_DATA0_FOR_PALETTE_BUFFER
 ;==============================================================================
 .macro SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   SET_VERA_ADDR24_IMM $00, PALETTE_BUFFER, $10
 .endmacro
 
 ;==============================================================================

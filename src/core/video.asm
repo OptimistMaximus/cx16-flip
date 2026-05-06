@@ -1,5 +1,6 @@
 .export func_vera_setup
 .export func_vera_restore
+.export func_register_sprites
 .export func_vera_flip_layer
 .export func_vera_copy_layer
 .export func_print_hex
@@ -151,5 +152,52 @@
    bne @column_loop
    dex
    bne @row_loop
+   rts
+.endproc
+
+.proc func_register_sprites: near
+
+   xpos = ZP_VOLATILE_AB
+   ypos = ZP_VOLATILE_CD
+
+   ; Sprite data is 32x32 of color 1 (because zero is transparent!)
+   SET_VERA_ADDR_DEFAULT SPRITE_DATA
+   lda #$11
+   ldx #16
+@sprite_data_outer_loop:
+   ldy #32
+@sprite_data_inner_loop:
+   sta VERA_DATA0
+   dey
+   bne @sprite_data_inner_loop
+   dex
+   bne @sprite_data_outer_loop
+
+   ; This sets up the 20 sprites we need, using about 80
+   ; bytes of code. This is a lot less than storing static
+   ; sprint data at 8 bytes per sprint (160 bytes total)
+   ; plus a few bytes to do the simple copy loop.
+   SET_VERA_ADDR_DEFAULT VERA_ADDR_SPRITE_ATTRS_1
+   ldy #2
+   U16_COPY_IMM ypos, 198
+ @sprite_attr_y_loop:
+   ldx #10
+   U16_STZ xpos
+ @sprite_attr_x_loop:
+   U8_COPY_IMM VERA_DATA0, <(SPRITE_DATA >> 5)
+   U8_COPY_IMM VERA_DATA0, >(SPRITE_DATA >> 5) ; b7=0 for mode 0
+   U8_COPY_VAR VERA_DATA0, xpos+0
+   U8_COPY_VAR VERA_DATA0, xpos+1
+   U8_COPY_VAR VERA_DATA0, ypos+0
+   U8_COPY_VAR VERA_DATA0, ypos+1
+   U8_COPY_IMM VERA_DATA0, %00001100
+   U8_COPY_IMM VERA_DATA0, %10100000
+   U16_ADD_IMM xpos, 32
+   dex
+   bne @sprite_attr_x_loop
+   U16_ADD_IMM ypos, 32
+   dey
+   bne @sprite_attr_y_loop
+
    rts
 .endproc

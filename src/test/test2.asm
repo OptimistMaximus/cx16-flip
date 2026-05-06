@@ -353,7 +353,7 @@ test_arg_expect_bb: .asciiz "bb"
    stz VERA_CTRL                        ; assert that we switched layers
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
-   ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprints, L1, L0
+   ASSERT_A_EQUALS_IMM $3501, %01100000 ; then verify sprites, L1, L0
    ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeLayer
    SET_VERA_ADDR24_IMM $00, $0F800, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
@@ -389,7 +389,7 @@ test_arg_expect_bb: .asciiz "bb"
    stz VERA_CTRL                        ; assert that we switched layers
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
-   ASSERT_A_EQUALS_IMM $3601, %00010000 ; then verify sprints, L1, L0
+   ASSERT_A_EQUALS_IMM $3601, %01010000 ; then verify sprites, L1, L0
    ASSERT_VAR_U8_EQUALS_IMM $3602, $F8, ZP8_activeLayer
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4

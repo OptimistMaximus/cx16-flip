@@ -8,6 +8,7 @@
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore
+.import func_register_sprites
 .import func_slurp_header
 .import func_slurp_chunk
 
@@ -72,7 +73,13 @@ default_image_filename: .byte "image.fli,r"
 
 start:
 
+   jsr func_register_sprites
    jsr func_vera_setup
+
+   ldx #2
+big_loop:
+   phx
+
    jsr sub_establish_filename
    jsr func_open_inputstream
    beq @inputstream_is_cool
@@ -102,6 +109,12 @@ start:
    bne @frame_loop
 
    jsr func_close_inputstream
+
+   plx
+   dex
+   beq @big_loop_done
+   jmp big_loop
+@big_loop_done:
 
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)

@@ -105,9 +105,26 @@ VERA_ADDR_PALETTE        = $1FA00 ; [IMMOBILE] Color Palette
 VERA_ADDR_PALETTE_LOW    = $1FA00
 VERA_ADDR_PALETTE_HIGH   = $1FA01
 VERA_ADDR_SPRITE_ATTRS   = $1FC00 ; [IMMOBILE] Sprite Attributes
-VERA_ADDR_SPRITE_ATTRS_1 = $1FC08 ; [IMMOBILE] Sprite Attributes for Sprite 1
-VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attributes for Sprite 2
-                                  ;            ... et cetera ...
+VERA_ADDR_SPRITE_ATTRS_0 = $1FC00 ; [IMMOBILE] Sprite Attrs for Mouse Cursor
+VERA_ADDR_SPRITE_ATTRS_1 = $1FC08 ; [IMMOBILE] Sprite Attrs for Sprite 1
+VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attrs for Sprite 2, etc
+
+;------------------------------------------------------------------------------
+; SET_VERA_ADDR_DEFAULT
+;
+; Data Channel 0 is configured. Auto-Increment is set to 1 (aka Stride 1).
+;
+; @param addressValue the immediate value of the 24-bit VRAM address
+;------------------------------------------------------------------------------
+.macro SET_VERA_ADDR_DEFAULT addressValue
+    stz VERA_CTRL
+    lda #<addressValue
+    sta VERA_ADDRx_L
+    lda #>addressValue
+    sta VERA_ADDRx_M
+    lda #($10 | ^addressValue)
+    sta VERA_ADDRx_H
+.endmacro
 
 ;------------------------------------------------------------------------------
 ; SET_VERA_ADDR24_IMM

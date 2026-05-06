@@ -1,4 +1,5 @@
 .project
 *.zip
 
+.DS_Store
 zzz/
