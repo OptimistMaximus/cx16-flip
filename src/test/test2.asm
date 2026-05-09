@@ -243,7 +243,25 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VAR_U16_EQUALS_IMM $3201, $3412, ZP16_numSubChunks
 
    ;---------------------------------------------------------------------------
-   ; TEST 33 - handle_color_64
+   ; TEST 33 - func_load_palette
+   ;---------------------------------------------------------------------------
+   jsr sub_init_palette_buffer
+   jsr func_load_palette
+   SET_VERA_ADDR24_IMM $00, $1FA00, $10
+   ASSERT_VRAM_U16_EQUALS_IMM $3300, $0000
+   ASSERT_VRAM_U16_EQUALS_IMM $3301, $0101
+   ASSERT_VRAM_U16_EQUALS_IMM $3302, $0202
+   SET_VERA_ADDR24_IMM $00, $1FB00, $10
+   ASSERT_VRAM_U16_EQUALS_IMM $3303, $8080
+   ASSERT_VRAM_U16_EQUALS_IMM $3304, $8181
+   ASSERT_VRAM_U16_EQUALS_IMM $3305, $8282
+   SET_VERA_ADDR24_IMM $00, $1FBFA, $10
+   ASSERT_VRAM_U16_EQUALS_IMM $3306, $FDFD
+   ASSERT_VRAM_U16_EQUALS_IMM $3307, $FEFE
+   ASSERT_VRAM_U16_EQUALS_IMM $3308, $FFFF
+
+   ;---------------------------------------------------------------------------
+   ; TEST 34 - handle_color_64
    ;           handle_color_256
    ;
    ; COLOR0.BIN is tested once with 64 color parsing, and once with 256.
@@ -253,44 +271,45 @@ test_arg_expect_bb: .asciiz "bb"
    ; COLOR2.BIN tests that 256 packets of copy  count 1 works fine. This is a
    ; ridiculous edge case that probably no encoder would use, but it's legal.
    ;---------------------------------------------------------------------------
+   
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3300, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3400, RC_SUCCESS
    SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-   ASSERT_VRAM_U16_EQUALS_IMM $3301, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3302, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3303, $0EA7 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3304, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3305, $0666 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3306, $0BBB ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3307, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3401, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3402, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3403, $0EA7 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3404, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3405, $0666 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3406, $0BBB ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3407, $0606 ; color 6 untouched
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3310, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3410, RC_SUCCESS
    SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-   ASSERT_VRAM_U16_EQUALS_IMM $3311, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3312, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3313, $0321 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3314, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3315, $0111 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3316, $0222 ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3317, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3411, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3412, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3413, $0321 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3414, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3415, $0111 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3416, $0222 ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3417, $0606 ; color 6 untouched
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3320, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3420, RC_SUCCESS
    SET_VRAM_DATA0_FOR_PALETTE_BUFFER
    lda #0
 @test32_copy_packet_count_loop:
-   ASSERT_VRAM_U16_EQUALS_IMM $3321, $0111  ; color 0,2,4,etc
-   ASSERT_VRAM_U16_EQUALS_IMM $3322, $0222  ; color 1,3,5,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3421, $0111  ; color 0,2,4,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3422, $0222  ; color 1,3,5,etc
    iny
    cpy #128
    bne @test32_copy_packet_count_loop
@@ -300,33 +319,15 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3330, RC_SUCCESS
+   ASSERT_A_EQUALS_IMM $3430, RC_SUCCESS
    SET_VRAM_DATA0_FOR_PALETTE_BUFFER
    lda #0
 @test32_verify_packet_count_loop:
-   ASSERT_VRAM_U16_EQUALS_IMM $3331, $0111  ; color 0,2,4,etc
-   ASSERT_VRAM_U16_EQUALS_IMM $3332, $0222  ; color 1,3,5,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3431, $0111  ; color 0,2,4,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3432, $0222  ; color 1,3,5,etc
    iny
    cpy #128
    bne @test32_verify_packet_count_loop
-
-   ;---------------------------------------------------------------------------
-   ; TEST 34 - func_load_palette
-   ;---------------------------------------------------------------------------
-   jsr sub_init_palette_buffer
-   jsr func_load_palette
-   SET_VERA_ADDR24_IMM $00, $1FA00, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3400, $0000
-   ASSERT_VRAM_U16_EQUALS_IMM $3401, $0101
-   ASSERT_VRAM_U16_EQUALS_IMM $3402, $0202
-   SET_VERA_ADDR24_IMM $00, $1FB00, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3403, $8080
-   ASSERT_VRAM_U16_EQUALS_IMM $3404, $8181
-   ASSERT_VRAM_U16_EQUALS_IMM $3405, $8282
-   SET_VERA_ADDR24_IMM $00, $1FBFA, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3406, $FDFD
-   ASSERT_VRAM_U16_EQUALS_IMM $3407, $FEFE
-   ASSERT_VRAM_U16_EQUALS_IMM $3408, $FFFF
 
    ;---------------------------------------------------------------------------
    ; TEST 35 - handle_byte_run
@@ -353,7 +354,13 @@ test_arg_expect_bb: .asciiz "bb"
    stz VERA_CTRL                        ; assert that we switched layers
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
+   
+.ifdef ENABLE_SPRITES
    ASSERT_A_EQUALS_IMM $3501, %01100000 ; then verify sprites, L1, L0
+.else
+   ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprites, L1, L0
+.endif
+
    ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeLayer
    SET_VERA_ADDR24_IMM $00, $0F800, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
@@ -389,7 +396,13 @@ test_arg_expect_bb: .asciiz "bb"
    stz VERA_CTRL                        ; assert that we switched layers
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
-   ASSERT_A_EQUALS_IMM $3601, %01010000 ; then verify sprites, L1, L0
+
+.ifdef ENABLE_SPRITES
+   ASSERT_A_EQUALS_IMM $3501, %01010000 ; then verify sprites, L1, L0
+.else
+   ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprites, L1, L0
+.endif
+
    ASSERT_VAR_U8_EQUALS_IMM $3602, $F8, ZP8_activeLayer
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4

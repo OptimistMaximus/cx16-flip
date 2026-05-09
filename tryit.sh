@@ -13,8 +13,8 @@ prg=FLIP${ver}.PRG
 mkdir $dir
 cp zzz/MAIN.PRG           $dir/$prg
 cp src/resources/$img     $dir/IMAGE.FLI
-cp LICENSE                $dir
-cp README.md              $dir
+#cp LICENSE                $dir
+#cp README.md              $dir
 cd $dir
 zip ../$dir.zip *
 cd ..

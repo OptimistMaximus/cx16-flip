@@ -54,6 +54,11 @@ VERA_DC0_HSCALE   = $9F2A   ; 64 = 2:1 (good for 320x240 mode), 128 = 1:1
 VERA_DC0_VSCALE   = $9F2B   ; 64 = 2:1 (good for 320x240 mode), 128 = 1:1
 VERA_DC0_BORDER   = $9F2C   ; holds palette index to use for boarder
 
+VERA_DC1_HSTART   = $9F29   ; Active Display H-Start (9:2)
+VERA_DC1_HSTOP    = $9F2A   ; Active Display H-Stop (9:2)
+VERA_DC1_VSTART   = $9F2B   ; Active Display V-Start (8:1)
+VERA_DC1_VSTOP    = $9F2C   ; Active Display V-Stop (8:1)
+
 VERA_DC2_FX_CTRL  = $9F29   ; b7    Transparent Writes
                             ; b6    Cache Write Enable
                             ; b5    Cache Fill Enable

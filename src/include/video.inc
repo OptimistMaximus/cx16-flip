@@ -47,8 +47,13 @@ LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
 LAYER_0_ACTIVE   := $00       ; middle byte of 17-bit address
 LAYER_1_ACTIVE   := $F8       ; middle byte of 17-bit address
 
+.ifdef ENABLE_SPRITES
 LAYER_0_ENABLED  := %01010001 ; sprites on, layer 1 off, layer 0 on, VGA
 LAYER_1_ENABLED  := %01100001 ; sprites on, layer 1 on, layer 0 off, VGA
+.else
+LAYER_0_ENABLED  := %00010001 ; layer 1 off, layer 0 on, VGA
+LAYER_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
+.endif
 
 ;==============================================================================
 ; SET_VRAM_DATA0_FOR_PALETTE_BUFFER

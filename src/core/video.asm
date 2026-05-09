@@ -12,6 +12,7 @@
 .include "../include/kernal.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
+.include "../include/zeropage.inc"
 
 ;==============================================================================
 ; print byte as hex text to screen (assuming text mode)
@@ -48,10 +49,7 @@
 ; Initialize VERA conditions (do this once at startup, after reading and
 ; validating the header).  We begin with Layer 1 "active", in that that's
 ; where we buffer the first image, while Layer 0 remains the one being shown
-; on-screen,
-;
-; TODO: create sprites, enable sprites here, and  use them to cover up the
-;       pixelated mess that will be shown below the 320x200 line.
+; on-screen
 ;==============================================================================
 .proc func_vera_setup: near
    U8_COPY_IMM ZP8_activeLayer,   LAYER_1_ACTIVE
@@ -67,6 +65,16 @@
    U8_COPY_IMM VERA_L0_HSCROLL_H, $00              ; Palette Offset 0
    U8_COPY_IMM VERA_L1_HSCROLL_L, $00              ; (unused)
    U8_COPY_IMM VERA_L1_HSCROLL_H, $00              ; Palette Offset 0
+
+.ifndef ENABLE_SPRITES  
+   U8_COPY_IMM VERA_CTRL,         $02              ; DCSEL=1
+   U8_COPY_IMM VERA_DC1_HSTART,   (0 >> 2)         ; These next 4 values are
+   U8_COPY_IMM VERA_DC1_HSTOP,    (640 >> 2)       ; all based on 640x480
+   U8_COPY_IMM VERA_DC1_VSTART,   (0 >> 1)         ; regardless of screen mode
+   U8_COPY_IMM VERA_DC1_VSTOP,    (396 >> 1)       ; i.e. use 396 for 198
+.endif
+      
+   U16_STZ CX16_API_R0                             ; use default driver
    jmp KERNAL_GRAPH_INIT
 .endproc
 
@@ -156,7 +164,9 @@
 .endproc
 
 .proc func_register_sprites: near
-
+.ifndef ENABLE_SPRITES
+   rts
+.endif
    xpos = ZP_VOLATILE_AB
    ypos = ZP_VOLATILE_CD
 
