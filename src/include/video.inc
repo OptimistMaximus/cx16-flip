@@ -37,7 +37,7 @@
 ;##############################################################################
 STAGE_0_ADDRESS  := $00000    ; $00000 to $0F7FF is stage 0 (320x198)
 STAGE_1_ADDRESS  := $0F800    ; $0F800 to $1EFFF is stage 1 (320x198)
-SPRITE_DATA      := $1F200    ; $1F200 to $1F3FF one sprite ( 32x32 )
+UNUSED_ADDRESS   := $1F000    ; $1F000 to $1F3FF
 PALETTE_BUFFER   := $1F400    ; $1F400 to $1F7FF
 
 STAGE_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
@@ -46,13 +46,8 @@ STAGE_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
 STAGE_0_ACTIVE   := $00       ; middle byte of 17-bit address
 STAGE_1_ACTIVE   := $F8       ; middle byte of 17-bit address
 
-.ifdef ENABLE_SPRITES
-STAGE_0_ENABLED  := %01010001 ; sprites on, layer 1 off, layer 0 on, VGA
-STAGE_1_ENABLED  := %01100001 ; sprites on, layer 1 on, layer 0 off, VGA
-.else
 STAGE_0_ENABLED  := %00010001 ; layer 1 off, layer 0 on, VGA
 STAGE_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
-.endif
 
 ;==============================================================================
 ; SET_VRAM_DATA0_FOR_PALETTE_BUFFER

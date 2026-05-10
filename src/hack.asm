@@ -76,6 +76,19 @@ VERA_DC1_VSTOP    := $9F2C   ; Active Display V-Stop (8:1)
 .endmacro
 
    ;----------------------------------------------------------
+   ; initialize graphics
+   ;----------------------------------------------------------
+.ifdef USE_GRAPH_INIT
+   stz CX16_API_R0+0           ; default driver (0)
+   stz CX16_API_R0+1
+   jsr KERNAL_GRAPH_INIT
+.else
+   clc                         ; clear means "set"
+   lda #$80                    ; 320x240@256C Layer 0
+   jsr KERNAL_SCREEN_MODE
+.endif
+
+   ;----------------------------------------------------------
    ; establish VERA DCSEL=0 stuff
    ;----------------------------------------------------------
    stz VERA_CTRL
@@ -114,19 +127,6 @@ VERA_DC1_VSTOP    := $9F2C   ; Active Display V-Stop (8:1)
    sta VERA_DC1_VSTOP
 .endif
 
-   ;----------------------------------------------------------
-   ; initialize graphics
-   ;----------------------------------------------------------
-.ifdef USE_GRAPH_INIT
-   stz CX16_API_R0+0           ; default driver (0)
-   stz CX16_API_R0+1
-   jsr KERNAL_GRAPH_INIT
-.else
-   clc                         ; clear means "set"
-   lda #$80                    ; 320x240@256C Layer 0
-   jsr KERNAL_SCREEN_MODE
-.endif
-
    SET_COLOR 2
    DRAW_RECT $0000, $0000, $20, $20
    DRAW_RECT $0020, $0020, $20, $20
@@ -143,4 +143,21 @@ VERA_DC1_VSTOP    := $9F2C   ; Active Display V-Stop (8:1)
    DRAW_RECT $0100, $00C0, $20, $20
    DRAW_RECT $0120, $00A0, $20, $20 ; should kiss right
 
+   
+;   lda #$02
+;   sta VERA_CTRL
+;   lda #30
+;   sta VERA_DC1_VSTART
+;   lda #210
+;   sta VERA_DC1_VSTOP
+;   stz VERA_CTRL
+;
+;   lda #$02
+;   sta VERA_CTRL
+;   lda #40
+;   sta VERA_DC1_HSTART
+;   lda #120
+;   sta VERA_DC1_HSTOP
+;   stz VERA_CTRL
+   
    rts

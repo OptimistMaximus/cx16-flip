@@ -10,7 +10,6 @@
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore
-.import func_register_sprites
 .import func_slurp_header
 .import func_slurp_chunk
 
@@ -84,7 +83,6 @@ start:
    jsr func_setup_irq_handler
 
    DEBUG_TIMER_START
-   jsr func_register_sprites
    jsr func_vera_setup
 
    jsr sub_establish_filename

@@ -3,8 +3,6 @@
 
 .include "./kernal.inc"
 
-ENABLE_SPRITES = 1
-
 ; IDEAS:
 ;
 ; 114,286 CPU cycles occur during 1/70  of a second at 8 MHz.
