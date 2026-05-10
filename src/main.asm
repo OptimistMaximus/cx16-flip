@@ -1,5 +1,7 @@
 .org $080D            ; specify where in memory our code will live
 
+.import func_setup_irq_handler
+.import func_restore_irq_handler
 .import func_find_arg
 .import func_open_inputstream
 .import func_close_inputstream
@@ -17,6 +19,7 @@
 .segment "ONCE"
 .segment "CODE"
 
+.include "include/debug.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"
 .include "include/math.inc"
@@ -27,6 +30,10 @@
    jmp start
 
 default_image_filename: .byte "image.fli,r"
+
+.ifdef DEBUG_TIMER_ENABLED
+debug_timer_value: .word $0000
+.endif
 
 ;------------------------------------------------------------------------------
 ; PRINT
@@ -68,17 +75,17 @@ default_image_filename: .byte "image.fli,r"
    PRINT PETSCII_CLOSE_SQUARE
    PRINT PETSCII_RETURN
    PRINT PETSCII_RETURN
+   jsr func_restore_irq_handler
    rts
 .endmacro
 
 start:
 
+   jsr func_setup_irq_handler
+
+   DEBUG_TIMER_START
    jsr func_register_sprites
    jsr func_vera_setup
-
-   ldx #2
-big_loop:
-   phx
 
    jsr sub_establish_filename
    jsr func_open_inputstream
@@ -110,16 +117,14 @@ big_loop:
 
    jsr func_close_inputstream
 
-   plx
-   dex
-   beq @big_loop_done
-   jmp big_loop
-@big_loop_done:
-
+   DEBUG_TIMER_READ debug_timer_value
+   
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)
 
    jsr func_vera_restore        ; restore vera to text mode
+   jsr func_restore_irq_handler
+   DEBUG_TIMER_DUMP debug_timer_value
    RTS_NO_DETAIL RC_SUCCESS
 
 ;------------------------------------------------------------------------------

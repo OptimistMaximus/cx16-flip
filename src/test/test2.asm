@@ -332,18 +332,18 @@ test_arg_expect_bb: .asciiz "bb"
    ;---------------------------------------------------------------------------
    ; TEST 35 - handle_byte_run
    ;
-   ; This test zeros out the first 6 bytes of both the layer 0 and layer 1
-   ; bitmaps, then establishes layer 0 as active (so we expect updates to
-   ; happen to layer 1).
+   ; This test zeros out the first 6 bytes of both the stage 0 and stage 1
+   ; bitmaps, then establishes stage 0 as active (so we expect updates to
+   ; happen to stage 1).
    ;
    ; The simulated data represents a height 1 image, so establish height 1
    ; before processing the input stream.
    ;
-   ; Expect Layer 0 to be untouched, Layer 1 to have the byte run, and the
-   ; layer switched from 0 to 1.
+   ; Expect Stage 0 to be untouched, Stage 1 to have the byte run, and the
+   ; stage switched from 0 to 1.
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
-   U8_COPY_IMM ZP8_activeLayer, $F8 ; establish layer 1 as active
+   U8_COPY_IMM ZP8_activeStage, $F8 ; establish stage 1 as active
    U8_COPY_IMM ZP8_height, 1        ; input data represents 1 line
 
    OPEN_INPUTSTREAM fn_byterun
@@ -361,7 +361,7 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprites, L1, L0
 .endif
 
-   ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeLayer
+   ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeStage
    SET_VERA_ADDR24_IMM $00, $0F800, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3521, $BB ; pixel 1
@@ -386,7 +386,7 @@ test_arg_expect_bb: .asciiz "bb"
    ; line 5 -> 0640 + F800 = 0FE40   <--- leave delta
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
-   U8_COPY_IMM ZP8_activeLayer, $00 ; establish layer 0 as active
+   U8_COPY_IMM ZP8_activeStage, $00 ; establish stage 0 as active
 
    OPEN_INPUTSTREAM fn_deltafli
    jsr handle_delta_fli
@@ -403,7 +403,7 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprites, L1, L0
 .endif
 
-   ASSERT_VAR_U8_EQUALS_IMM $3602, $F8, ZP8_activeLayer
+   ASSERT_VAR_U8_EQUALS_IMM $3602, $F8, ZP8_activeStage
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0

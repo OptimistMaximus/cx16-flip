@@ -198,6 +198,24 @@
 .endmacro
 
 ;==============================================================================
+; U16_ADD_A
+;
+; Add into a target variable the value in .A
+;
+; @param targetAddr the target value's address
+;
+; Note, this macro will clear the carry bit before adding.
+;==============================================================================
+.macro U16_ADD_A targetAddr
+   clc
+   adc targetAddr+0
+   sta targetAddr+0
+   lda targetAddr+1
+   adc #0
+   sta targetAddr+1
+.endmacro
+
+;==============================================================================
 ; U16_INC
 ;
 ; Increment the value in a variable

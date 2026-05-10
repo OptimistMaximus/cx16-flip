@@ -6,23 +6,22 @@
 .include "./vera.inc"
 
 ;##############################################################################
-; Due to VERA limitations, bitmap layers must start at an $800 aligned address.
-; Part of the rendering trick used by this player is to have two bitmap layers
-; that we keep flipping between (showing one while staging data into the other)
+; Due to VERA limitations, bitmap "tilebase" must start at an $800 aligned
+; address. Part of the rendering trick used by this player is to have two areas
+; of VRAM where the image is staged, and we keep flipping between them
+; (showing one while staging data into the other)
 ;
-; $00000-$0F800 will be Layer 0.
-; $0F800-$1F000 will be Layer 1.
+; $00000-$0F800 will be Stage 0.
+; $0F800-$1F000 will be Stage 1.
 ;
-; Thus, each layer can hold a 320x198 image. We'll need to cut corners a bit,
-; or rather cut lines. As a trick for now, the first and last lines of every
-; image will be parsed but not rendered to screen.
+; Thus, each stage can hold a 320x198 image. We'll need to cut corners a bit,
+; or rather cut lines. FLI images always seem to be 320x200, so we should cut
+; either the first two, the last two, or the first and last.
 ;
 ; Ideally we'd do the following:
 ; Height 200 ($C8) -> skip first and last lines
 ; Height 199 ($C7) -> skip first line
 ;                  -> else, don't skip any lines
-;
-; But for this first release, it will just always skip the first and last.
 ;
 ; Note that the low and high bytes of both addresses are always zero.  Only
 ; the middle byte is different.  We'll use this to our advantage in code that
@@ -31,28 +30,28 @@
 ; is active by just storing its middle byte.  A value of $00 means Layer 0
 ; is active.  The non-zero value means Layer 1 is active.
 ;
-; TODO: consider maybe we can just have a single always-active layer at
+; TODO: consider maybe we can just have a single always-active stage at
 ; $00000-$12C00 that we just update as we go. MAYBE we can update fast enough
 ; that it isn't too crappy-looking. Probably not, so this is just a curiosity
 ; to be explored at a later date.
 ;##############################################################################
-LAYER_0_ADDRESS  := $00000    ; $00000 to $0F7FF is layer 0 (320x198)
-LAYER_1_ADDRESS  := $0F800    ; $0F800 to $1EFFF is layer 1 (320x198)
+STAGE_0_ADDRESS  := $00000    ; $00000 to $0F7FF is stage 0 (320x198)
+STAGE_1_ADDRESS  := $0F800    ; $0F800 to $1EFFF is stage 1 (320x198)
 SPRITE_DATA      := $1F200    ; $1F200 to $1F3FF one sprite ( 32x32 )
 PALETTE_BUFFER   := $1F400    ; $1F400 to $1F7FF
 
-LAYER_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
-LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
+STAGE_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
+STAGE_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
 
-LAYER_0_ACTIVE   := $00       ; middle byte of 17-bit address
-LAYER_1_ACTIVE   := $F8       ; middle byte of 17-bit address
+STAGE_0_ACTIVE   := $00       ; middle byte of 17-bit address
+STAGE_1_ACTIVE   := $F8       ; middle byte of 17-bit address
 
 .ifdef ENABLE_SPRITES
-LAYER_0_ENABLED  := %01010001 ; sprites on, layer 1 off, layer 0 on, VGA
-LAYER_1_ENABLED  := %01100001 ; sprites on, layer 1 on, layer 0 off, VGA
+STAGE_0_ENABLED  := %01010001 ; sprites on, layer 1 off, layer 0 on, VGA
+STAGE_1_ENABLED  := %01100001 ; sprites on, layer 1 on, layer 0 off, VGA
 .else
-LAYER_0_ENABLED  := %00010001 ; layer 1 off, layer 0 on, VGA
-LAYER_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
+STAGE_0_ENABLED  := %00010001 ; layer 1 off, layer 0 on, VGA
+STAGE_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
 .endif
 
 ;==============================================================================
@@ -103,13 +102,13 @@ LAYER_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
    U16_ASL resultAddr
    U16_ADD_VAR resultAddr, scratchAddr
 
-   clc                      ; Now add the active layer's bitmap address.
+   clc                      ; Now add the active stage's bitmap address.
    lda resultAddr+1         ; The lower byte is always zero, so no need to
-   adc ZP8_activeLayer      ; add anything. The middle byte is tracked in
-   sta resultAddr+1         ; ZP_activeLayer, so we must add it. Then carry
+   adc ZP8_activeStage      ; add anything. The middle byte is tracked in
+   sta resultAddr+1         ; ZP8_activeStage, so we must add it. Then carry
    lda resultAddr+2         ; into the high byte. This is a bit wasteful for
-   adc #0                   ; layer 0 but doing this unconditionally keeps
-   sta resultAddr+2         ; each layer's processing time consistent.
+   adc #0                   ; stage 0 but doing this unconditionally keeps
+   sta resultAddr+2         ; each stage's processing time consistent.
 .endmacro
 
 ;==============================================================================
@@ -117,7 +116,7 @@ LAYER_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
 ;==============================================================================
 .macro CALC_VRAM_OFFSET_FOR_FULL resultAddr
    stz resultAddr+0
-   lda ZP8_activeLayer
+   lda ZP8_activeStage
    sta resultAddr+1
    stz resultAddr+2
 .endmacro
