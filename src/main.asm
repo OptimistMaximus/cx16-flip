@@ -118,7 +118,7 @@ start:
    jsr func_close_inputstream
 
    DEBUG_TIMER_READ debug_timer_value
-   
+
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)
 

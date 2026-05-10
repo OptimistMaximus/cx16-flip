@@ -22,7 +22,7 @@
 ;-----------------------------------------------------------------------------
 ; debug_print_istring
 ;
-; @param inlined, for example 
+; @param inlined, for example
 ;
 ;           jsr debug_print_istring
 ;           .asciiz "hello"

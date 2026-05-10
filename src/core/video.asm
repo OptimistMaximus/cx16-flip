@@ -66,14 +66,14 @@
    U8_COPY_IMM VERA_L1_HSCROLL_L, $00              ; (unused)
    U8_COPY_IMM VERA_L1_HSCROLL_H, $00              ; Palette Offset 0
 
-.ifndef ENABLE_SPRITES  
+.ifndef ENABLE_SPRITES
    U8_COPY_IMM VERA_CTRL,         $02              ; DCSEL=1
    U8_COPY_IMM VERA_DC1_HSTART,   (0 >> 2)         ; These next 4 values are
    U8_COPY_IMM VERA_DC1_HSTOP,    (640 >> 2)       ; all based on 640x480
    U8_COPY_IMM VERA_DC1_VSTART,   (0 >> 1)         ; regardless of screen mode
    U8_COPY_IMM VERA_DC1_VSTOP,    (396 >> 1)       ; i.e. use 396 for 198
 .endif
-      
+
    U16_STZ CX16_API_R0                             ; use default driver
    jmp KERNAL_GRAPH_INIT
 .endproc

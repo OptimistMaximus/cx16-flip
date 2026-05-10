@@ -36,7 +36,7 @@
 .endmacro
 
 ;==============================================================================
-; U16_STACK_PULL_RETURN_ADDR_INTO_INLINED_ARG_ADDR 
+; U16_STACK_PULL_RETURN_ADDR_INTO_INLINED_ARG_ADDR
 ;
 ; This pulls 2 bytes off the stack assuming they are the return address of the
 ; subroutine you're in. Then it adds 1 to account for the 6502 oddity of how it
@@ -91,7 +91,7 @@
 ;==============================================================================
 .macro U16_STACK_PUSH_RETURN_ADDR_FROM_INLINED_ARG_ADDR sourceAddr
    dey                ; subtract 1 now, when it's convenient and efficient
-   tya                ;  
+   tya                ;
    clc                ; clear carry for upcoming add
    adc sourceAddr+0   ; add the low byte of the inlined arg address
    sta sourceAddr+0   ; then squirrel it away for later

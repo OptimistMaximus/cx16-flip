@@ -271,7 +271,7 @@ test_arg_expect_bb: .asciiz "bb"
    ; COLOR2.BIN tests that 256 packets of copy  count 1 works fine. This is a
    ; ridiculous edge case that probably no encoder would use, but it's legal.
    ;---------------------------------------------------------------------------
-   
+
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_64
@@ -354,7 +354,7 @@ test_arg_expect_bb: .asciiz "bb"
    stz VERA_CTRL                        ; assert that we switched layers
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
-   
+
 .ifdef ENABLE_SPRITES
    ASSERT_A_EQUALS_IMM $3501, %01100000 ; then verify sprites, L1, L0
 .else
