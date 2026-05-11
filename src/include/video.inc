@@ -39,8 +39,8 @@
 ;##############################################################################
 STAGE_0_ADDRESS  := $00000    ; $00000 to $0F7FF is stage 0 (320x198)
 STAGE_1_ADDRESS  := $0F800    ; $0F800 to $1EFFF is stage 1 (320x198)
-UNUSED_ADDRESS   := $1F000    ; $1F000 to $1F3FF
-PALETTE_BUFFER   := $1F400    ; $1F400 to $1F7FF
+UNUSED_ADDRESS   := $1F000    ; $1F000 to $1F6FF
+PALETTE_BUFFER   := $1F400    ; $1F700 to $1F8FF (256 colors at 2 bytes each)
 
 STAGE_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
 STAGE_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
