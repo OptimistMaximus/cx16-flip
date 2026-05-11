@@ -49,74 +49,64 @@ STAGE_1_ACTIVE   := $F8       ; middle byte of 17-bit address
 STAGE_0_ENABLED  := %00010001 ; layer 1 off, layer 0 on, VGA
 STAGE_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
 
-;==============================================================================
-; SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-;==============================================================================
-.macro SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-   SET_VERA_ADDR24_IMM $00, PALETTE_BUFFER, $10
+.macro ADVANCE_LINE_FOR_ACTIVE_BUFFERING
+   U24_ADD_IMM ZP24_vramOffset, 320
+   SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
 .endmacro
 
-;==============================================================================
-; CALC_VRAM_OFFSET
-;
-; This is a special optimization to calculate a VRAM offset in 320x240 mode
-; where the line number is less than 204. This means the calculated result will
-; be within the 16-bit range, so we can save a few cycles due to not worrying
-; about the most significant byte (it can be unconditionally forced to zero)
-;
-; @param  resultAddr  where to store the 24-bit result
-; @param  lineAddr    where the line number is (having value 0-203)
-; @param  scratchAddr where it's safe to temporarily store a 16-bit value
-;
-; The optimization here is to store the line number into the 24-bit result,
-; then multiply by 320 by adding the result of the line number multiplied by
-; 64 plus the line number multiplied by 256. Multiplying by 64 is just six
-; left-shifts, so we'll do that and squirrel away the result into our scratch
-; area. Then do two more shifts so that the result now represents the value
-; multiplied by 256. Then add in the squirreled away 64x value.
-;
-; It is tempting to do a quick check for line 0, in which case we can skip all
-; the boring shifts and adds, but it is assumed this macro will get called in
-; situations where line 0 is as likely to be passed in as any other line. So
-; we don't want to incur the 2 or 3 cycle penalty 100% of the time only to
-; save some cycles 1/204th of the time.
-;==============================================================================
-.macro CALC_VRAM_OFFSET_FOR_DELTA resultAddr, lineAddr, scratchAddr
-   lda lineAddr
-   sta resultAddr+0
-   stz resultAddr+1
-   stz resultAddr+2
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_COPY_VAR scratchAddr, resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ADD_VAR resultAddr, scratchAddr
-
-   clc                      ; Now add the active stage's bitmap address.
-   lda resultAddr+1         ; The lower byte is always zero, so no need to
-   adc ZP8_activeStage      ; add anything. The middle byte is tracked in
-   sta resultAddr+1         ; ZP8_activeStage, so we must add it. Then carry
-   lda resultAddr+2         ; into the high byte. This is a bit wasteful for
-   adc #0                   ; stage 0 but doing this unconditionally keeps
-   sta resultAddr+2         ; each stage's processing time consistent.
+.macro INITIALIZE_BULK_VRAM_COPY targetAddr, sourceAddr
+.ifdef ENABLE_FAST_CACHE_WRITE
+   SET_VERA_ADDR24_IMM $00, sourceAddr, $10
+   SET_VERA_ADDR24_IMM $01, targetAddr, $30
+   lda #%00000100 ; DCSEL=2
+   sta VERA_CTRL
+   lda #%01100000 ; b6 cache write, b5 cache fill
+   tsb VERA_DC2_FX_CTRL
+.else
+   SET_VERA_ADDR24_IMM $00, sourceAddr, $10
+   SET_VERA_ADDR24_IMM $01, targetAddr, $10
+.endif
 .endmacro
 
-;==============================================================================
-; CALC_VRAM_OFFSET_FOR_FULL
-;==============================================================================
-.macro CALC_VRAM_OFFSET_FOR_FULL resultAddr
-   stz resultAddr+0
-   lda ZP8_activeStage
-   sta resultAddr+1
-   stz resultAddr+2
+.macro INTERNAL_MACRO_FOR_INNER_BATCH
+.ifdef ENABLE_FAST_CACHE_WRITE
+   lda VERA_DATA0
+   lda VERA_DATA0
+   lda VERA_DATA0
+   lda VERA_DATA0
+   stz VERA_DATA1
+.else
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+.endif
+.endmacro
+
+.macro EXECUTE_BULK_VRAM_COPY outerCount, innerCount
+   ldx #outerCount
+@bulk_vram_copy_outer_loop:
+   ldy #(innerCount / 1)
+@bulk_vram_copy_inner_loop:
+   INTERNAL_MACRO_FOR_INNER_BATCH
+   dey
+   bne @bulk_vram_copy_inner_loop
+   dex
+   bne @bulk_vram_copy_outer_loop
 .endmacro
 
 
-
+.macro FINALIZE_BULK_VRAM_COPY
+.ifdef ENABLE_FAST_CACHE_WRITE
+   lda #%00000100 ; DCSEL=2
+   sta VERA_CTRL
+   lda #%01100000 ; b6 cache write, b5 cache fill
+   trb VERA_DC2_FX_CTRL
+.endif
+.endmacro
 
 .endif

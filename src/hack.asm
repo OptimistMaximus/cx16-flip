@@ -143,7 +143,7 @@ VERA_DC1_VSTOP    := $9F2C   ; Active Display V-Stop (8:1)
    DRAW_RECT $0100, $00C0, $20, $20
    DRAW_RECT $0120, $00A0, $20, $20 ; should kiss right
 
-   
+
 ;   lda #$02
 ;   sta VERA_CTRL
 ;   lda #30
@@ -159,5 +159,5 @@ VERA_DC1_VSTOP    := $9F2C   ; Active Display V-Stop (8:1)
 ;   lda #120
 ;   sta VERA_DC1_HSTOP
 ;   stz VERA_CTRL
-   
+
    rts

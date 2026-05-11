@@ -169,4 +169,31 @@ VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attrs for Sprite 2, etc
     sta VERA_ADDRx_H
 .endmacro
 
+;------------------------------------------------------------------------------
+; INC_VERA_ADDR24_BY_320
+;
+; Advance VERA address by 320, relative to where it was last set.  Note that
+; the VERA keeps these registers "fresh" so to speak, per its auto-incrementer.
+; So if you set it to $00000 and do two VRAM accesses (at auto-increment 1)
+; then when you call this it will effectively set the value to 322.
+;
+; IDEA: use this in my GIF program when drawing a box, could be very fast.
+;
+;------------------------------------------------------------------------------
+.macro INC_VERA_ADDR24_BY_320 controlValue, optionValue
+   lda #controlValue
+   sta VERA_CTRL
+   clc
+   lda VERA_ADDRx_L
+   adc #$40
+   sta VERA_ADDRx_L
+   lda VERA_ADDRx_M
+   adc #$01
+   sta VERA_ADDRx_M
+   lda VERA_ADDRx_H
+   adc #$00
+   ora #optionValue
+   sta VERA_ADDRx_H
+.endmacro
+
 .endif

@@ -65,40 +65,26 @@ test_arg_expect_bb: .asciiz "bb"
    jsr func_find_arg
 .endmacro
 
-; for unit tests we need to preserve .A .X .Y
 .macro OPEN_INPUTSTREAM_R filenameLabel, replacementOffset, replacementChar
-   pha
-      phx
-         phy
-            U8_COPY_IMM filenameLabel+replacementOffset, replacementChar
-            ldx #<filenameLabel
-            ldy #>filenameLabel
-            jsr func_open_inputstream
-         ply
-      plx
-   pla
+   U8_COPY_IMM filenameLabel+replacementOffset, replacementChar
+   ldx #<filenameLabel
+   ldy #>filenameLabel
+   jsr func_open_inputstream
 .endmacro
 
 .macro OPEN_INPUTSTREAM filenameLabel
-   pha
-      phx
-         phy
-            ldx #<filenameLabel
-            ldy #>filenameLabel
-            jsr func_open_inputstream
-         ply
-      plx
-   pla
+   ldx #<filenameLabel
+   ldy #>filenameLabel
+   jsr func_open_inputstream
 .endmacro
 
-; for unit tests we need to preserve .A .X .Y
 .macro CLOSE_INPUTSTREAM
-   pha
-      phx
-         phy
-            jsr func_close_inputstream
-         ply
-      plx
+   pha                                  ; preserve .A .X .Y since we
+      phx                               ; often call this after calling
+         phy                            ; a subroutine that was reading
+            jsr func_close_inputstream  ; a file, and we need to close
+         ply                            ; the stream before asserting the
+      plx                               ; subroutine's side-effects
    pla
 .endmacro
 
@@ -277,7 +263,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_64
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3400, RC_SUCCESS
-   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3401, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3402, $0101 ; color 1 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3403, $0EA7 ; color 2
@@ -291,7 +277,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3410, RC_SUCCESS
-   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3411, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3412, $0101 ; color 1 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3413, $0321 ; color 2
@@ -305,7 +291,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3420, RC_SUCCESS
-   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    lda #0
 @test32_copy_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3421, $0111  ; color 0,2,4,etc
@@ -320,7 +306,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3430, RC_SUCCESS
-   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    lda #0
 @test32_verify_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3431, $0111  ; color 0,2,4,etc
@@ -345,7 +331,6 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_zero_bitmaps
    U8_COPY_IMM ZP8_activeStage, $F8 ; establish stage 1 as active
    U8_COPY_IMM ZP8_height, 1        ; input data represents 1 line
-
    OPEN_INPUTSTREAM fn_byterun
    jsr handle_byte_run
    CLOSE_INPUTSTREAM

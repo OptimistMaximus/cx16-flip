@@ -1,9 +1,9 @@
 .export func_vera_setup
 .export func_vera_restore
-.export func_vera_flip_layer
-.export func_vera_copy_layer
+.export func_vera_flip_stage
 .export func_print_hex
 .export func_load_palette
+.export func_prep_for_active_buffering
 
 .segment "CODE"
 
@@ -51,30 +51,30 @@
 ; on-screen
 ;==============================================================================
 .proc func_vera_setup: near
+
+   stz VERA_CTRL                                   ; DCSEL=0
+   stz VERA_DC0_VIDEO                              ; disable VERA during setup
+
    U16_STZ CX16_API_R0                             ; use default driver
    jsr KERNAL_GRAPH_INIT
 
    U8_COPY_IMM ZP8_activeStage,   STAGE_1_ACTIVE
    U8_COPY_IMM VERA_CTRL,         $00              ; DCSEL=0
-   U8_COPY_IMM VERA_DC0_VIDEO,    STAGE_0_ENABLED
    U8_COPY_IMM VERA_DC0_HSCALE,   64               ; 640 -> 320
    U8_COPY_IMM VERA_DC0_VSCALE,   64               ; 480 -> 240
    U8_COPY_IMM VERA_L0_CONFIG,    %00000111        ; bitmap mode, 8bpp color
-   U8_COPY_IMM VERA_L1_CONFIG,    %00000111        ; bitmap mode, 8bpp color
    U8_COPY_IMM VERA_L0_TILEBASE,  STAGE_0_TILEBASE
-   U8_COPY_IMM VERA_L1_TILEBASE,  STAGE_1_TILEBASE
    U8_COPY_IMM VERA_L0_HSCROLL_L, $00              ; (unused)
    U8_COPY_IMM VERA_L0_HSCROLL_H, $00              ; Palette Offset 0
-   U8_COPY_IMM VERA_L1_HSCROLL_L, $00              ; (unused)
-   U8_COPY_IMM VERA_L1_HSCROLL_H, $00              ; Palette Offset 0
 
-.ifndef ENABLE_SPRITES
    U8_COPY_IMM VERA_CTRL,         $02              ; DCSEL=1
    U8_COPY_IMM VERA_DC1_HSTART,   (0 >> 2)         ; These next 4 values are
    U8_COPY_IMM VERA_DC1_HSTOP,    (640 >> 2)       ; all based on 640x480
    U8_COPY_IMM VERA_DC1_VSTART,   (0 >> 1)         ; regardless of screen mode
    U8_COPY_IMM VERA_DC1_VSTOP,    (396 >> 1)       ; i.e. use 396 for 198
-.endif
+
+   stz VERA_CTRL                                   ; DCSEL=0
+   U8_COPY_IMM VERA_DC0_VIDEO, STAGE_0_ENABLED     ; enable VERA after setup
 
    rts
 .endproc
@@ -94,71 +94,99 @@
 ; This loads the 512 byte palette buffer into VERA's actual palette
 ;==============================================================================
 .proc func_load_palette: near
-   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-   SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE, $10
-   ldy #0
-@loop:
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   iny
-   bne @loop
+   INITIALIZE_BULK_VRAM_COPY VERA_ADDR_PALETTE, PALETTE_BUFFER
+   EXECUTE_BULK_VRAM_COPY 1, 128 ; 128 * 4 bytes in 512 byte palette
+   FINALIZE_BULK_VRAM_COPY
    rts
 .endproc
 
 ;==============================================================================
-; func_vera_flip_layer
+; PREP_VERA_FOR_ACTIVE_BUFFERING
+;
+; This is a special optimization to calculate a VRAM offset in 320x240 mode
+; where the line number is less than 204. This means the calculated result will
+; be within the 16-bit range, so we can save a few cycles due to not worrying
+; about the most significant byte (it can be unconditionally forced to zero)
+;
+; @param  .A the line number (having value 0-197)
+;
+; The optimization here is to store the line number into the 24-bit result,
+; then multiply by 320 by adding the result of the line number multiplied by
+; 64 plus the line number multiplied by 256. Multiplying by 64 is just six
+; left-shifts, so we'll do that and squirrel away the result into our scratch
+; area. Then do two more shifts so that the result now represents the value
+; multiplied by 256. Then add in the squirreled away 64x value.
+;
+; It is tempting to do a quick check for line 0, in which case we can skip all
+; the boring shifts and adds, but it is assumed this macro will get called in
+; situations where line 0 is as likely to be passed in as any other line. So
+; we don't want to incur the 2 or 3 cycle penalty 100% of the time only to
+; save some cycles 1/204th of the time.
+;
+; Also, although it is VERY tempting to make a special optimization for full
+; frames (where the line is always zero), we do not have such a macro if only
+; because full frames are presumed to be exceedingly rare in a FLI, so from a
+; code maintenance standpoint, having a super-special optimization for an
+; extremely rare case isn't worth it.
+;==============================================================================
+.proc func_prep_for_active_buffering
+   scratchAddr = ZP_VOLATILE_EF
+
+   sta ZP24_vramOffset+0    ; .A is now in the 24-bit result, for shifting
+   stz ZP24_vramOffset+1
+   stz ZP24_vramOffset+2
+   U16_ASL ZP24_vramOffset
+   U16_ASL ZP24_vramOffset
+   U16_ASL ZP24_vramOffset
+   U16_ASL ZP24_vramOffset
+   U16_ASL ZP24_vramOffset
+   U16_ASL ZP24_vramOffset
+   U16_COPY_VAR scratchAddr, ZP24_vramOffset
+   U16_ASL ZP24_vramOffset
+   U16_ASL ZP24_vramOffset
+   U16_ADD_VAR ZP24_vramOffset, scratchAddr
+   clc                      ; Now add the active stage's bitmap address.
+   lda ZP24_vramOffset+1    ; The lower byte is always zero, so no need to
+   adc ZP8_activeStage      ; add anything. The middle byte is tracked in
+   sta ZP24_vramOffset+1    ; ZP8_activeStage, so we must add it. Then carry
+   lda ZP24_vramOffset+2    ; into the high byte. This is a bit wasteful for
+   adc #0                   ; stage 0 but doing this unconditionally keeps
+   sta ZP24_vramOffset+2    ; each stage's processing time consistent.
+
+   SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
+   rts
+.endproc
+
+;==============================================================================
+; func_vera_flip_stage
 ;
 ; If Stage 0 is active, that means we've been buffering to it, so now it is
 ; time to "show" Stage 0, and change the active Stage value so we'll start
 ; buffering to to Stage 1 next.  If Layer 1 then essentially do the opposite.
 ;
+; After establishing the new active stage, it is now safe to prime the freshly
+; active stage with what the now-shown stage has, so that relative changes to
+; it (coming up soon) will build off the same base established by the previous
+; active stage.
+;
 ; @effect .X clobbered
 ; @effect .Y clobbered
 ;==============================================================================
-.proc func_vera_flip_layer: near
+.proc func_vera_flip_stage: near
    lda ZP8_activeStage
-   beq @prep_when_0_active
-      ldx #STAGE_1_ENABLED      ; Stage 1 is active, so enable it to show it,
-      ldy #STAGE_0_ACTIVE       ;         and make Stage 0 become active
-      bra @prep_done
-@prep_when_0_active:
-      ldx #STAGE_0_ENABLED      ; Stage 0 is active, so enable it to show it,
-      ldy #STAGE_1_ACTIVE       ;         and make Stage 1 become active
-@prep_done:
-   stz VERA_CTRL                ; Establish DCSEL=0
-   stx VERA_DC0_VIDEO           ; apply control settings
-   sty ZP8_activeStage          ; update who's active
-   rts
-.endproc
-
-.proc func_vera_copy_layer
-   lda ZP8_activeStage
-   beq @copy_layer_source_is_layer_1
-   SET_VERA_ADDR24_IMM $00, STAGE_0_ADDRESS, $10 ; source is stage 0
-   SET_VERA_ADDR24_IMM $01, STAGE_1_ADDRESS, $10 ; target is stage 1
-   bra @copy_layer_source_and_target_established
-@copy_layer_source_is_layer_1:
-   SET_VERA_ADDR24_IMM $00, STAGE_1_ADDRESS, $10 ; source is stage 1
-   SET_VERA_ADDR24_IMM $01, STAGE_0_ADDRESS, $10 ; target is stage 0
-@copy_layer_source_and_target_established:
-
-   ldx #198 ; 198 rows
-@row_loop:
-   ldy #80  ; 320 columns (80 4-byte chunks)
-@column_loop:
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   dey
-   bne @column_loop
-   dex
-   bne @row_loop
+   beq @flip_stage_active_0
+      stz VERA_CTRL
+      U8_COPY_IMM VERA_L0_TILEBASE, STAGE_1_TILEBASE
+      U8_COPY_IMM ZP8_activeStage, STAGE_0_ACTIVE
+      INITIALIZE_BULK_VRAM_COPY STAGE_0_ADDRESS, STAGE_1_ADDRESS
+      bra @flip_done
+@flip_stage_active_0:
+      stz VERA_CTRL
+      U8_COPY_IMM VERA_L0_TILEBASE, STAGE_0_TILEBASE
+      U8_COPY_IMM ZP8_activeStage, STAGE_1_ACTIVE
+      INITIALIZE_BULK_VRAM_COPY STAGE_1_ADDRESS, STAGE_0_ADDRESS
+@flip_done:
+   EXECUTE_BULK_VRAM_COPY 198, 80 ; 198 rows, 80*4 columns
+   FINALIZE_BULK_VRAM_COPY
    rts
 .endproc

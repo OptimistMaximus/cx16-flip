@@ -178,7 +178,7 @@
 ;
 ; This assumes VERA address is established, data channel 0, stride 1
 ;=============================================================================
-.macro ASSERT_VRAM_U8_EQUALS_IMM testId, expectValue, actualAddr
+.macro ASSERT_VRAM_U8_EQUALS_IMM testId, expectValue
    lda VERA_DATA0
    ASSERT_A_EQUALS_IMM testId, expectValue
 .endmacro
@@ -188,7 +188,7 @@
 ;
 ; This assumes VERA address is established, data channel 0, stride 1
 ;=============================================================================
-.macro ASSERT_VRAM_U8_EQUALS_VAR testId, expectAddr, actualAddr
+.macro ASSERT_VRAM_U8_EQUALS_VAR testId, expectAddr
    lda VERA_DATA0
    ASSERT_A_EQUALS_VAR testId, expectAddr
 .endmacro

@@ -2,21 +2,14 @@
 
 .import func_slurp_into_buffer
 .import func_slurp_into_a
-.import func_vera_flip_layer
-.import func_vera_copy_layer
+.import func_vera_flip_stage
+.import func_prep_for_active_buffering
 
 .segment "CODE"
 
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/video.inc"
-
-.macro SLURP_INTO_VAR16 targetAddr
-   jsr func_slurp_into_a
-   sta targetAddr+0
-   jsr func_slurp_into_a
-   sta targetAddr+1
-.endmacro
 
 ; this runs within an .X and .Y loop so it must preserve .X and .Y
 ; It is invoked after having just loaded the byte count into .A
@@ -67,46 +60,40 @@
 
 
 .proc handle_delta_fli: near
+   scratchVar = ZP_VOLATILE_A
 
-   vramOffset = ZP_VOLATILE_ABC
-   copyCount  = ZP_VOLATILE_D
+   lda #4                              ; slurp 2 words: line skip, line count
+   jsr func_slurp_into_buffer
+   lda RAM_VOLATILE_BUF+0              ; .A now holds line skip (0-199)
+   ldx RAM_VOLATILE_BUF+2              ; .X now holds line count (1-200)
 
-   lineSkip   = ZP_VOLATILE_EF        ; for FLI, only low byte is relevant
-   lineCount  = ZP_VOLATILE_GH        ; for FLI, only low byte is relevant
-   scratch    = ZP_VOLATILE_IJ
+   ; TODO: need logic to suppress first and last lines from writing to VERA
 
-   SLURP_INTO_VAR16 lineSkip
-   SLURP_INTO_VAR16 lineCount
+   jsr func_prep_for_active_buffering  ; .A has line skip
 
-   CALC_VRAM_OFFSET_FOR_DELTA vramOffset, lineSkip, scratch
-   SET_VERA_ADDR24_VAR $00, vramOffset, $10
+@line_loop:                            ; .X is the line countdown
 
-   ldx lineCount                      ; .X is the line countdown
-@line_loop:
-
-      jsr func_slurp_into_a           ; packet count
-      tay                             ; .Y is the packet countdown
+      jsr func_slurp_into_a            ; packet count
+      tay                              ; .Y is the packet countdown
       @packet_loop:
          jsr sub_skip_columns
-         jsr func_slurp_into_a        ; byte count
+         jsr func_slurp_into_a         ; byte count
          bit #%10000000
-         beq @process_positive_count  ; i.e. bit 7 was clear
+         beq @process_positive_count   ; i.e. bit 7 was clear
             PROCESS_NEGATIVE_COUNT
             bra @process_count_done
          @process_positive_count:
-            PROCESS_POSITIVE_COUNT copyCount
+            PROCESS_POSITIVE_COUNT scratchVar
          @process_count_done:
        dey
        bne @packet_loop
 
-       U24_ADD_IMM vramOffset, 320    ; advance to the next line
-       SET_VERA_ADDR24_VAR $00, vramOffset, $10
+       ADVANCE_LINE_FOR_ACTIVE_BUFFERING
 
    dex
    bne @line_loop
 
-   jsr func_vera_flip_layer
-   jsr func_vera_copy_layer
+   jsr func_vera_flip_stage
 
    RTS_NO_DETAIL RC_SUCCESS
 .endproc

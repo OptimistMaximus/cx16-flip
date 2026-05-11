@@ -11,7 +11,7 @@
 ;
 ; 297 seventieths = 255 sixtieths
 
-
+; ENABLE_FAST_CACHE_WRITE = 1
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "VOLATILE" VARIABLES
@@ -75,10 +75,11 @@ RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP8_activeStage        := $22
-ZP8_height             := $23
-ZP8_depth              := $24
-ZP8_slurpTracker       := $25
+ZP24_vramOffset        := $22
+ZP8_activeStage        := $25
+ZP8_height             := $26
+ZP8_depth              := $27
+ZP8_slurpTracker       := $28
 
 ZP16_chunkType         := $40
 ZP16_delaySyncs        := $42

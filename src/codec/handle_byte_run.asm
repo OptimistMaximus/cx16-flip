@@ -2,9 +2,8 @@
 
 .import func_slurp_into_buffer
 .import func_slurp_into_a
-.import func_vera_flip_layer
-.import func_vera_copy_layer
-
+.import func_vera_flip_stage
+.import func_prep_for_active_buffering
 
 .segment "CODE"
 
@@ -24,6 +23,7 @@
 .endmacro
 
 ; same comment as for positive count macro
+; @param scratchVar a place to put a temporary 8-bit value
 .macro PROCESS_NEGATIVE_COUNT scratchVar
    eor #$FF ; for negative values, two's compliment gets the absolute value
    inc      ; (unless special case of -128 which an encoder should never do)
@@ -44,11 +44,8 @@
 
 
 .proc handle_byte_run: near
-
-   vramOffset = ZP_VOLATILE_ABC
-   copyCount  = ZP_VOLATILE_D
-   CALC_VRAM_OFFSET_FOR_FULL vramOffset
-   SET_VERA_ADDR24_VAR $00, vramOffset, $10
+   lda #0                             ; full starts at line 0 always
+   jsr func_prep_for_active_buffering
 
    ldx ZP8_height                     ; .X is the line countdown
 @line_loop:
@@ -59,7 +56,7 @@
          jsr func_slurp_into_a        ; byte count
          bit #%10000000
          beq @process_positive_count  ; i.e. bit 7 was clear
-            PROCESS_NEGATIVE_COUNT copyCount
+            PROCESS_NEGATIVE_COUNT ZP_VOLATILE_P
             bra @process_count_done
          @process_positive_count:
             PROCESS_POSITIVE_COUNT
@@ -70,8 +67,7 @@
    dex
    bne @line_loop
 
-   jsr func_vera_flip_layer
-   jsr func_vera_copy_layer
+   jsr func_vera_flip_stage
 
    RTS_NO_DETAIL RC_SUCCESS
 .endproc
