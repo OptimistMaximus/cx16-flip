@@ -59,9 +59,10 @@ test: zzz/TEST.PRG $(TEST_RESOURCES)
 
 run: zzz/MAIN.PRG $(MAIN_RESOURCES)
 	cd zzz && x16emu -run -prg MAIN.PRG
+	ls -l $<
 
 debug: zzz/MAIN.PRG $(MAIN_RESOURCES)
-	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG
+	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG -dump V
 	ls -l $<
 
 clean:

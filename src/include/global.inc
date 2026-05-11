@@ -11,8 +11,6 @@
 ;
 ; 297 seventieths = 255 sixtieths
 
-; ENABLE_FAST_CACHE_WRITE = 1
-
 ;------------------------------------------------------------------------------
 ; GLOBAL "VOLATILE" VARIABLES
 ;

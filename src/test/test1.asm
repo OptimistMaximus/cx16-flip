@@ -107,7 +107,7 @@ u24VeraAddr: .res 3, $00
    ; ADVANCE_LINE_FOR_ACTIVE_BUFFERING
    ; func_vera_flip_stage
    ;---------------------------------------------------------------------------
-   jsr sub_init_stages_quick                       ; first 4 of stages zero'ed
+   jsr sub_init_stages
 
    .scope test12_prep_stage_0                      ; state 0 active
       U8_COPY_IMM ZP8_activeStage, STAGE_0_ACTIVE
@@ -151,33 +151,69 @@ u24VeraAddr: .res 3, $00
       ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
    .endscope
 
+   .scope test12_prep_stage_1                      ; state 1 active
+      U8_COPY_IMM ZP8_activeStage, STAGE_0_ACTIVE
+      lda #0                                       ; prep for line 0
+      jsr func_prep_for_active_buffering
+      lda VERA_DATA0                               ; burn
+      lda #$11                                     ; write $11,$11
+      sta VERA_DATA0
+      sta VERA_DATA0
+
+      ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 1 skipped
+      ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 2
+      lda VERA_DATA0
+      lda #$22                                     ; burn
+      sta VERA_DATA0                               ; write $22,$22
+      sta VERA_DATA0
+
+      lda #1                                       ; prep for line 1
+      jsr func_prep_for_active_buffering
+      lda VERA_DATA0                               ; burn
+      lda #$33                                     ; write $33,$33
+      sta VERA_DATA0
+      sta VERA_DATA0
+
+      SET_VERA_ADDR24_IMM $00, 0, $10              ; expect line 0
+      ASSERT_VRAM_U8_EQUALS_IMM $1200, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1201, $11
+      ASSERT_VRAM_U8_EQUALS_IMM $1202, $11
+      ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
+
+      SET_VERA_ADDR24_IMM $00, 320, $10            ; expect line 1
+      ASSERT_VRAM_U8_EQUALS_IMM $1200, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1201, $33
+      ASSERT_VRAM_U8_EQUALS_IMM $1202, $33
+      ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
+
+      SET_VERA_ADDR24_IMM $00, 640, $10            ; expect line 2
+      ASSERT_VRAM_U8_EQUALS_IMM $1200, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1201, $22
+      ASSERT_VRAM_U8_EQUALS_IMM $1202, $22
+      ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
+   .endscope
+
+
    PASS
 
 .endproc
 
-; zero out 320 bytes starting wherever VERA current offset is
-.proc sub_init_vram_line: near
-   lda #0
-   ldy #160
-@loop:
-   sta VERA_DATA0
-   sta VERA_DATA0
-   dey
-   bne @loop
-   rts
-.endproc
-
-; zero out the first 4 lines of each stage
-.proc sub_init_stages_quick: near
+; zero out both stages
+.proc sub_init_stages: near
    SET_VERA_ADDR24_IMM $00, $00000, $10
-   jsr sub_init_vram_line
-   jsr sub_init_vram_line
-   jsr sub_init_vram_line
-   jsr sub_init_vram_line
-   SET_VERA_ADDR24_IMM $00, $0F800, $10
-   jsr sub_init_vram_line
-   jsr sub_init_vram_line
-   jsr sub_init_vram_line
-   jsr sub_init_vram_line
+   SET_VERA_ADDR24_IMM $01, $0F800, $10
+   ldx #198
+@row_loop:
+   ldy #150
+   lda #0
+@column_loop:
+   sta VERA_DATA0
+   sta VERA_DATA0
+   sta VERA_DATA1
+   sta VERA_DATA1
+   dey
+   bne @column_loop
+   dex
+   bne @row_loop
    rts
 .endproc

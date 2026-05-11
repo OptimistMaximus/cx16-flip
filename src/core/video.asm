@@ -94,9 +94,8 @@
 ; This loads the 512 byte palette buffer into VERA's actual palette
 ;==============================================================================
 .proc func_load_palette: near
-   INITIALIZE_BULK_VRAM_COPY VERA_ADDR_PALETTE, PALETTE_BUFFER
-   EXECUTE_BULK_VRAM_COPY 1, 128 ; 128 * 4 bytes in 512 byte palette
-   FINALIZE_BULK_VRAM_COPY
+   PREP_BULK_VRAM_COPY VERA_ADDR_PALETTE, PALETTE_BUFFER
+   EXEC_BULK_VRAM_COPY 1, 512
    rts
 .endproc
 
@@ -178,15 +177,14 @@
       stz VERA_CTRL
       U8_COPY_IMM VERA_L0_TILEBASE, STAGE_1_TILEBASE
       U8_COPY_IMM ZP8_activeStage, STAGE_0_ACTIVE
-      INITIALIZE_BULK_VRAM_COPY STAGE_0_ADDRESS, STAGE_1_ADDRESS
+      PREP_BULK_VRAM_COPY STAGE_0_ADDRESS, STAGE_1_ADDRESS
       bra @flip_done
 @flip_stage_active_0:
       stz VERA_CTRL
       U8_COPY_IMM VERA_L0_TILEBASE, STAGE_0_TILEBASE
       U8_COPY_IMM ZP8_activeStage, STAGE_1_ACTIVE
-      INITIALIZE_BULK_VRAM_COPY STAGE_1_ADDRESS, STAGE_0_ADDRESS
+      PREP_BULK_VRAM_COPY STAGE_1_ADDRESS, STAGE_0_ADDRESS
 @flip_done:
-   EXECUTE_BULK_VRAM_COPY 198, 80 ; 198 rows, 80*4 columns
-   FINALIZE_BULK_VRAM_COPY
+   EXEC_BULK_VRAM_COPY 198, 320
    rts
 .endproc

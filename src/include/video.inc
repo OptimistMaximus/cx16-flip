@@ -1,6 +1,8 @@
 .ifndef VIDEO_INC
         VIDEO_INC = 1
 
+ ENABLE_FAST_CACHE_WRITE = 1
+
 .include "./global.inc"
 .include "./math.inc"
 .include "./vera.inc"
@@ -54,14 +56,16 @@ STAGE_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
    SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
 .endmacro
 
-.macro INITIALIZE_BULK_VRAM_COPY targetAddr, sourceAddr
+.macro PREP_BULK_VRAM_COPY targetAddr, sourceAddr
 .ifdef ENABLE_FAST_CACHE_WRITE
+
+   lda #%00000100                   ; DCSEL=2
+   sta VERA_CTRL
+   lda #%01100000                   ; Enable Cache Fill & Cache Write
+   sta VERA_DC2_FX_CTRL
+
    SET_VERA_ADDR24_IMM $00, sourceAddr, $10
    SET_VERA_ADDR24_IMM $01, targetAddr, $30
-   lda #%00000100 ; DCSEL=2
-   sta VERA_CTRL
-   lda #%01100000 ; b6 cache write, b5 cache fill
-   tsb VERA_DC2_FX_CTRL
 .else
    SET_VERA_ADDR24_IMM $00, sourceAddr, $10
    SET_VERA_ADDR24_IMM $01, targetAddr, $10
@@ -87,25 +91,26 @@ STAGE_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
 .endif
 .endmacro
 
-.macro EXECUTE_BULK_VRAM_COPY outerCount, innerCount
+; @param outerCount outer loop count
+; @param innerCount inner loop count (must be multiple of 16)
+.macro EXEC_BULK_VRAM_COPY outerCount, innerCount
    ldx #outerCount
 @bulk_vram_copy_outer_loop:
-   ldy #(innerCount / 1)
+   ldy #(innerCount / 16)
 @bulk_vram_copy_inner_loop:
+   INTERNAL_MACRO_FOR_INNER_BATCH
+   INTERNAL_MACRO_FOR_INNER_BATCH
+   INTERNAL_MACRO_FOR_INNER_BATCH
    INTERNAL_MACRO_FOR_INNER_BATCH
    dey
    bne @bulk_vram_copy_inner_loop
    dex
    bne @bulk_vram_copy_outer_loop
-.endmacro
 
-
-.macro FINALIZE_BULK_VRAM_COPY
 .ifdef ENABLE_FAST_CACHE_WRITE
-   lda #%00000100 ; DCSEL=2
+   lda #%00000100                   ; DCSEL=2
    sta VERA_CTRL
-   lda #%01100000 ; b6 cache write, b5 cache fill
-   trb VERA_DC2_FX_CTRL
+   stz VERA_DC2_FX_CTRL             ; Disable Cache Fill & Cache Write
 .endif
 .endmacro
 

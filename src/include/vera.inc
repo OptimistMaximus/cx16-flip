@@ -67,6 +67,14 @@ VERA_DC2_FX_CTRL  = $9F29   ; b7    Transparent Writes
                             ; b2    4-bit Mode
                             ; b1-b0 Addr1 Mode
 
+VERA_DC6_WRITE_FX_CACHE_L = $9F29
+VERA_DC6_WRITE_FX_CACHE_M = $9F2A
+VERA_DC6_WRITE_FX_CACHE_H = $9F2B
+VERA_DC6_WRITE_FX_CACHE_U = $9F2C
+
+VERA_DC6_READ_FX_ACCUM_RESET  = $9F29
+VERA_DC6_READ_FX_ACCUM        = $9F2A
+
 VERA_L0_CONFIG    = $9F2D   ; b7-b6 ~ Map Height
                             ; b5-b4 ~ Map Width
                             ; b3    ~ T256C
@@ -78,10 +86,15 @@ VERA_L0_CONFIG    = $9F2D   ; b7-b6 ~ Map Height
                             ;         3 = 8 bpp
 VERA_L0_MAPBASE   = $9F2E
 
-VERA_L0_TILEBASE  = $9F2F   ; b7-b2 ~ Tile Base Address (tile mode)
-                            ; b7-b2 ~ Bitmap Address (bitmap mode)
-                            ; b1    ~ Tile Height  0 = 8 pixels  | 320
-                            ; b0    ~ Tile Width   1 = 16 pixels | 640
+VERA_L0_TILEBASE  = $9F2F   ; b7-b2 ~ Tile Mode   ~ Tile Base Address
+                            ; b1    ~ Tile Mode   ~ Tile Height, 0=8 pixels, 1=16 pixels
+                            ; b0    ~ Tile Mode   ~ Tile Width,  0=8 pixels, 1=16 pixels
+                            ; b7-b2 ~ Bitmap Mode ~ Bitmap Address
+                            ; b1    ~ Bitmap Mode ~ (unused)
+                            ; b0    ~ Bitmap Mode ~ 0=320x240, 1=640x480
+
+
+
 VERA_L0_HSCROLL_L = $9F30
 VERA_L0_HSCROLL_H = $9F31
 VERA_L0_VSCROLL_L = $9F32
