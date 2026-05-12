@@ -74,6 +74,7 @@
 @line_loop:                            ; .X is the line countdown
 
       jsr func_slurp_into_a            ; packet count
+      beq @packet_loop_done            ; (packet count can legit be zero)
       tay                              ; .Y is the packet countdown
       @packet_loop:
          jsr sub_skip_columns
@@ -87,6 +88,7 @@
          @process_count_done:
        dey
        bne @packet_loop
+       @packet_loop_done:
 
        ADVANCE_LINE_FOR_ACTIVE_BUFFERING
 
