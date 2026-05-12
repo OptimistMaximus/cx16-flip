@@ -147,17 +147,17 @@ u24VeraAddr: .res 3, $00
       jsr func_vera_flip_stage                     ; flip active to 1
       ASSERT_VAR_U8_EQUALS_IMM $1209, STAGE_1_ACTIVE, ZP8_activeStage
 
-      SET_VERA_ADDR24_IMM $00, $0F800, $10         ; expect line 0
+      SET_VERA_ADDR24_IMM $00, $10000, $10         ; expect line 0
       ASSERT_VRAM_U8_EQUALS_IMM $1210, $00
       ASSERT_VRAM_U8_EQUALS_IMM $1211, $AA
       ASSERT_VRAM_U8_EQUALS_IMM $1212, $00
 
-      SET_VERA_ADDR24_IMM $00, $0F940, $10         ; expect line 1
+      SET_VERA_ADDR24_IMM $00, $10140, $10         ; expect line 1
       ASSERT_VRAM_U8_EQUALS_IMM $1213, $00
       ASSERT_VRAM_U8_EQUALS_IMM $1214, $CC
       ASSERT_VRAM_U8_EQUALS_IMM $1215, $00
 
-      SET_VERA_ADDR24_IMM $00, $0FA80, $10         ; expect line 2
+      SET_VERA_ADDR24_IMM $00, $10280, $10         ; expect line 2
       ASSERT_VRAM_U8_EQUALS_IMM $1216, $00
       ASSERT_VRAM_U8_EQUALS_IMM $1217, $BB
       ASSERT_VRAM_U8_EQUALS_IMM $1218, $00
@@ -177,17 +177,17 @@ u24VeraAddr: .res 3, $00
       lda #$FF
       sta VERA_DATA0
 
-      SET_VERA_ADDR24_IMM $00, $0F800, $10         ; expect line 0
+      SET_VERA_ADDR24_IMM $00, $10000, $10         ; expect line 0
       ASSERT_VRAM_U8_EQUALS_IMM $1220, $DD
       ASSERT_VRAM_U8_EQUALS_IMM $1221, $AA
       ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
 
-      SET_VERA_ADDR24_IMM $00, $0F940, $10         ; expect line 1
+      SET_VERA_ADDR24_IMM $00, $10140, $10         ; expect line 1
       ASSERT_VRAM_U8_EQUALS_IMM $1223, $EE
       ASSERT_VRAM_U8_EQUALS_IMM $1224, $CC
       ASSERT_VRAM_U8_EQUALS_IMM $1225, $00
 
-      SET_VERA_ADDR24_IMM $00, $0FA80, $10         ; expect line 2
+      SET_VERA_ADDR24_IMM $00, $10280, $10         ; expect line 2
       ASSERT_VRAM_U8_EQUALS_IMM $1226, $FF
       ASSERT_VRAM_U8_EQUALS_IMM $1227, $BB
       ASSERT_VRAM_U8_EQUALS_IMM $1228, $00

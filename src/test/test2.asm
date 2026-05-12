@@ -88,14 +88,12 @@ test_arg_expect_bb: .asciiz "bb"
    pla
 .endmacro
 
-; simple subroutine to zero out $00000 to $1F400
+; simple subroutine to zero out $00000 to $1F8C0
 ; this covers both bitmaps and the palette buffer
-;
-; 250 * 256 * 2 = 128000 = $1F400
 .proc sub_zero_bitmaps: near
    SET_VERA_ADDR24_IMM $00, $00000, $10
    lda #0
-   ldx #251
+   ldx #$FC               ; $FC * $100 = $FC00 = $1F800
 @outer_loop:
    ldy #0
 @inner_loop:
@@ -105,11 +103,17 @@ test_arg_expect_bb: .asciiz "bb"
    bne @inner_loop
    dex
    bne @outer_loop
+
+   ldx #$C0
+@remainder_loop:
+   sta VERA_DATA0
+   dex
+   bne @remainder_loop
    rts
 .endproc
 
 .proc sub_init_palette_buffer: near
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   SET_VERA_ADDR24_IMM $00, $0FE00, $10
    ldy #0
 @loop:
    sty VERA_DATA0
@@ -263,7 +267,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_64
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3400, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   SET_VERA_ADDR24_IMM $00, $0FE00, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3401, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3402, $0101 ; color 1 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3403, $0EA7 ; color 2
@@ -277,7 +281,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3410, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   SET_VERA_ADDR24_IMM $00, $0FE00, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3411, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3412, $0101 ; color 1 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3413, $0321 ; color 2
@@ -291,7 +295,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3420, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   SET_VERA_ADDR24_IMM $00, $0FE00, $10
    lda #0
 @test32_copy_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3421, $0111  ; color 0,2,4,etc
@@ -306,7 +310,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3430, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   SET_VERA_ADDR24_IMM $00, $0FE00, $10
    lda #0
 @test32_verify_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3431, $0111  ; color 0,2,4,etc
@@ -329,7 +333,7 @@ test_arg_expect_bb: .asciiz "bb"
    ; stage switched from 0 to 1.
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
-   U8_COPY_IMM ZP8_activeStage, $F8 ; establish stage 1 as active
+   U8_COPY_IMM ZP8_activeStage, $01 ; establish stage 1 as active
    U8_COPY_IMM ZP8_height, 1        ; input data represents 1 line
    OPEN_INPUTSTREAM fn_byterun
    jsr handle_byte_run
@@ -342,7 +346,7 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprites, L1, L0
 
    ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeStage
-   SET_VERA_ADDR24_IMM $00, $0F800, $10
+   SET_VERA_ADDR24_IMM $00, $10000, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3521, $BB ; pixel 1
    ASSERT_VRAM_U8_EQUALS_IMM $3522, $CC ; pixel 2
@@ -378,7 +382,7 @@ test_arg_expect_bb: .asciiz "bb"
    and #%01110000                       ; then mask out all but bits 6,5,4
    ASSERT_A_EQUALS_IMM $3601, %00100000 ; then verify sprites, L1, L0
 
-   ASSERT_VAR_U8_EQUALS_IMM $3602, $F8, ZP8_activeStage
+   ASSERT_VAR_U8_EQUALS_IMM $3602, $01, ZP8_activeStage
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0

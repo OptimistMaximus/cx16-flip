@@ -1,7 +1,7 @@
 .ifndef VIDEO_INC
         VIDEO_INC = 1
 
- ENABLE_FAST_CACHE_WRITE = 1
+; ENABLE_FAST_CACHE_WRITE = 1
 
 .include "./global.inc"
 .include "./math.inc"
@@ -13,43 +13,33 @@
 ; of VRAM where the image is staged, and we keep flipping between them
 ; (showing one while staging data into the other)
 ;
-; $00000-$0F800 will be Stage 0.
-; $0F800-$1F000 will be Stage 1.
+; $00000-$0FFFF will be Stage 0, using $00000-$0F8C0 for a 320x199 image.
+; $10000-$1FFFF will be Stage 1, using $10000-$1F8C0 for a 320x199 image.
 ;
-; Thus, each stage can hold a 320x198 image. We'll need to cut corners a bit,
-; or rather cut lines. FLI images always seem to be 320x200, so we should cut
-; either the first two, the last two, or the first and last.
+; $0F8C0-$0FDFF in Stage 0 will be unused
+; $0FE00-$0FFFF in Stage 0 will be a staging area for the palette
+; $1F8C0-$1FFFF in Stage 1 will be untouched, since it spills into special
+;                          VERA addresses (e.g. PSG, palette, sprites)
 ;
-; Ideally we'd do the following:
-; Height 200 ($C8) -> skip first and last lines
-; Height 199 ($C7) -> skip first line
-;                  -> else, don't skip any lines
+; FLI images are 320x200 so we'll parse (but not render) the last line.
 ;
-; Note that the low and high bytes of both addresses are always zero.  Only
-; the middle byte is different.  We'll use this to our advantage in code that
-; does math on the addresses. We only need to care about the middle byte of
-; the VRAM offset. It also means we can easily store the state of whic layer
-; is active by just storing its middle byte.  A value of $00 means Layer 0
-; is active.  The non-zero value means Layer 1 is active.
-;
-; TODO: consider maybe we can just have a single always-active stage at
-; $00000-$12C00 that we just update as we go. MAYBE we can update fast enough
-; that it isn't too crappy-looking. Probably not, so this is just a curiosity
-; to be explored at a later date.
+; Note that the middle and high bytes of both stage addresses are zero.  Only
+; the high byte is different.  We'll use this to our advantage in code that
+; does math on the addresses. Conveniently the high byte of Stage 0 is 0, and
+; the high byte of Stage 1 is 1.  And even more conveniently, the 6502 makes
+; it very efficient to detect when a value is zero or not.  So we'll use a
+; ZP byte having either a value of $00 or $01 to track which stage is "active".
+; It will also act as the high byte of the stage address.
 ;##############################################################################
 STAGE_0_ADDRESS  := $00000    ; $00000 to $0F7FF is stage 0 (320x198)
-STAGE_1_ADDRESS  := $0F800    ; $0F800 to $1EFFF is stage 1 (320x198)
-UNUSED_ADDRESS   := $1F000    ; $1F000 to $1F6FF
-PALETTE_BUFFER   := $1F400    ; $1F700 to $1F8FF (256 colors at 2 bytes each)
+STAGE_1_ADDRESS  := $10000    ; $0F800 to $1EFFF is stage 1 (320x198)
+PALETTE_BUFFER   := $0FE00    ; $0FE00 to $0FFFF (256 colors at 2 bytes each)
 
-STAGE_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
-STAGE_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
+STAGE_0_TILEBASE := ((STAGE_0_ADDRESS >> 11) << 2) ; b7:2 is b16:11 of addr
+STAGE_1_TILEBASE := ((STAGE_1_ADDRESS >> 11) << 2) ; b7:2 is b16:11 of addr
 
-STAGE_0_ACTIVE   := $00       ; middle byte of 17-bit address
-STAGE_1_ACTIVE   := $F8       ; middle byte of 17-bit address
-
-STAGE_0_ENABLED  := %00010001 ; layer 1 off, layer 0 on, VGA
-STAGE_1_ENABLED  := %00100001 ; layer 1 on, layer 0 off, VGA
+STAGE_0_ACTIVE   := ^STAGE_0_ADDRESS ; high byte of 17-bit address
+STAGE_1_ACTIVE   := ^STAGE_1_ADDRESS ; high byte of 17-bit address
 
 .macro ADVANCE_LINE_FOR_ACTIVE_BUFFERING
    U24_ADD_IMM ZP24_vramOffset, 320

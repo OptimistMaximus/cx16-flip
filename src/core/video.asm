@@ -52,8 +52,9 @@
 ;==============================================================================
 .proc func_vera_setup: near
 
+   ; is this what's causing a flash-bang?
    stz VERA_CTRL                                   ; DCSEL=0
-   stz VERA_DC0_VIDEO                              ; disable VERA during setup
+   stz VERA_DC0_VIDEO                              ; disable everything
 
    U16_STZ CX16_API_R0                             ; use default driver
    jsr KERNAL_GRAPH_INIT
@@ -74,7 +75,7 @@
    U8_COPY_IMM VERA_DC1_VSTOP,    (396 >> 1)       ; i.e. use 396 for 198
 
    stz VERA_CTRL                                   ; DCSEL=0
-   U8_COPY_IMM VERA_DC0_VIDEO, STAGE_0_ENABLED     ; enable VERA after setup
+   U8_COPY_IMM VERA_DC0_VIDEO,    %00010001        ; enable Layer 0, VGA mode
 
    rts
 .endproc
@@ -131,26 +132,20 @@
 .proc func_prep_for_active_buffering
    scratchAddr = ZP_VOLATILE_EF
 
-   sta ZP24_vramOffset+0    ; .A is now in the 24-bit result, for shifting
-   stz ZP24_vramOffset+1
-   stz ZP24_vramOffset+2
+   sta ZP24_vramOffset+0                     ; .A is now in the 24-bit result
+   stz ZP24_vramOffset+1                     ; which is the basis for our
+   U16_ASL ZP24_vramOffset                   ; multiplication optimization
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
+   U16_COPY_VAR scratchAddr, ZP24_vramOffset ; squirrel 6x value
    U16_ASL ZP24_vramOffset
-   U16_COPY_VAR scratchAddr, ZP24_vramOffset
    U16_ASL ZP24_vramOffset
-   U16_ASL ZP24_vramOffset
-   U16_ADD_VAR ZP24_vramOffset, scratchAddr
-   clc                      ; Now add the active stage's bitmap address.
-   lda ZP24_vramOffset+1    ; The lower byte is always zero, so no need to
-   adc ZP8_activeStage      ; add anything. The middle byte is tracked in
-   sta ZP24_vramOffset+1    ; ZP8_activeStage, so we must add it. Then carry
-   lda ZP24_vramOffset+2    ; into the high byte. This is a bit wasteful for
-   adc #0                   ; stage 0 but doing this unconditionally keeps
-   sta ZP24_vramOffset+2    ; each stage's processing time consistent.
+   U16_ADD_VAR ZP24_vramOffset, scratchAddr  ; add in 6x value
+   lda ZP8_activeStage                       ; active stage number is also
+   sta ZP24_vramOffset+2                     ; the address high byte!
 
    SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
    rts
