@@ -1,8 +1,6 @@
 .ifndef VIDEO_INC
         VIDEO_INC = 1
 
-; ENABLE_FAST_CACHE_WRITE = 1
-
 .include "./global.inc"
 .include "./math.inc"
 .include "./vera.inc"
@@ -47,8 +45,6 @@ STAGE_1_ACTIVE   := ^STAGE_1_ADDRESS ; high byte of 17-bit address
 .endmacro
 
 .macro PREP_BULK_VRAM_COPY targetAddr, sourceAddr
-.ifdef ENABLE_FAST_CACHE_WRITE
-
    lda #%00000100                   ; DCSEL=2
    sta VERA_CTRL
    lda #%01100000                   ; Enable Cache Fill & Cache Write
@@ -56,29 +52,14 @@ STAGE_1_ACTIVE   := ^STAGE_1_ADDRESS ; high byte of 17-bit address
 
    SET_VERA_ADDR24_IMM $00, sourceAddr, $10
    SET_VERA_ADDR24_IMM $01, targetAddr, $30
-.else
-   SET_VERA_ADDR24_IMM $00, sourceAddr, $10
-   SET_VERA_ADDR24_IMM $01, targetAddr, $10
-.endif
 .endmacro
 
 .macro INTERNAL_MACRO_FOR_INNER_BATCH
-.ifdef ENABLE_FAST_CACHE_WRITE
    lda VERA_DATA0
    lda VERA_DATA0
    lda VERA_DATA0
    lda VERA_DATA0
    stz VERA_DATA1
-.else
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-.endif
 .endmacro
 
 ; @param outerCount outer loop count
@@ -97,11 +78,9 @@ STAGE_1_ACTIVE   := ^STAGE_1_ADDRESS ; high byte of 17-bit address
    dex
    bne @bulk_vram_copy_outer_loop
 
-.ifdef ENABLE_FAST_CACHE_WRITE
    lda #%00000100                   ; DCSEL=2
    sta VERA_CTRL
    stz VERA_DC2_FX_CTRL             ; Disable Cache Fill & Cache Write
-.endif
 .endmacro
 
 .endif

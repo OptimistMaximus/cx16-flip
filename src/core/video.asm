@@ -92,11 +92,26 @@
 ;==============================================================================
 ; func_load_palette
 ;
-; This loads the 512 byte palette buffer into VERA's actual palette
+; This loads the 512 byte palette buffer into VERA's actual palette. Due to a
+; quirk of how VERA handles its palette, we can't use the "fast cache write"
+; trick for palette transfer.  It should be OK though, since the palette is
+; relatively small.
 ;==============================================================================
 .proc func_load_palette: near
-   PREP_BULK_VRAM_COPY VERA_ADDR_PALETTE, PALETTE_BUFFER
-   EXEC_BULK_VRAM_COPY 1, 512
+   SET_VERA_ADDR24_IMM $00, PALETTE_BUFFER, $10
+   SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE, $10
+   ldy #(512 / 4)
+@loop:
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   dey
+   bne @loop
    rts
 .endproc
 
