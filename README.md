@@ -34,11 +34,8 @@ They are also printed to screen as hex string representation: "AA [XXYY]"
 | 2  | unsupported file type     | the file type                         |
 | 3  | unsupported frame type    | the frame type                        |
 | 4  | unsupported chunk type    | the chunk type                        |
-| 5  | width too big             | the image width                       |
-| 6  | height too big            | the image height                      |
-| 7  | depth too big             | the color depth                       |
-| 8  | speed too high            | the FLI speed, lower 16-bits only     |
-| 9  | delay too long            | the FLC delay                         |
+| 5  | invalid chunk type        | the chunk type                        |
+| 6  | speed too high            | the FLI speed, lower 16-bits only     |
 
 
 ### Version History

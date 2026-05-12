@@ -169,9 +169,6 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_A_EQUALS_IMM       $3000,        RC_SUCCESS
    ASSERT_VAR_U16_EQUALS_IMM $3001, $04A1, ZP16_delaySyncs
    ASSERT_VAR_U16_EQUALS_IMM $3002, $0024, ZP16_numFrames
-   ASSERT_VAR_U16_EQUALS_IMM $3003, $0140, ZP16_width
-   ASSERT_VAR_U8_EQUALS_IMM  $3004, $C8,   ZP8_height
-   ASSERT_VAR_U8_EQUALS_IMM  $3005, $08,   ZP8_depth
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
@@ -181,27 +178,6 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_Y_EQUALS_IMM $3012, $AF
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
-   jsr func_slurp_header
-   CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3020, RC_WIDTH_TOO_BIG
-   ASSERT_X_EQUALS_IMM $3021, $80
-   ASSERT_Y_EQUALS_IMM $3022, $02
-
-   OPEN_INPUTSTREAM_R fn_header_x, 6, '3'
-   jsr func_slurp_header
-   CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3030, RC_HEIGHT_TOO_BIG
-   ASSERT_X_EQUALS_IMM $3031, $B0
-   ASSERT_Y_EQUALS_IMM $3032, $0B
-
-   OPEN_INPUTSTREAM_R fn_header_x, 6, '4'
-   jsr func_slurp_header
-   CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3040, RC_DEPTH_TOO_BIG
-   ASSERT_X_EQUALS_IMM $3041, $B0
-   ASSERT_Y_EQUALS_IMM $3042, $0B
-
-   OPEN_INPUTSTREAM_R fn_header_x, 6, '5'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
    ASSERT_A_EQUALS_IMM $3050, RC_SPEED_TOO_HIGH
@@ -334,7 +310,6 @@ test_arg_expect_bb: .asciiz "bb"
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
    U8_COPY_IMM ZP8_activeStage, $01 ; establish stage 1 as active
-   U8_COPY_IMM ZP8_height, 1        ; input data represents 1 line
    OPEN_INPUTSTREAM fn_byterun
    jsr handle_byte_run
    CLOSE_INPUTSTREAM
@@ -344,16 +319,24 @@ test_arg_expect_bb: .asciiz "bb"
    lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
    and #%01110000                       ; then mask out all but bits 6,5,4
    ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprites, L1, L0
-
    ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeStage
-   SET_VERA_ADDR24_IMM $00, $10000, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $3520, $AA ; pixel 0
-   ASSERT_VRAM_U8_EQUALS_IMM $3521, $BB ; pixel 1
-   ASSERT_VRAM_U8_EQUALS_IMM $3522, $CC ; pixel 2
-   ASSERT_VRAM_U8_EQUALS_IMM $3523, $EE ; pixel 3
-   ASSERT_VRAM_U8_EQUALS_IMM $3524, $EE ; pixel 4
-   ASSERT_VRAM_U8_EQUALS_IMM $3525, $00 ; pixel 5 (untouched)
 
+   SET_VERA_ADDR24_IMM $00, $10000, $10
+   ASSERT_VRAM_U8_EQUALS_IMM $3510, $00 ; packet 0 start (line 0)
+   SET_VERA_ADDR24_IMM $00, $1007E, $10
+   ASSERT_VRAM_U8_EQUALS_IMM $3511, $00 ; packet 0 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3512, $01 ; packet 1 start
+   ASSERT_VRAM_U8_EQUALS_IMM $3513, $02
+   ASSERT_VRAM_U8_EQUALS_IMM $3514, $03
+   ASSERT_VRAM_U8_EQUALS_IMM $3515, $04
+   ASSERT_VRAM_U8_EQUALS_IMM $3516, $05 ; packet 1 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3517, $06 ; packet 2 start
+   SET_VERA_ADDR24_IMM $00, $100F3, $10
+   ASSERT_VRAM_U8_EQUALS_IMM $3518, $06 ; packet 2 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3519, $07 ; packet 3 start
+   SET_VERA_ADDR24_IMM $00, $1013F, $10
+   ASSERT_VRAM_U8_EQUALS_IMM $3520, $07 ; packet 3 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3520, $00 ; packet 4 start (line 1)
 
    ;---------------------------------------------------------------------------
    ; TEST 36 - handle_delta_fli

@@ -47,7 +47,7 @@
    lda #0                             ; full starts at line 0 always
    jsr func_prep_for_active_buffering
 
-   ldx ZP8_height                     ; .X is the line countdown
+   ldx #200                           ; .X is the line countdown
 @line_loop:
 
       jsr func_slurp_into_a           ; packet count
