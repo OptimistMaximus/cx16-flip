@@ -4,7 +4,7 @@
 # This builds a zip file that works with the "Try it Now" feature
 # of the Commander X16 forums.
 
-ver=003
+ver=004
 img=bell.fli
 img2=owl.fli
 
