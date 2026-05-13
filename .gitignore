@@ -1,4 +1,7 @@
 .project
 *.zip
 
+.DS_Store
+.settings/
 zzz/
+images/

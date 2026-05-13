@@ -27,45 +27,15 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    wordPointerFileType  =         RAM_VOLATILE_BUF+4  ; pointer to file type
    wordPointerNumFrames =         RAM_VOLATILE_BUF+6  ; pointer to frames
-   wordPointerWidth     =         RAM_VOLATILE_BUF+8  ; pointer to width
-   wordPointerHeight    =         RAM_VOLATILE_BUF+10 ; pointer to height
-   wordPointerDepth     =         RAM_VOLATILE_BUF+12 ; pointer to depth
    dwordPointerSpeed    =         RAM_VOLATILE_BUF+16 ; pointer to speed
 
    ;---------------------------------------------------------------------------
    ; validate file type
-   ;
-   ; This is a bit of overkill since we don't support FLC yet, but just for
-   ; fun we'll establish the FLI vs FLC bit in the flags now.
    ;---------------------------------------------------------------------------
    U16_CMP_IMM wordPointerFileType, FILE_TYPE_FLI
    beq @fileType_is_fli
    RTS_VAR16_DETAIL RC_UNSUPPORTED_FILE_TYPE, wordPointerFileType
 @fileType_is_fli:
-
-   ;---------------------------------------------------------------------------
-   ; validate width
-   ;---------------------------------------------------------------------------
-   U16_CMP_IMM wordPointerWidth, 321
-   bcc @width_is_cool
-   RTS_VAR16_DETAIL RC_WIDTH_TOO_BIG, wordPointerWidth
-@width_is_cool:
-
-   ;---------------------------------------------------------------------------
-   ; validate height
-   ;---------------------------------------------------------------------------
-   U16_CMP_IMM wordPointerHeight, 201
-   bcc @height_is_cool
-   RTS_VAR16_DETAIL RC_HEIGHT_TOO_BIG, wordPointerHeight
-@height_is_cool:
-
-   ;---------------------------------------------------------------------------
-   ; validate depth
-   ;---------------------------------------------------------------------------
-   U16_CMP_IMM wordPointerDepth, 256
-   bcc @depth_is_cool
-   RTS_VAR16_DETAIL RC_DEPTH_TOO_BIG, wordPointerDepth
-@depth_is_cool:
 
    ;---------------------------------------------------------------------------
    ; validate speed
@@ -103,9 +73,6 @@ FILE_TYPE_FLI := $AF11
    ; copy important data out of the volatile buffer and into our ZP vars
    ;---------------------------------------------------------------------------
    U16_COPY_VAR ZP16_numFrames,   wordPointerNumFrames
-   U16_COPY_VAR ZP16_width,       wordPointerWidth
-   U8_COPY_VAR  ZP8_height,       wordPointerHeight ; copy height (low byte)
-   U8_COPY_VAR  ZP8_depth,        wordPointerDepth  ; copy depth (low byte)
 
    RTS_NO_DETAIL RC_SUCCESS
 .endproc

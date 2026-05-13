@@ -6,11 +6,21 @@
 .import func_slurp_into_a
 .import func_append_access_mode
 .import func_strlen
+.import func_prep_for_active_buffering
+.import func_vera_flip_stage
 
 .segment "RODATA"
 
 test_filename: .asciiz "slurp.bin,r"
 expect_abcdw:  .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
+test12_expect_1111: .byte $00,$11,$11,$00
+test12_expect_2222: .byte $00,$22,$22,$00
+test12_expect_3333: .byte $00,$33,$33,$00
+test12_expect_4444: .byte $00,$44,$44,$00
+
+.segment "DATA"
+
+u24VeraAddr: .res 3, $00
 
 .segment "CODE"
 
@@ -18,7 +28,15 @@ expect_abcdw:  .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
+.include "../include/video.inc"
 .include "../include/xunit.inc"
+
+.macro BURN_THEN_WRITE value
+   lda VERA_DATA0 ; burn
+   lda #value
+   sta VERA_DATA0
+   sta VERA_DATA0
+.endmacro
 
 .proc test_suite_1: near
 
@@ -82,8 +100,137 @@ expect_abcdw:  .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
    jsr func_strlen
    ASSERT_A_EQUALS_IMM $1120, 6
 
+   ;---------------------------------------------------------------------------
+   ; TEST 12 (video stuff)
+   ;
+   ; func_prep_for_active_buffering
+   ; ADVANCE_LINE_FOR_ACTIVE_BUFFERING
+   ; func_vera_flip_stage
+   ;---------------------------------------------------------------------------
+   jsr sub_init_stages
+
+   .scope test12_prep_stage_0                      ; stage 0 active
+      U8_COPY_IMM ZP8_activeStage, STAGE_0_ACTIVE
+      lda #0                                       ; prep for line 0
+      jsr func_prep_for_active_buffering
+      lda VERA_DATA0
+      lda #$AA
+      sta VERA_DATA0
+
+      ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 1 skipped
+      ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 2
+      lda VERA_DATA0
+      lda #$BB
+      sta VERA_DATA0
+
+      lda #1                                       ; prep for line 1
+      jsr func_prep_for_active_buffering
+      lda VERA_DATA0
+      lda #$CC
+      sta VERA_DATA0
+
+      SET_VERA_ADDR24_IMM $00, $00000, $10         ; expect line 0
+      ASSERT_VRAM_U8_EQUALS_IMM $1200, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1201, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1202, $00
+
+      SET_VERA_ADDR24_IMM $00, $00140, $10         ; expect line 1
+      ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1204, $CC
+      ASSERT_VRAM_U8_EQUALS_IMM $1205, $00
+
+      SET_VERA_ADDR24_IMM $00, $00280, $10         ; expect line 2
+      ASSERT_VRAM_U8_EQUALS_IMM $1206, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1207, $BB
+      ASSERT_VRAM_U8_EQUALS_IMM $1208, $00
+
+      jsr func_vera_flip_stage                     ; flip active to 1
+      ASSERT_VAR_U8_EQUALS_IMM $1209, STAGE_1_ACTIVE, ZP8_activeStage
+
+      SET_VERA_ADDR24_IMM $00, $10000, $10         ; expect line 0
+      ASSERT_VRAM_U8_EQUALS_IMM $1210, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1211, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1212, $00
+
+      SET_VERA_ADDR24_IMM $00, $10140, $10         ; expect line 1
+      ASSERT_VRAM_U8_EQUALS_IMM $1213, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1214, $CC
+      ASSERT_VRAM_U8_EQUALS_IMM $1215, $00
+
+      SET_VERA_ADDR24_IMM $00, $10280, $10         ; expect line 2
+      ASSERT_VRAM_U8_EQUALS_IMM $1216, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1217, $BB
+      ASSERT_VRAM_U8_EQUALS_IMM $1218, $00
+   .endscope
+
+   .scope test12_prep_stage_1                      ; stage 1 active
+      lda #0                                       ; prep for line 0
+      jsr func_prep_for_active_buffering
+      lda #$DD
+      sta VERA_DATA0
+
+      ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 1
+      lda #$EE
+      sta VERA_DATA0
+
+      ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 2
+      lda #$FF
+      sta VERA_DATA0
+
+      SET_VERA_ADDR24_IMM $00, $10000, $10         ; expect line 0
+      ASSERT_VRAM_U8_EQUALS_IMM $1220, $DD
+      ASSERT_VRAM_U8_EQUALS_IMM $1221, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
+
+      SET_VERA_ADDR24_IMM $00, $10140, $10         ; expect line 1
+      ASSERT_VRAM_U8_EQUALS_IMM $1223, $EE
+      ASSERT_VRAM_U8_EQUALS_IMM $1224, $CC
+      ASSERT_VRAM_U8_EQUALS_IMM $1225, $00
+
+      SET_VERA_ADDR24_IMM $00, $10280, $10         ; expect line 2
+      ASSERT_VRAM_U8_EQUALS_IMM $1226, $FF
+      ASSERT_VRAM_U8_EQUALS_IMM $1227, $BB
+      ASSERT_VRAM_U8_EQUALS_IMM $1228, $00
+
+      jsr func_vera_flip_stage                     ; flip active to 0
+      ASSERT_VAR_U8_EQUALS_IMM $1229, STAGE_0_ACTIVE, ZP8_activeStage
+
+      SET_VERA_ADDR24_IMM $00, $00000, $10         ; expect line 0
+      ASSERT_VRAM_U8_EQUALS_IMM $1220, $DD
+      ASSERT_VRAM_U8_EQUALS_IMM $1221, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
+
+      SET_VERA_ADDR24_IMM $00, $00140, $10         ; expect line 1
+      ASSERT_VRAM_U8_EQUALS_IMM $1223, $EE
+      ASSERT_VRAM_U8_EQUALS_IMM $1224, $CC
+      ASSERT_VRAM_U8_EQUALS_IMM $1225, $00
+
+      SET_VERA_ADDR24_IMM $00, $00280, $10         ; expect line 2
+      ASSERT_VRAM_U8_EQUALS_IMM $1226, $FF
+      ASSERT_VRAM_U8_EQUALS_IMM $1227, $BB
+      ASSERT_VRAM_U8_EQUALS_IMM $1228, $00
+   .endscope
 
    PASS
 
 .endproc
 
+; zero out both stages
+.proc sub_init_stages: near
+   SET_VERA_ADDR24_IMM $00, $00000, $10
+   SET_VERA_ADDR24_IMM $01, $0F800, $10
+   ldx #198
+@row_loop:
+   ldy #150
+   lda #0
+@column_loop:
+   sta VERA_DATA0
+   sta VERA_DATA0
+   sta VERA_DATA1
+   sta VERA_DATA1
+   dey
+   bne @column_loop
+   dex
+   bne @row_loop
+   rts
+.endproc

@@ -51,14 +51,18 @@ TEST_LIBS := zzz/test.lib $(MAIN_LIBS)
 #------------------------------------------------------------------
 # Target test (default), debug, clean, run
 #------------------------------------------------------------------
+hack: zzz/HACK.PRG
+	cd zzz && x16emu -run -prg HACK.PRG
+
 test: zzz/TEST.PRG $(TEST_RESOURCES)
 	cd zzz && x16emu -run -debug 080D -prg TEST.PRG
 
 run: zzz/MAIN.PRG $(MAIN_RESOURCES)
 	cd zzz && x16emu -run -prg MAIN.PRG
+	ls -l $<
 
 debug: zzz/MAIN.PRG $(MAIN_RESOURCES)
-	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG
+	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG -dump V
 	ls -l $<
 
 clean:
@@ -93,6 +97,9 @@ zzz/MAIN.PRG: zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
 
 zzz/TEST.PRG: zzz/test.o $(TEST_LIBS) | zzz
 	cl65 -o $@ $< $(TEST_LIBS)
+
+zzz/HACK.PRG: zzz/hack.o | zzz
+	cl65 -o $@ $<
 
 #------------------------------------------------------------------
 # Targets to build libraries
@@ -133,6 +140,9 @@ zzz/main.o: $(SOURCE)/main.asm $(INCLUDES) | zzz
 	cl65 -t cx16 -o $@ -c $<
 
 zzz/test.o: $(SOURCE)/test.asm $(INCLUDES) | zzz
+	cl65 -t cx16 -o $@ -c $<
+
+zzz/hack.o: $(SOURCE)/hack.asm $(INCLUDES) | zzz
 	cl65 -t cx16 -o $@ -c $<
 
 #------------------------------------------------------------------

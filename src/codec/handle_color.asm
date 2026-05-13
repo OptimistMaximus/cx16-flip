@@ -91,7 +91,7 @@ sub_handle_color:
    ; zero (don't skip) but a copy count of zero means 256 (i.e. a full palette
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
-   SET_VRAM_DATA0_FOR_PALETTE_BUFFER
+   SET_VERA_ADDR24_IMM $00, PALETTE_BUFFER, $10
 
    SLURP_INTO_VAR16 numPackets
 

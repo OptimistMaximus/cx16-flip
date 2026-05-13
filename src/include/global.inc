@@ -11,8 +11,6 @@
 ;
 ; 297 seventieths = 255 sixtieths
 
-
-
 ;------------------------------------------------------------------------------
 ; GLOBAL "VOLATILE" VARIABLES
 ;
@@ -75,17 +73,17 @@ RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP8_activeLayer        := $40
-ZP8_height             := $41
-ZP8_depth              := $42
-ZP8_slurpTracker       := $43
+ZP24_vramOffset        := $22
+ZP8_activeStage        := $25
+ZP8_slurpTracker       := $28
 
-ZP16_chunkType         := $50
-ZP16_delaySyncs        := $52
-ZP16_width             := $54
-ZP16_numFrames         := $56
-ZP16_currFrame         := $58
-ZP16_numSubChunks      := $5A
+ZP16_chunkType         := $40
+ZP16_delaySyncs        := $42
+ZP16_numFrames         := $46
+ZP16_currFrame         := $48
+ZP16_numSubChunks      := $4A
+ZP16_origIrqHandler    := $4C
+ZP16_debugTimerSyncs   := $4E
 
 RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 
@@ -93,17 +91,12 @@ RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
 ;------------------------------------------------------------------------------
 RC_SUCCESS                    := 0
-RC_CANNOT_OPEN_FILE           := 1  ; .X is CHKIN status, .Y is OPEN status
+RC_CANNOT_OPEN_FILE           := 1  ;
 RC_UNSUPPORTED_FILE_TYPE      := 2  ; type
 RC_UNSUPPORTED_FRAME_TYPE     := 3  ; type
 RC_UNSUPPORTED_CHUNK_TYPE     := 4  ; type
-RC_WIDTH_TOO_BIG              := 5  ; width
-RC_HEIGHT_TOO_BIG             := 6  ; height
-RC_DEPTH_TOO_BIG              := 7  ; depth
-RC_SPEED_TOO_HIGH             := 8  ; FLI speed, lower half of 32-bit value
-RC_DELAY_TOO_LONG             := 9  ; FLC delay
-RC_INVALID_CHUNK_TYPE         := 10 ; type
-
+RC_INVALID_CHUNK_TYPE         := 5  ; type
+RC_SPEED_TOO_HIGH             := 6  ; FLI speed, lower half of 32-bit value
 
 ;==============================================================================
 ; RTS_VAR16_DETAIL

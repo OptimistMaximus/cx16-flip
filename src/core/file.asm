@@ -99,6 +99,7 @@
 ; func_slurp_into_buffer
 ;
 ; @param  .A the number of bytes to slurp (1-255)
+; @effect .X .Y clobbered
 ; @effect RAM_VOLATILE_BUF is populated with the desired number of bytes
 ; @effect ZP8_slurpTracker incremented by the specified number of bytes
 ; @cycles 26 plus whatever MACPTR uses

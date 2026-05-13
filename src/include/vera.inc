@@ -52,7 +52,12 @@ VERA_DC0_VIDEO   = $9F29    ; b7    ~ Current Field ??
 
 VERA_DC0_HSCALE   = $9F2A   ; 64 = 2:1 (good for 320x240 mode), 128 = 1:1
 VERA_DC0_VSCALE   = $9F2B   ; 64 = 2:1 (good for 320x240 mode), 128 = 1:1
-VERA_DC0_BORDER   = $9F2C   ; holds palette index to use for boarder
+VERA_DC0_BORDER   = $9F2C   ; holds palette index to use for border
+
+VERA_DC1_HSTART   = $9F29   ; Active Display H-Start (9:2)
+VERA_DC1_HSTOP    = $9F2A   ; Active Display H-Stop (9:2)
+VERA_DC1_VSTART   = $9F2B   ; Active Display V-Start (8:1)
+VERA_DC1_VSTOP    = $9F2C   ; Active Display V-Stop (8:1)
 
 VERA_DC2_FX_CTRL  = $9F29   ; b7    Transparent Writes
                             ; b6    Cache Write Enable
@@ -61,6 +66,14 @@ VERA_DC2_FX_CTRL  = $9F29   ; b7    Transparent Writes
                             ; b3    16-bit Hop
                             ; b2    4-bit Mode
                             ; b1-b0 Addr1 Mode
+
+VERA_DC6_WRITE_FX_CACHE_L = $9F29
+VERA_DC6_WRITE_FX_CACHE_M = $9F2A
+VERA_DC6_WRITE_FX_CACHE_H = $9F2B
+VERA_DC6_WRITE_FX_CACHE_U = $9F2C
+
+VERA_DC6_READ_FX_ACCUM_RESET  = $9F29
+VERA_DC6_READ_FX_ACCUM        = $9F2A
 
 VERA_L0_CONFIG    = $9F2D   ; b7-b6 ~ Map Height
                             ; b5-b4 ~ Map Width
@@ -73,10 +86,15 @@ VERA_L0_CONFIG    = $9F2D   ; b7-b6 ~ Map Height
                             ;         3 = 8 bpp
 VERA_L0_MAPBASE   = $9F2E
 
-VERA_L0_TILEBASE  = $9F2F   ; b7-b2 ~ Tile Base Address (tile mode)
-                            ; b7-b2 ~ Bitmap Address (bitmap mode)
-                            ; b1    ~ Tile Height  0 = 8 pixels  | 320
-                            ; b0    ~ Tile Width   1 = 16 pixels | 640
+VERA_L0_TILEBASE  = $9F2F   ; b7-b2 ~ Tile Mode   ~ Tile Base Address
+                            ; b1    ~ Tile Mode   ~ Tile Height, 0=8 pixels, 1=16 pixels
+                            ; b0    ~ Tile Mode   ~ Tile Width,  0=8 pixels, 1=16 pixels
+                            ; b7-b2 ~ Bitmap Mode ~ Bitmap Address
+                            ; b1    ~ Bitmap Mode ~ (unused)
+                            ; b0    ~ Bitmap Mode ~ 0=320x240, 1=640x480
+
+
+
 VERA_L0_HSCROLL_L = $9F30
 VERA_L0_HSCROLL_H = $9F31
 VERA_L0_VSCROLL_L = $9F32
@@ -105,9 +123,26 @@ VERA_ADDR_PALETTE        = $1FA00 ; [IMMOBILE] Color Palette
 VERA_ADDR_PALETTE_LOW    = $1FA00
 VERA_ADDR_PALETTE_HIGH   = $1FA01
 VERA_ADDR_SPRITE_ATTRS   = $1FC00 ; [IMMOBILE] Sprite Attributes
-VERA_ADDR_SPRITE_ATTRS_1 = $1FC08 ; [IMMOBILE] Sprite Attributes for Sprite 1
-VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attributes for Sprite 2
-                                  ;            ... et cetera ...
+VERA_ADDR_SPRITE_ATTRS_0 = $1FC00 ; [IMMOBILE] Sprite Attrs for Mouse Cursor
+VERA_ADDR_SPRITE_ATTRS_1 = $1FC08 ; [IMMOBILE] Sprite Attrs for Sprite 1
+VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attrs for Sprite 2, etc
+
+;------------------------------------------------------------------------------
+; SET_VERA_ADDR_DEFAULT
+;
+; Data Channel 0 is configured. Auto-Increment is set to 1 (aka Stride 1).
+;
+; @param addressValue the immediate value of the 24-bit VRAM address
+;------------------------------------------------------------------------------
+.macro SET_VERA_ADDR_DEFAULT addressValue
+    stz VERA_CTRL
+    lda #<addressValue
+    sta VERA_ADDRx_L
+    lda #>addressValue
+    sta VERA_ADDRx_M
+    lda #($10 | ^addressValue)
+    sta VERA_ADDRx_H
+.endmacro
 
 ;------------------------------------------------------------------------------
 ; SET_VERA_ADDR24_IMM
@@ -145,6 +180,33 @@ VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attributes for Sprite 2
     lda addressAddr+2
     ora #optionValue
     sta VERA_ADDRx_H
+.endmacro
+
+;------------------------------------------------------------------------------
+; INC_VERA_ADDR24_BY_320
+;
+; Advance VERA address by 320, relative to where it was last set.  Note that
+; the VERA keeps these registers "fresh" so to speak, per its auto-incrementer.
+; So if you set it to $00000 and do two VRAM accesses (at auto-increment 1)
+; then when you call this it will effectively set the value to 322.
+;
+; IDEA: use this in my GIF program when drawing a box, could be very fast.
+;
+;------------------------------------------------------------------------------
+.macro INC_VERA_ADDR24_BY_320 controlValue, optionValue
+   lda #controlValue
+   sta VERA_CTRL
+   clc
+   lda VERA_ADDRx_L
+   adc #$40
+   sta VERA_ADDRx_L
+   lda VERA_ADDRx_M
+   adc #$01
+   sta VERA_ADDRx_M
+   lda VERA_ADDRx_H
+   adc #$00
+   ora #optionValue
+   sta VERA_ADDRx_H
 .endmacro
 
 .endif

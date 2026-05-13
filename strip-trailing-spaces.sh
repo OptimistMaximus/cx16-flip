@@ -4,7 +4,9 @@
 # everywhere, especially due to auto-indenting.  This script will
 # clean up all the assembly files.
 
-for dude in `find . -name \*.asm` `find . -name \*.inc` ; do
-  sed -i '' 's/[[:space:]]*$//' $dude
+for extension in asm inc txt ; do
+  for dude in `find . -name \*.$extension` ; do
+    sed -i '' 's/[[:space:]]*$//' $dude
+  done
 done
 

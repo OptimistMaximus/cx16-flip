@@ -6,116 +6,81 @@
 .include "./vera.inc"
 
 ;##############################################################################
-; Due to VERA limitations, bitmap layers must start at an $800 aligned address.
-; Part of the rendering trick used by this player is to have two bitmap layers
-; that we keep flipping between (showing one while staging data into the other)
+; Due to VERA limitations, bitmap "tilebase" must start at an $800 aligned
+; address. Part of the rendering trick used by this player is to have two areas
+; of VRAM where the image is staged, and we keep flipping between them
+; (showing one while staging data into the other)
 ;
-; $00000-$0F800 will be Layer 0.
-; $0F800-$1F000 will be Layer 1.
+; $00000-$0FFFF will be Stage 0, using $00000-$0F8C0 for a 320x199 image.
+; $10000-$1FFFF will be Stage 1, using $10000-$1F8C0 for a 320x199 image.
 ;
-; Thus, each layer can hold a 320x198 image. We'll need to cut corners a bit,
-; or rather cut lines. As a trick for now, the first and last lines of every
-; image will be parsed but not rendered to screen.
+; $0F8C0-$0FDFF in Stage 0 will be unused
+; $0FE00-$0FFFF in Stage 0 will be a staging area for the palette
+; $1F8C0-$1FFFF in Stage 1 will be untouched, since it spills into special
+;                          VERA addresses (e.g. PSG, palette, sprites)
 ;
-; Ideally we'd do the following:
-; Height 200 ($C8) -> skip first and last lines
-; Height 199 ($C7) -> skip first line
-;                  -> else, don't skip any lines
+; FLI images are 320x200 so we'll parse (but not render) the last line.
 ;
-; But for this first release, it will just always skip the first and last.
-;
-; Note that the low and high bytes of both addresses are always zero.  Only
-; the middle byte is different.  We'll use this to our advantage in code that
-; does math on the addresses. We only need to care about the middle byte of
-; the VRAM offset. It also means we can easily store the state of whic layer
-; is active by just storing its middle byte.  A value of $00 means Layer 0
-; is active.  The non-zero value means Layer 1 is active.
-;
-; TODO: consider maybe we can just have a single always-active layer at
-; $00000-$12C00 that we just update as we go. MAYBE we can update fast enough
-; that it isn't too crappy-looking. Probably not, so this is just a curiosity
-; to be explored at a later date.
+; Note that the middle and high bytes of both stage addresses are zero.  Only
+; the high byte is different.  We'll use this to our advantage in code that
+; does math on the addresses. Conveniently the high byte of Stage 0 is 0, and
+; the high byte of Stage 1 is 1.  And even more conveniently, the 6502 makes
+; it very efficient to detect when a value is zero or not.  So we'll use a
+; ZP byte having either a value of $00 or $01 to track which stage is "active".
+; It will also act as the high byte of the stage address.
 ;##############################################################################
-LAYER_0_ADDRESS  := $00000
-LAYER_1_ADDRESS  := $0F800
+STAGE_0_ADDRESS  := $00000    ; $00000 to $0F7FF is stage 0 (320x198)
+STAGE_1_ADDRESS  := $10000    ; $0F800 to $1EFFF is stage 1 (320x198)
+PALETTE_BUFFER   := $0FE00    ; $0FE00 to $0FFFF (256 colors at 2 bytes each)
 
-LAYER_0_TILEBASE := %00000000 ; bits 7:2 are bits 16:11 of addr
-LAYER_1_TILEBASE := %01111100 ; bits 7:2 are bits 16:11 of addr
+STAGE_0_TILEBASE := ((STAGE_0_ADDRESS >> 11) << 2) ; b7:2 is b16:11 of addr
+STAGE_1_TILEBASE := ((STAGE_1_ADDRESS >> 11) << 2) ; b7:2 is b16:11 of addr
 
-LAYER_0_ACTIVE   := $00       ; middle byte of 17-bit address
-LAYER_1_ACTIVE   := $F8       ; middle byte of 17-bit address
+STAGE_0_ACTIVE   := ^STAGE_0_ADDRESS ; high byte of 17-bit address
+STAGE_1_ACTIVE   := ^STAGE_1_ADDRESS ; high byte of 17-bit address
 
-LAYER_0_ENABLED  := %00010001 ; sprites off, layer 1 off, layer 0 on, VGA
-LAYER_1_ENABLED  := %00100001 ; sprites off, layer 1 on, layer 0 off, VGA
-
-;==============================================================================
-; SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-;==============================================================================
-.macro SET_VRAM_DATA0_FOR_PALETTE_BUFFER
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
+.macro ADVANCE_LINE_FOR_ACTIVE_BUFFERING
+   U24_ADD_IMM ZP24_vramOffset, 320
+   SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
 .endmacro
 
-;==============================================================================
-; CALC_VRAM_OFFSET
-;
-; This is a special optimization to calculate a VRAM offset in 320x240 mode
-; where the line number is less than 204. This means the calculated result will
-; be within the 16-bit range, so we can save a few cycles due to not worrying
-; about the most significant byte (it can be unconditionally forced to zero)
-;
-; @param  resultAddr  where to store the 24-bit result
-; @param  lineAddr    where the line number is (having value 0-203)
-; @param  scratchAddr where it's safe to temporarily store a 16-bit value
-;
-; The optimization here is to store the line number into the 24-bit result,
-; then multiply by 320 by adding the result of the line number multiplied by
-; 64 plus the line number multiplied by 256. Multiplying by 64 is just six
-; left-shifts, so we'll do that and squirrel away the result into our scratch
-; area. Then do two more shifts so that the result now represents the value
-; multiplied by 256. Then add in the squirreled away 64x value.
-;
-; It is tempting to do a quick check for line 0, in which case we can skip all
-; the boring shifts and adds, but it is assumed this macro will get called in
-; situations where line 0 is as likely to be passed in as any other line. So
-; we don't want to incur the 2 or 3 cycle penalty 100% of the time only to
-; save some cycles 1/204th of the time.
-;==============================================================================
-.macro CALC_VRAM_OFFSET_FOR_DELTA resultAddr, lineAddr, scratchAddr
-   lda lineAddr
-   sta resultAddr+0
-   stz resultAddr+1
-   stz resultAddr+2
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_COPY_VAR scratchAddr, resultAddr
-   U16_ASL resultAddr
-   U16_ASL resultAddr
-   U16_ADD_VAR resultAddr, scratchAddr
+.macro PREP_BULK_VRAM_COPY targetAddr, sourceAddr
+   lda #%00000100                   ; DCSEL=2
+   sta VERA_CTRL
+   lda #%01100000                   ; Enable Cache Fill & Cache Write
+   sta VERA_DC2_FX_CTRL
 
-   clc                      ; Now add the active layer's bitmap address.
-   lda resultAddr+1         ; The lower byte is always zero, so no need to
-   adc ZP8_activeLayer      ; add anything. The middle byte is tracked in
-   sta resultAddr+1         ; ZP_activeLayer, so we must add it. Then carry
-   lda resultAddr+2         ; into the high byte. This is a bit wasteful for
-   adc #0                   ; layer 0 but doing this unconditionally keeps
-   sta resultAddr+2         ; each layer's processing time consistent.
+   SET_VERA_ADDR24_IMM $00, sourceAddr, $10
+   SET_VERA_ADDR24_IMM $01, targetAddr, $30
 .endmacro
 
-;==============================================================================
-; CALC_VRAM_OFFSET_FOR_FULL
-;==============================================================================
-.macro CALC_VRAM_OFFSET_FOR_FULL resultAddr
-   stz resultAddr+0
-   lda ZP8_activeLayer
-   sta resultAddr+1
-   stz resultAddr+2
+.macro INTERNAL_MACRO_FOR_INNER_BATCH
+   lda VERA_DATA0
+   lda VERA_DATA0
+   lda VERA_DATA0
+   lda VERA_DATA0
+   stz VERA_DATA1
 .endmacro
 
+; @param outerCount outer loop count
+; @param innerCount inner loop count (must be multiple of 16)
+.macro EXEC_BULK_VRAM_COPY outerCount, innerCount
+   ldx #outerCount
+@bulk_vram_copy_outer_loop:
+   ldy #(innerCount / 16)
+@bulk_vram_copy_inner_loop:
+   INTERNAL_MACRO_FOR_INNER_BATCH
+   INTERNAL_MACRO_FOR_INNER_BATCH
+   INTERNAL_MACRO_FOR_INNER_BATCH
+   INTERNAL_MACRO_FOR_INNER_BATCH
+   dey
+   bne @bulk_vram_copy_inner_loop
+   dex
+   bne @bulk_vram_copy_outer_loop
 
-
+   lda #%00000100                   ; DCSEL=2
+   sta VERA_CTRL
+   stz VERA_DC2_FX_CTRL             ; Disable Cache Fill & Cache Write
+.endmacro
 
 .endif
