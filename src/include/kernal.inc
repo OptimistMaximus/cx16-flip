@@ -91,6 +91,11 @@ KERNAL_GRAPH_GET_CHAR_SIZE := $FF3E ; get size and baseline of a character
 KERNAL_GRAPH_PUT_CHAR      := $FF41 ; print a character
 
 ;------------------------------------------------------------------------------
+; Other
+;------------------------------------------------------------------------------
+KERNAL_ENTER_BASIC         := $FF47 ; return to ready, C=1 cold start, C=0 warm
+
+;------------------------------------------------------------------------------
 ; BASIC Params ... poke here (from Basic) before invoking a program, the value
 ;                  will be prepped into the associated register/flags before
 ;                  the program is executed

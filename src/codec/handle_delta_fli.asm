@@ -11,37 +11,6 @@
 .include "../include/math.inc"
 .include "../include/video.inc"
 
-; this runs within an .X and .Y loop so it must preserve .X and .Y
-; It is invoked after having just loaded the byte count into .A
-.macro PROCESS_POSITIVE_COUNT scratchVar
-   sta scratchVar
-
-   phx
-      phy
-         jsr func_slurp_into_buffer
-         ldy #0
-      :  lda RAM_VOLATILE_BUF,y
-         sta VERA_DATA0
-         iny
-         cpy scratchVar
-         bne :-
-      ply
-   plx
-.endmacro
-
-; same comment as for positive count macro
-.macro PROCESS_NEGATIVE_COUNT
-   eor #$FF ; for negative values, two's compliment gets the absolute value
-   inc      ; (unless special case of -128 which an encoder should never do)
-   phy
-   tay                          ; .Y now becomes the repeat count
-   jsr func_slurp_into_a        ; .A now becomes the byte to repeat
-:  sta VERA_DATA0
-   dey
-   bne :-
-   ply
-.endmacro
-
 .proc sub_skip_columns: near
    jsr func_slurp_into_a ; (.A holds skip count, where 0 means 0)
    bne @proceed_to_skip
@@ -60,42 +29,129 @@
 
 
 .proc handle_delta_fli: near
-   scratchVar = ZP_VOLATILE_A
 
    lda #4                              ; slurp 2 words: line skip, line count
    jsr func_slurp_into_buffer
-   lda RAM_VOLATILE_BUF+0              ; .A now holds line skip (0-199)
-   ldx RAM_VOLATILE_BUF+2              ; .X now holds line count (1-200)
 
-   ; TODO: need logic to suppress first and last lines from writing to VERA
+   tmpLineSkip = RAM_VOLATILE_BUF+0    ; i.e. pointer to volatile buffer, will
+   tmpLineCount = RAM_VOLATILE_BUF+2   ; be clobbered upon first line slurp
 
-   jsr func_prep_for_active_buffering  ; .A has line skip
+   ldx tmpLineCount                    ; .X now holds the line count
 
-@line_loop:                            ; .X is the line countdown
+   clc
+   txa
+   adc tmpLineSkip                     ; .A now holds the total lines
 
-      jsr func_slurp_into_a            ; packet count
-      beq @packet_loop_done            ; (packet count can legit be zero)
-      tay                              ; .Y is the packet countdown
-      @packet_loop:
-         jsr sub_skip_columns
-         jsr func_slurp_into_a         ; byte count
-         bit #%10000000
-         beq @process_positive_count   ; i.e. bit 7 was clear
-            PROCESS_NEGATIVE_COUNT
-            bra @process_count_done
-         @process_positive_count:
-            PROCESS_POSITIVE_COUNT scratchVar
-         @process_count_done:
-       dey
-       bne @packet_loop
-       @packet_loop_done:
+   pha                                 ; squirrel it for later
+      cmp #200
+      bne @last_line_is_cool
+      dex
+   @last_line_is_cool:
 
-       ADVANCE_LINE_FOR_ACTIVE_BUFFERING
+      lda tmpLineSkip                  ; .A now holds line skip
+      jsr func_prep_for_active_buffering
 
-   dex
-   bne @line_loop
+   ;---------------------------------------------------------------------------
+   ; IMPORTANT: we're about to enter the line loop ... it will render lines,
+   ;            and rendering lines will definitely clobber the volatile buffer
+   ;            where we were storing the line skip and line count above.  It
+   ;            is important we must never refer to those tmp symbols again,
+   ;            since they'll point to clobbered data in the buffer.  That is
+   ;            why we did a PHA to squirrel the line count.
+   ;---------------------------------------------------------------------------
+
+   @line_loop:
+      jsr sub_render_line
+      dex
+      bne @line_loop
+
+   pla                                 ; unsquirrel the total lines
+   cmp #200                            ; if it was 200 that meant we have a
+   bne @burn_mitigated                 ; line to burn!
+   jsr sub_burn_line
+@burn_mitigated:
 
    jsr func_vera_flip_stage
 
    RTS_NO_DETAIL RC_SUCCESS
 .endproc
+
+.proc sub_render_line: near
+   scratchVar = ZP_VOLATILE_A
+
+   jsr func_slurp_into_a            ; packet count
+   beq @packet_loop_done            ; (packet count can legit be zero)
+   tay                              ; .Y is the packet countdown
+@packet_loop:
+   jsr sub_skip_columns
+   jsr func_slurp_into_a         ; byte count
+   bit #%10000000
+   beq @process_positive_count   ; i.e. bit 7 was clear
+
+      TWOS_COMPLIMENT_A
+      phy
+         tay                          ; .Y now becomes the repeat count
+         jsr func_slurp_into_a        ; .A now becomes the byte to repeat
+      :  sta VERA_DATA0
+         dey
+         bne :-
+      ply
+      bra @process_count_done
+
+   @process_positive_count:
+
+      sta scratchVar
+      phx
+         phy
+            jsr func_slurp_into_buffer
+            ldy #0
+         :  lda RAM_VOLATILE_BUF,y
+            sta VERA_DATA0
+            iny
+            cpy scratchVar
+            bne :-
+         ply
+      plx
+
+   @process_count_done:
+
+   dey
+   bne @packet_loop
+@packet_loop_done:
+
+   ADVANCE_LINE_FOR_ACTIVE_BUFFERING
+
+   rts
+.endproc
+
+
+.proc sub_burn_line: near
+   jsr func_slurp_into_a            ; packet count
+   beq @packet_loop_done            ; (packet count can legit be zero)
+   tay                              ; .Y is the packet countdown
+@packet_loop:
+   jsr func_slurp_into_a            ; irrelevant column skip count
+   jsr func_slurp_into_a            ; byte count
+   bit #%10000000
+   beq @process_positive_count      ; i.e. bit 7 was clear
+
+      jsr func_slurp_into_a         ; irrelevant byte to repeat
+      bra @process_count_done
+
+   @process_positive_count:
+
+      phx
+         phy
+            jsr func_slurp_into_buffer
+         ply
+      plx
+
+   @process_count_done:
+
+   dey
+   bne @packet_loop
+@packet_loop_done:
+
+   rts
+.endproc
+
