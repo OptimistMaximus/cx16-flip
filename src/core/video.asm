@@ -149,6 +149,7 @@
 
    sta ZP24_vramOffset+0                     ; .A is now in the 24-bit result
    stz ZP24_vramOffset+1                     ; which is the basis for our
+   stz ZP24_vramOffset+2
    U16_ASL ZP24_vramOffset                   ; multiplication optimization
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
@@ -159,9 +160,7 @@
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
    U16_ADD_VAR ZP24_vramOffset, scratchAddr  ; add in 6x value
-   lda ZP8_activeStage                       ; active stage number is also
-   sta ZP24_vramOffset+2                     ; the address high byte!
-
+   U24_ADD_IMM ZP24_vramOffset, $0FA00       ; shift to after stage fold  
    SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
    rts
 .endproc
@@ -182,19 +181,7 @@
 ; @effect .Y clobbered
 ;==============================================================================
 .proc func_vera_flip_stage: near
-   lda ZP8_activeStage
-   beq @flip_stage_active_0
-      stz VERA_CTRL
-      U8_COPY_IMM VERA_L0_TILEBASE, STAGE_1_TILEBASE
-      U8_COPY_IMM ZP8_activeStage, STAGE_0_ACTIVE
-      PREP_BULK_VRAM_COPY STAGE_0_ADDRESS, STAGE_1_ADDRESS
-      bra @flip_done
-@flip_stage_active_0:
-      stz VERA_CTRL
-      U8_COPY_IMM VERA_L0_TILEBASE, STAGE_0_TILEBASE
-      U8_COPY_IMM ZP8_activeStage, STAGE_1_ACTIVE
-      PREP_BULK_VRAM_COPY STAGE_1_ADDRESS, STAGE_0_ADDRESS
-@flip_done:
+   PREP_BULK_VRAM_COPY $00000, $0FA00
    EXEC_BULK_VRAM_COPY 198, 320
    rts
 .endproc
