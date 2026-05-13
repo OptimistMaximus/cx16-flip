@@ -40,7 +40,12 @@ They are also printed to screen as hex string representation: "AA [XXYY]"
 
 ### Version History
 
-- 2026/04/02 Version 0.0.2
+- 2026/05/12 Version 0.0.3
+  - fixed crash on second running
+  - add support for zero length packets (skips within deltas)
+  - introduce fast cache writing
+  - hide pixelated mess via VSTART/VSTOP
+- 2026/05/02 Version 0.0.2
   - basic functionality established
   - pixelated mess shows on-screen
   - ignores "speed" field of header
