@@ -38,6 +38,16 @@ FILE_TYPE_FLI := $AF11
 @fileType_is_fli:
 
    ;---------------------------------------------------------------------------
+   ; validate width and height
+   ;
+   ; A properly encoded FLI should have these set to zero, since FLI files are
+   ; all implicitly 320 x 200.  But it seems that many encoders will set them
+   ; to 320 and 200 anyway. We'll tolerate either zeros or 320 x 200.
+   ;---------------------------------------------------------------------------
+
+   ; TODO: validate height and width
+
+   ;---------------------------------------------------------------------------
    ; validate speed
    ;
    ; FLI has a 32-bit speed variable whose unit is seventieth-of-a-second. The

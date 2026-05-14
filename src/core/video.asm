@@ -160,7 +160,7 @@
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
    U16_ADD_VAR ZP24_vramOffset, scratchAddr  ; add in 6x value
-   U24_ADD_IMM ZP24_vramOffset, $0FA00       ; shift to after stage fold  
+   U24_ADD_IMM ZP24_vramOffset, $0FA00       ; shift to after stage fold
    SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
    rts
 .endproc
