@@ -4,7 +4,6 @@
 
 .import func_slurp_into_buffer
 .import handle_invalid
-.import handle_unsupported
 .import handle_frame_type
 .import handle_color_256
 .import handle_color_64
@@ -32,25 +31,16 @@
 ; it's $F1FA.
 ;##############################################################################
 
-chunk_type_jump_table:
-.word handle_invalid       ; $00
-.word handle_invalid       ; $01
-.word handle_invalid       ; $02
-.word handle_unsupported   ; $03 CEL_DATA    (FLC only)
-.word handle_color_256     ; $04 COLOR_256   256-level colour palette
-.word handle_invalid       ; $05
-.word handle_invalid       ; $06
-.word handle_unsupported   ; $07 DELTA_FLC   (FLC only)
-.word handle_invalid       ; $08
-.word handle_invalid       ; $09
-.word handle_invalid       ; $0A
-.word handle_color_64      ; $0B COLOR_64    64-level colour palette
-.word handle_delta_fli     ; $0C DELTA_FLI   delta image, byte oriented RLE
-.word handle_black         ; $0D BLACK       full black frame (rare)
-.word handle_invalid       ; $0E
-.word handle_byte_run      ; $0F BYTE_RUN    full image, byte oriented RLE
-.word handle_fli_copy      ; $10 FLI_COPY    uncompressed image (rare)
-
+chunk_type_jump_table:     ; listed in order of most to least frequent
+.word handle_invalid
+.word handle_frame_type    ; $F1FA FRAME_TYPE
+.word handle_delta_fli     ; $0C   DELTA_FLI  delta image, byte oriented RLE
+.word handle_color_64      ; $0B   COLOR_64   64-level color palette
+.word handle_color_256     ; $04   COLOR_256  256-level color palette
+.word handle_byte_run      ; $0F   BYTE_RUN   full image, byte oriented RLE
+.word handle_fli_copy      ; $10   FLI_COPY   uncompressed image (rare)
+.word handle_black         ; $0D   BLACK      full black frame (rare)
+   
 .segment "CODE"
 
 .include "../include/global.inc"
@@ -74,31 +64,48 @@ chunk_type_jump_table:
    lda #6 ; 32-bit chunk size, followed by 16-bit chunk type
    jsr func_slurp_into_buffer
    U16_COPY_VAR ZP16_chunkType, RAM_VOLATILE_BUF+4
-
-   ;---------------------------------------------------------------------------
-   ; High byte $00 means we can use the jump table.  The low byte should be a
-   ; value from $00 to $2B, so we can safely multiply it by 2 to get the jump
-   ; table offset. The FLI subset of chunk types is $10 or less.
-   ;
-   ; We only get as far as parsing chunks if we already passed header
-   ; validation. Header validation already made sure the type was FLI, not FLC.
-   ; We'll trust that the file was properly encoded, so only FLI chunk types
-   ; will be encountered.
-   ;---------------------------------------------------------------------------
-   lda ZP16_chunkType+1
-   bne @two_byte_chunk_type
-   lda ZP16_chunkType+0
-   asl
-   tax
+   
+   jsr func_resolve_chunk_type
    jmp (chunk_type_jump_table,x)
 
-@two_byte_chunk_type:
-   ;---------------------------------------------------------------------------
-   ; There are 5 chunk types whose value is more than $FF, and only one of them
-   ; is valid for FLI files. In keeping with the "trust me, bro" mentality,
-   ; we assume the file was properly encoded. That means any chunk type whose
-   ; high byte wasn't zero MUST be the $F1FA chunk.
-   ;---------------------------------------------------------------------------
-   jmp handle_frame_type
+.endproc
 
+.macro SET_OFFSET_AND_RETURN_IF_MATCH chunkTypeLowerByte, jumpTableOffset
+   cmp #chunkTypeLowerByte
+   bne :+
+   ldx #jumpTableOffset
+   rts
+:
+.endmacro
+
+.macro SET_OFFSET_TO_ZERO_AND_RETURN
+   ldx #$00
+   rts
+.endmacro
+
+
+
+; @param ZP16_chunkType holds the chunk type
+; @effect .X holds the jump table offset to the handler
+.proc func_resolve_chunk_type: near
+   lda ZP16_chunkType+1
+   beq @check_types_with_high_byte_00
+   cmp #$F1
+   beq @check_types_with_high_byte_F1
+   SET_OFFSET_TO_ZERO_AND_RETURN
+   
+@check_types_with_high_byte_F1:
+   lda ZP16_chunkType+0
+   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; F1FA FRAME_TYPE
+   SET_OFFSET_TO_ZERO_AND_RETURN
+   
+@check_types_with_high_byte_00:
+   lda ZP16_chunkType+0
+   SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
+   SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
+   SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
+   SET_OFFSET_AND_RETURN_IF_MATCH $0F, $0A ; BYTE_RUN
+   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
+   SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0E ; BLACK
+   SET_OFFSET_TO_ZERO_AND_RETURN
 .endproc

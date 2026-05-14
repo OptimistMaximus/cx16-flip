@@ -74,7 +74,6 @@ RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 ;------------------------------------------------------------------------------
 
 ZP24_vramOffset        := $22
-ZP8_activeStage        := $25
 ZP8_slurpTracker       := $28
 
 ZP16_chunkType         := $40
@@ -84,6 +83,7 @@ ZP16_currFrame         := $48
 ZP16_numSubChunks      := $4A
 ZP16_origIrqHandler    := $4C
 ZP16_debugTimerSyncs   := $4E
+ZP16_handlerFuncPtr    := $50
 
 RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 
@@ -93,7 +93,7 @@ RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 RC_SUCCESS                    := 0
 RC_CANNOT_OPEN_FILE           := 1  ;
 RC_UNSUPPORTED_FILE_TYPE      := 2  ; type
-RC_UNSUPPORTED_FRAME_TYPE     := 3  ; type
+RC_INVALID_FRAME_TYPE         := 3  ; type
 RC_UNSUPPORTED_CHUNK_TYPE     := 4  ; type
 RC_INVALID_CHUNK_TYPE         := 5  ; type
 RC_SPEED_TOO_HIGH             := 6  ; FLI speed, lower half of 32-bit value
