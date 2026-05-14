@@ -91,12 +91,10 @@ RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
 ;------------------------------------------------------------------------------
 RC_SUCCESS                    := 0
-RC_CANNOT_OPEN_FILE           := 1  ;
-RC_UNSUPPORTED_FILE_TYPE      := 2  ; type
-RC_INVALID_FRAME_TYPE         := 3  ; type
-RC_UNSUPPORTED_CHUNK_TYPE     := 4  ; type
-RC_INVALID_CHUNK_TYPE         := 5  ; type
-RC_SPEED_TOO_HIGH             := 6  ; FLI speed, lower half of 32-bit value
+RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
+RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
+RC_INVALID_CHUNK_TYPE         := 3  ; type
+RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
 
 ;==============================================================================
 ; RTS_VAR16_DETAIL
