@@ -1,12 +1,16 @@
 .org $080D            ; specify where in memory our code will live
+
+.import test_suite_0
+.import test_suite_1
+.import test_suite_2
+.import smc_anchor_for_bsod
+
 .segment "STARTUP"    ; declare segments
 .segment "INIT"
 .segment "ONCE"
 .segment "CODE"
 
-.import test_suite_0
-.import test_suite_1
-.import test_suite_2
+.include "./include/opcodes.inc"
 
 .macro RUN_SUITE label
    jsr label
@@ -36,6 +40,9 @@
    ;###########################################################################
 
 start:
+
+   lda #OPCODE_RTS
+   sta smc_anchor_for_bsod ; overwrite JMP with RTS
 
    RUN_SUITE test_suite_0
    RUN_SUITE test_suite_1

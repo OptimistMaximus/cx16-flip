@@ -30,6 +30,7 @@
 ; Zero the value in a 16-bit variable
 ;
 ; @param targetAddr the value's address
+; @effect .A
 ;==============================================================================
 .macro U16_STZ targetAddr
    lda #0
@@ -43,6 +44,7 @@
 ; Zero the value in a 24-bit variable
 ;
 ; @param targetAddr the value's address
+; @effect .A
 ;==============================================================================
 .macro U24_STZ targetAddr
    lda #0
@@ -57,6 +59,7 @@
 ; Zero the value in a 32-bit variable
 ;
 ; @param targetAddr the value's address
+; @effect .A
 ;==============================================================================
 .macro U32_STZ targetAddr
    lda #0
@@ -240,6 +243,29 @@
 .endmacro
 
 ;==============================================================================
+; U32_INC
+;
+; Increment the value in a variable
+;
+; @param targetAddr the value's address
+;
+; @cycles  8 if ZP and no low rollover
+;         16 if ZP and low rollover
+;         24 if ZP and mid rollover
+;         32 if ZP and high rollover
+;==============================================================================
+.macro U32_INC targetAddr
+    inc targetAddr+0
+    bne :+
+    inc targetAddr+1
+    bne :+
+    inc targetAddr+2
+    bne :+
+    inc targetAddr+3
+:
+.endmacro
+
+;==============================================================================
 ; U16_SUB_IMM
 ;
 ; Subtract out of a target variable an immediate value
@@ -345,6 +371,30 @@
    sta targetAddr+1
 .endmacro
 
+;==============================================================================
+; U32_ADD_A
+;
+; Add into a target variable the value in a .A
+;
+; @param targetAddr the target value's address
+; @cycles 34 if ZP
+;
+; Note, this macro will clear the carry bit before adding.
+;==============================================================================
+.macro U32_ADD_A targetAddr
+   clc
+   adc targetAddr+0
+   sta targetAddr+0
+   lda targetAddr+1
+   adc #0
+   sta targetAddr+1
+   lda targetAddr+2
+   adc #0
+   sta targetAddr+2
+   lda targetAddr+3
+   adc #0
+   sta targetAddr+3
+.endmacro
 
 
 
@@ -367,30 +417,6 @@
    sbc valueAddress+1
    sta targetAddr+1
 .endmacro
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ;==============================================================================
 ; U16_CMP_IMM
@@ -461,6 +487,27 @@
    bne :+
    lda targetAddr+0
    cmp #<otherValue
+:
+.endmacro
+
+;==============================================================================
+; U32_CMP_VAR
+;
+; @param valueAddr the value's address
+; @param otherValue the argument
+;==============================================================================
+.macro U32_CMP_VAR targetAddr, otherAddr
+   lda targetAddr+3
+   cmp otherAddr+3
+   bne :+
+   lda targetAddr+2
+   cmp otherAddr+2
+   bne :+
+   lda targetAddr+1
+   cmp otherAddr+1
+   bne :+
+   lda targetAddr+0
+   cmp otherAddr+0
 :
 .endmacro
 

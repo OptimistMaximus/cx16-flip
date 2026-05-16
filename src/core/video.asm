@@ -53,30 +53,34 @@
 .proc func_vera_setup: near
 
    ; is this what's causing a flash-bang?
-   stz VERA_CTRL                                   ; DCSEL=0
-   stz VERA_DC0_VIDEO                              ; disable everything
+   stz VERA_CTRL                            ; DCSEL=0
+   stz VERA_DC0_VIDEO                       ; disable everything
 
-   U16_STZ CX16_API_R0                             ; use default driver
+   U16_STZ CX16_API_R0                      ; use default driver
    jsr KERNAL_GRAPH_INIT
 
-   U8_COPY_IMM ZP8_activeStage,   STAGE_1_ACTIVE
-   U8_COPY_IMM VERA_CTRL,         $00              ; DCSEL=0
-   U8_COPY_IMM VERA_DC0_HSCALE,   64               ; 640 -> 320
-   U8_COPY_IMM VERA_DC0_VSCALE,   64               ; 480 -> 240
-   U8_COPY_IMM VERA_L0_CONFIG,    %00000111        ; bitmap mode, 8bpp color
-   U8_COPY_IMM VERA_L0_TILEBASE,  STAGE_0_TILEBASE
-   U8_COPY_IMM VERA_L0_HSCROLL_L, $00              ; (unused)
-   U8_COPY_IMM VERA_L0_HSCROLL_H, $00              ; Palette Offset 0
+   stz VERA_CTRL                            ; DCSEL=0
+   lda #64
+   sta VERA_DC0_HSCALE                      ; 640 -> 320
+   sta VERA_DC0_VSCALE                      ; 480 -> 240
 
-   U8_COPY_IMM VERA_CTRL,         $02              ; DCSEL=1
-   U8_COPY_IMM VERA_DC1_HSTART,   (0 >> 2)         ; These next 4 values are
-   U8_COPY_IMM VERA_DC1_HSTOP,    (640 >> 2)       ; all based on 640x480
-   U8_COPY_IMM VERA_DC1_VSTART,   (0 >> 1)         ; regardless of screen mode
-   U8_COPY_IMM VERA_DC1_VSTOP,    (396 >> 1)       ; i.e. use 396 for 198
+   lda #%00000111                           ; bitmap mode, 8bpp color
+   sta VERA_L0_CONFIG
 
-   stz VERA_CTRL                                   ; DCSEL=0
-   U8_COPY_IMM VERA_DC0_VIDEO,    %00010001        ; enable Layer 0, VGA mode
+   stz VERA_L0_TILEBASE                     ; VRAM $00000, W=320
+   stz VERA_L0_HSCROLL_L                    ; (unused)
+   stz VERA_L0_HSCROLL_H                    ; Palette Offset 0
 
+   U8_COPY_IMM VERA_CTRL,       $02         ; DCSEL=1
+   U8_COPY_IMM VERA_DC1_HSTART, (0 >> 2)    ; These next 4 values are
+   U8_COPY_IMM VERA_DC1_HSTOP,  (640 >> 2)  ; all based on 640x480
+   U8_COPY_IMM VERA_DC1_VSTART, (0 >> 1)    ; regardless of screen mode
+   U8_COPY_IMM VERA_DC1_VSTOP,  (400 >> 1)  ; i.e. use 400 for 200
+
+   stz VERA_CTRL                            ; DCSEL=0
+   lda #%00010001                           ; enable Layer 0, VGA mode
+   sta VERA_DC0_VIDEO
+ 
    rts
 .endproc
 
@@ -98,7 +102,7 @@
 ; relatively small.
 ;==============================================================================
 .proc func_load_palette: near
-   SET_VERA_ADDR24_IMM $00, PALETTE_BUFFER, $10
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
    SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE, $10
    ldy #(512 / 4)
 @loop:
@@ -149,6 +153,7 @@
 
    sta ZP24_vramOffset+0                     ; .A is now in the 24-bit result
    stz ZP24_vramOffset+1                     ; which is the basis for our
+   stz ZP24_vramOffset+2
    U16_ASL ZP24_vramOffset                   ; multiplication optimization
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
@@ -159,9 +164,7 @@
    U16_ASL ZP24_vramOffset
    U16_ASL ZP24_vramOffset
    U16_ADD_VAR ZP24_vramOffset, scratchAddr  ; add in 6x value
-   lda ZP8_activeStage                       ; active stage number is also
-   sta ZP24_vramOffset+2                     ; the address high byte!
-
+   U24_ADD_IMM ZP24_vramOffset, $0FA00       ; shift to after stage fold
    SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
    rts
 .endproc
@@ -182,19 +185,7 @@
 ; @effect .Y clobbered
 ;==============================================================================
 .proc func_vera_flip_stage: near
-   lda ZP8_activeStage
-   beq @flip_stage_active_0
-      stz VERA_CTRL
-      U8_COPY_IMM VERA_L0_TILEBASE, STAGE_1_TILEBASE
-      U8_COPY_IMM ZP8_activeStage, STAGE_0_ACTIVE
-      PREP_BULK_VRAM_COPY STAGE_0_ADDRESS, STAGE_1_ADDRESS
-      bra @flip_done
-@flip_stage_active_0:
-      stz VERA_CTRL
-      U8_COPY_IMM VERA_L0_TILEBASE, STAGE_0_TILEBASE
-      U8_COPY_IMM ZP8_activeStage, STAGE_1_ACTIVE
-      PREP_BULK_VRAM_COPY STAGE_1_ADDRESS, STAGE_0_ADDRESS
-@flip_done:
+   PREP_BULK_VRAM_COPY $00000, $0FA00
    EXEC_BULK_VRAM_COPY 198, 320
    rts
 .endproc

@@ -15,5 +15,5 @@
    lda #10
    jsr func_slurp_into_buffer
    U16_COPY_VAR ZP16_numSubChunks, RAM_VOLATILE_BUF
-   RTS_NO_DETAIL RC_SUCCESS
+   rts
 .endproc

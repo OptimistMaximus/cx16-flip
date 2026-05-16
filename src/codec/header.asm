@@ -1,5 +1,6 @@
 .export func_slurp_header
 
+.import bsod
 .import func_slurp_into_buffer
 
 .include "../include/global.inc"
@@ -13,9 +14,11 @@ FILE_TYPE_FLI := $AF11
 ;==============================================================================
 ; func_slurp_header
 ;
-; @effect .A .X .Y per RTS_xxx_DETAIL semantics
+; This must be the very first thing called after opening the file input stream
 ;==============================================================================
 .proc func_slurp_header: near
+
+   U32_STZ ZP32_slurpTracker
 
    lda #128 ; header is 128 bytes
    jsr func_slurp_into_buffer
@@ -25,8 +28,8 @@ FILE_TYPE_FLI := $AF11
    ; first just use symbols as effective pointers into the header buffer.
    ; These will be used for validation. After that, we can copy stuff into ZP.
    ;---------------------------------------------------------------------------
+   dwordPointerFileSize =         RAM_VOLATILE_BUF+0  ; pointer to file size
    wordPointerFileType  =         RAM_VOLATILE_BUF+4  ; pointer to file type
-   wordPointerNumFrames =         RAM_VOLATILE_BUF+6  ; pointer to frames
    dwordPointerSpeed    =         RAM_VOLATILE_BUF+16 ; pointer to speed
 
    ;---------------------------------------------------------------------------
@@ -34,8 +37,18 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    U16_CMP_IMM wordPointerFileType, FILE_TYPE_FLI
    beq @fileType_is_fli
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_FILE_TYPE, wordPointerFileType
+   BSOD RC_UNSUPPORTED_FILE_TYPE, wordPointerFileType
 @fileType_is_fli:
+
+   ;---------------------------------------------------------------------------
+   ; validate width and height
+   ;
+   ; A properly encoded FLI should have these set to zero, since FLI files are
+   ; all implicitly 320 x 200.  But it seems that many encoders will set them
+   ; to 320 and 200 anyway. We'll tolerate either zeros or 320 x 200.
+   ;---------------------------------------------------------------------------
+
+   ; TODO: validate height and width
 
    ;---------------------------------------------------------------------------
    ; validate speed
@@ -46,7 +59,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    U32_CMP_IMM dwordPointerSpeed, 2293
    bcc @speed_is_cool
-   RTS_VAR16_DETAIL RC_SPEED_TOO_HIGH, dwordPointerSpeed
+   BSOD RC_SPEED_TOO_HIGH, dwordPointerSpeed
 @speed_is_cool:
 
    ;---------------------------------------------------------------------------
@@ -70,11 +83,11 @@ FILE_TYPE_FLI := $AF11
    U16_SLOW_DIVIDE ZP16_delaySyncs, varTemp, varDivisor
 
    ;---------------------------------------------------------------------------
-   ; copy important data out of the volatile buffer and into our ZP vars
+   ; store variables
    ;---------------------------------------------------------------------------
-   U16_COPY_VAR ZP16_numFrames,   wordPointerNumFrames
+   U32_COPY_VAR ZP32_fileSize, dwordPointerFileSize
 
-   RTS_NO_DETAIL RC_SUCCESS
+   rts
 .endproc
 
 

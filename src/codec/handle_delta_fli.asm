@@ -37,43 +37,15 @@
    tmpLineCount = RAM_VOLATILE_BUF+2   ; be clobbered upon first line slurp
 
    ldx tmpLineCount                    ; .X now holds the line count
-
-   clc
-   txa
-   adc tmpLineSkip                     ; .A now holds the total lines
-
-   pha                                 ; squirrel it for later
-      cmp #200
-      bne @last_line_is_cool
-      dex
-   @last_line_is_cool:
-
-      lda tmpLineSkip                  ; .A now holds line skip
-      jsr func_prep_for_active_buffering
-
-   ;---------------------------------------------------------------------------
-   ; IMPORTANT: we're about to enter the line loop ... it will render lines,
-   ;            and rendering lines will definitely clobber the volatile buffer
-   ;            where we were storing the line skip and line count above.  It
-   ;            is important we must never refer to those tmp symbols again,
-   ;            since they'll point to clobbered data in the buffer.  That is
-   ;            why we did a PHA to squirrel the line count.
-   ;---------------------------------------------------------------------------
+   lda tmpLineSkip                     ; .A now holds line skip
+   jsr func_prep_for_active_buffering
 
    @line_loop:
-      jsr sub_render_line
-      dex
-      bne @line_loop
+   jsr sub_render_line
+   dex
+   bne @line_loop
 
-   pla                                 ; unsquirrel the total lines
-   cmp #200                            ; if it was 200 that meant we have a
-   bne @burn_mitigated                 ; line to burn!
-   jsr sub_burn_line
-@burn_mitigated:
-
-   jsr func_vera_flip_stage
-
-   RTS_NO_DETAIL RC_SUCCESS
+   jmp func_vera_flip_stage
 .endproc
 
 .proc sub_render_line: near
@@ -123,35 +95,3 @@
 
    rts
 .endproc
-
-
-.proc sub_burn_line: near
-   jsr func_slurp_into_a            ; packet count
-   beq @packet_loop_done            ; (packet count can legit be zero)
-   tay                              ; .Y is the packet countdown
-@packet_loop:
-   jsr func_slurp_into_a            ; irrelevant column skip count
-   jsr func_slurp_into_a            ; byte count
-   bit #%10000000
-   beq @process_positive_count      ; i.e. bit 7 was clear
-
-      jsr func_slurp_into_a         ; irrelevant byte to repeat
-      bra @process_count_done
-
-   @process_positive_count:
-
-      phx
-         phy
-            jsr func_slurp_into_buffer
-         ply
-      plx
-
-   @process_count_done:
-
-   dey
-   bne @packet_loop
-@packet_loop_done:
-
-   rts
-.endproc
-

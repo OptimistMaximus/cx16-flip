@@ -50,6 +50,11 @@ test_arg_expect_bb: .asciiz "bb"
 
 .segment "CODE"
 
+VRAM_IMAGE_LINE_0  := $00000
+VRAM_IMAGE_LINE_1  := $00140
+VRAM_IMAGE_LINE_2  := $00280
+VRAM_IMAGE_LINE_3  := $003C0
+
 .macro PREP_BASIC_BUFFER sourceLabel
    ldy #$FF
 :  iny
@@ -113,7 +118,7 @@ test_arg_expect_bb: .asciiz "bb"
 .endproc
 
 .proc sub_init_palette_buffer: near
-   SET_VERA_ADDR24_IMM $00, $0FE00, $10
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    ldy #0
 @loop:
    sty VERA_DATA0
@@ -166,38 +171,33 @@ test_arg_expect_bb: .asciiz "bb"
    OPEN_INPUTSTREAM_R fn_header_x, 6, '0'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM       $3000,        RC_SUCCESS
-   ASSERT_VAR_U16_EQUALS_IMM $3001, $04A1, ZP16_delaySyncs
-   ASSERT_VAR_U16_EQUALS_IMM $3002, $0024, ZP16_numFrames
+   ASSERT_VAR_U16_EQUALS_IMM $3000, $04A1, ZP16_delaySyncs
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE
-   ASSERT_X_EQUALS_IMM $3011, $12
-   ASSERT_Y_EQUALS_IMM $3012, $AF
+   ASSERT_VAR_U8_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3011, $AF12, GOLDEN_returnDetail
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3050, RC_SPEED_TOO_HIGH
-   ASSERT_X_EQUALS_IMM $3051, $12
-   ASSERT_Y_EQUALS_IMM $3052, $34
+   ASSERT_VAR_U8_EQUALS_IMM $3020, RC_SPEED_TOO_HIGH, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3021, $3412, GOLDEN_returnDetail
 
    ;---------------------------------------------------------------------------
    ; TEST 31 - handle_invalid
    ;           handle_unsupported
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM ZP16_chunkType, $AABB
+   U16_COPY_IMM ZP16_chunkType, $DEAD
    jsr handle_invalid
-   ASSERT_A_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE
-   ASSERT_X_EQUALS_IMM $3101, $BB
-   ASSERT_Y_EQUALS_IMM $3102, $AA
+   ASSERT_VAR_U8_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3101, $DEAD, GOLDEN_returnDetail
 
+   U16_COPY_IMM ZP16_chunkType, $BEEF
    jsr handle_unsupported
-   ASSERT_A_EQUALS_IMM $3103, RC_UNSUPPORTED_CHUNK_TYPE
-   ASSERT_X_EQUALS_IMM $3104, $BB
-   ASSERT_Y_EQUALS_IMM $3105, $AA
+   ASSERT_VAR_U8_EQUALS_IMM $3110, RC_UNSUPPORTED_CHUNK_TYPE, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GOLDEN_returnDetail
 
    ;---------------------------------------------------------------------------
    ; TEST 32 - handle_frame_type
@@ -205,7 +205,6 @@ test_arg_expect_bb: .asciiz "bb"
    OPEN_INPUTSTREAM fn_frame
    jsr handle_frame_type
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3200, RC_SUCCESS
    ASSERT_VAR_U16_EQUALS_IMM $3201, $3412, ZP16_numSubChunks
 
    ;---------------------------------------------------------------------------
@@ -242,8 +241,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3400, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $0FE00, $10
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3401, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3402, $0101 ; color 1 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3403, $0EA7 ; color 2
@@ -256,8 +254,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3410, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $0FE00, $10
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3411, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3412, $0101 ; color 1 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3413, $0321 ; color 2
@@ -270,8 +267,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3420, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $0FE00, $10
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    lda #0
 @test32_copy_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3421, $0111  ; color 0,2,4,etc
@@ -285,8 +281,7 @@ test_arg_expect_bb: .asciiz "bb"
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3430, RC_SUCCESS
-   SET_VERA_ADDR24_IMM $00, $0FE00, $10
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
    lda #0
 @test32_verify_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3431, $0111  ; color 0,2,4,etc
@@ -309,21 +304,13 @@ test_arg_expect_bb: .asciiz "bb"
    ; stage switched from 0 to 1.
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
-   U8_COPY_IMM ZP8_activeStage, $01 ; establish stage 1 as active
    OPEN_INPUTSTREAM fn_byterun
    jsr handle_byte_run
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3500, RC_SUCCESS
 
-   stz VERA_CTRL                        ; assert that we switched layers
-   lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
-   and #%01110000                       ; then mask out all but bits 6,5,4
-   ASSERT_A_EQUALS_IMM $3501, %00100000 ; then verify sprites, L1, L0
-   ASSERT_VAR_U8_EQUALS_IMM $3502, $00, ZP8_activeStage
-
-   SET_VERA_ADDR24_IMM $00, $10000, $10
+   SET_VERA_ADDR24_IMM $00, $00000, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3510, $00 ; packet 0 start (line 0)
-   SET_VERA_ADDR24_IMM $00, $1007E, $10
+   SET_VERA_ADDR24_IMM $00, $0007E, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3511, $00 ; packet 0 end
    ASSERT_VRAM_U8_EQUALS_IMM $3512, $01 ; packet 1 start
    ASSERT_VRAM_U8_EQUALS_IMM $3513, $02
@@ -331,10 +318,10 @@ test_arg_expect_bb: .asciiz "bb"
    ASSERT_VRAM_U8_EQUALS_IMM $3515, $04
    ASSERT_VRAM_U8_EQUALS_IMM $3516, $05 ; packet 1 end
    ASSERT_VRAM_U8_EQUALS_IMM $3517, $06 ; packet 2 start
-   SET_VERA_ADDR24_IMM $00, $100F3, $10
+   SET_VERA_ADDR24_IMM $00, $000F3, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3518, $06 ; packet 2 end
    ASSERT_VRAM_U8_EQUALS_IMM $3519, $07 ; packet 3 start
-   SET_VERA_ADDR24_IMM $00, $1013F, $10
+   SET_VERA_ADDR24_IMM $00, $0013F, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $07 ; packet 3 end
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $00 ; packet 4 start (line 1)
 
@@ -353,19 +340,10 @@ test_arg_expect_bb: .asciiz "bb"
    ; line 5 -> 0640 + F800 = 0FE40   <--- leave delta
    ;---------------------------------------------------------------------------
    jsr sub_zero_bitmaps
-   U8_COPY_IMM ZP8_activeStage, $00 ; establish stage 0 as active
 
    OPEN_INPUTSTREAM fn_deltafli
    jsr handle_delta_fli
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3600, RC_SUCCESS
-
-   stz VERA_CTRL                        ; assert that we switched layers
-   lda VERA_DC0_VIDEO                   ; by loading current VIDEO flags
-   and #%01110000                       ; then mask out all but bits 6,5,4
-   ASSERT_A_EQUALS_IMM $3601, %00100000 ; then verify sprites, L1, L0
-
-   ASSERT_VAR_U8_EQUALS_IMM $3602, $01, ZP8_activeStage
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0

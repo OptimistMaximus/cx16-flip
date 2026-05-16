@@ -27,104 +27,79 @@
 ; you did, then no logic could ever safely use them!  If you need ZP vars for
 ; IRQ stuff, declare them in the "STATIC" section.
 ;------------------------------------------------------------------------------
-ZP_VOLATILE_ABCD := $30
-ZP_VOLATILE_EFGH := $34
-ZP_VOLATILE_IJKL := $38
-ZP_VOLATILE_MNOP := $3C
+ZP_VOLATILE_A    := $22
+ZP_VOLATILE_B    := $23
+ZP_VOLATILE_C    := $24
+ZP_VOLATILE_D    := $25
+ZP_VOLATILE_E    := $26
+ZP_VOLATILE_F    := $27
+ZP_VOLATILE_G    := $28
+ZP_VOLATILE_H    := $29
+ZP_VOLATILE_I    := $2A
+ZP_VOLATILE_J    := $2B
+ZP_VOLATILE_K    := $2C
+ZP_VOLATILE_L    := $2D
 
-ZP_VOLATILE_ABC  := $30
-ZP_VOLATILE_DEF  := $33
-ZP_VOLATILE_GHI  := $36
-ZP_VOLATILE_JKL  := $39
-ZP_VOLATILE_MNO  := $3C
+ZP_VOLATILE_ABCD := ZP_VOLATILE_A
+ZP_VOLATILE_EFGH := ZP_VOLATILE_E
+ZP_VOLATILE_IJKL := ZP_VOLATILE_I
 
-ZP_VOLATILE_AB   := $30
-ZP_VOLATILE_CD   := $32
-ZP_VOLATILE_EF   := $34
-ZP_VOLATILE_GH   := $36
-ZP_VOLATILE_IJ   := $38
-ZP_VOLATILE_KL   := $3A
-ZP_VOLATILE_MN   := $3C
-ZP_VOLATILE_OP   := $3E
+ZP_VOLATILE_ABC  := ZP_VOLATILE_A
+ZP_VOLATILE_DEF  := ZP_VOLATILE_D
+ZP_VOLATILE_GHI  := ZP_VOLATILE_G
+ZP_VOLATILE_JKL  := ZP_VOLATILE_J
 
-ZP_VOLATILE_A    := $30
-ZP_VOLATILE_B    := $31
-ZP_VOLATILE_C    := $32
-ZP_VOLATILE_D    := $33
-ZP_VOLATILE_E    := $34
-ZP_VOLATILE_F    := $35
-ZP_VOLATILE_G    := $36
-ZP_VOLATILE_H    := $37
-ZP_VOLATILE_I    := $38
-ZP_VOLATILE_J    := $39
-ZP_VOLATILE_K    := $3A
-ZP_VOLATILE_L    := $3B
-ZP_VOLATILE_M    := $3C
-ZP_VOLATILE_N    := $3D
-ZP_VOLATILE_O    := $3E
-ZP_VOLATILE_P    := $3F
+ZP_VOLATILE_AB   := ZP_VOLATILE_A
+ZP_VOLATILE_CD   := ZP_VOLATILE_C
+ZP_VOLATILE_EF   := ZP_VOLATILE_E
+ZP_VOLATILE_GH   := ZP_VOLATILE_G
+ZP_VOLATILE_IJ   := ZP_VOLATILE_I
+ZP_VOLATILE_KL   := ZP_VOLATILE_K
 
 RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 
 ;------------------------------------------------------------------------------
-; GLOBAL "STATIC" VARIABLES
+; GLOBAL "STATIC" VARIABLES (BASIC AREA)
 ;
 ; These are bespoke variables whose content shouldn't be meddled with except
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP24_vramOffset        := $22
-ZP8_activeStage        := $25
-ZP8_slurpTracker       := $28
+ZP16_delaySyncs        := $2E
 
-ZP16_chunkType         := $40
-ZP16_delaySyncs        := $42
-ZP16_numFrames         := $46
-ZP16_currFrame         := $48
-ZP16_numSubChunks      := $4A
-ZP16_origIrqHandler    := $4C
-ZP16_debugTimerSyncs   := $4E
+ZP32_slurpTracker      := $30
+ZP32_fileSize          := $34
+ZP24_vramOffset        := $38
+ZP8_unused             := $3B
+ZP16_chunkType         := $3C
+ZP16_numSubChunks      := $3E
 
-RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
+GOLDEN_origIrqHandler  := $600 ; 16-bit
+GOLDEN_debugTimerSyncs := $602 ; 16-bit
+
+GOLDEN_returnCode      := $6D0 ; 8-bit
+GOLDEN_returnDetail    := $6D2 ; 16-bit
+GOLDEN_zpStash         := $6D4
+
+GOLDEN_slurpBuffer     := $700 ; 256 bytes (idea not implemented yet)
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
 ;------------------------------------------------------------------------------
 RC_SUCCESS                    := 0
-RC_CANNOT_OPEN_FILE           := 1  ;
-RC_UNSUPPORTED_FILE_TYPE      := 2  ; type
-RC_UNSUPPORTED_FRAME_TYPE     := 3  ; type
-RC_UNSUPPORTED_CHUNK_TYPE     := 4  ; type
-RC_INVALID_CHUNK_TYPE         := 5  ; type
-RC_SPEED_TOO_HIGH             := 6  ; FLI speed, lower half of 32-bit value
+RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
+RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
+RC_INVALID_CHUNK_TYPE         := 3  ; type
+RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
 
-;==============================================================================
-; RTS_VAR16_DETAIL
-;
-; This macro establishes a semantic convention where a subroutine can return
-; with .A holding a return code (see above) and .X and .Y holding detail.
-;
-; Note that as part of this macro's contract, it sets .A as the very last
-; action. So, callers can do a quick BEQ or BNE to detect success or failure.
-;==============================================================================
-.macro RTS_VAR16_DETAIL rc, detailAddr
-   ldx detailAddr+0
-   ldy detailAddr+1
-   lda #rc
-   rts
-.endmacro
-
-;==============================================================================
-; RTS_NO_DETAIL
-;
-; This macro is exactly the same as RTS_VAR16_DETAIL, except it forces the
-; .X and .Y values to zero.
-;==============================================================================
-.macro RTS_NO_DETAIL rc
-   ldx #0
-   ldy #0
-   lda #rc
-   rts
+.macro BSOD returnCode, detailAddr
+   lda #returnCode
+   sta GOLDEN_returnCode
+   lda detailAddr+0
+   sta GOLDEN_returnDetail+0
+   lda detailAddr+1
+   sta GOLDEN_returnDetail+1
+   jmp bsod
 .endmacro
 
 .endif
