@@ -186,6 +186,6 @@
 ;==============================================================================
 .proc func_vera_flip_stage: near
    PREP_BULK_VRAM_COPY $00000, $0FA00
-   EXEC_BULK_VRAM_COPY 198, 320
+   EXEC_BULK_VRAM_COPY 200, 320
    rts
 .endproc
