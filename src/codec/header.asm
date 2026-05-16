@@ -13,8 +13,12 @@ FILE_TYPE_FLI := $AF11
 
 ;==============================================================================
 ; func_slurp_header
+;
+; This must be the very first thing called after opening the file input stream
 ;==============================================================================
 .proc func_slurp_header: near
+
+   U32_STZ ZP32_slurpTracker
 
    lda #128 ; header is 128 bytes
    jsr func_slurp_into_buffer
@@ -24,6 +28,7 @@ FILE_TYPE_FLI := $AF11
    ; first just use symbols as effective pointers into the header buffer.
    ; These will be used for validation. After that, we can copy stuff into ZP.
    ;---------------------------------------------------------------------------
+   dwordPointerFileSize =         RAM_VOLATILE_BUF+0  ; pointer to file size
    wordPointerFileType  =         RAM_VOLATILE_BUF+4  ; pointer to file type
    dwordPointerSpeed    =         RAM_VOLATILE_BUF+16 ; pointer to speed
 
@@ -76,6 +81,11 @@ FILE_TYPE_FLI := $AF11
    U16_SLOW_MULTIPLY varTemp, dwordPointerSpeed, varMultiplier
    U16_COPY_IMM varDivisor, 7
    U16_SLOW_DIVIDE ZP16_delaySyncs, varTemp, varDivisor
+
+   ;---------------------------------------------------------------------------
+   ; store variables
+   ;---------------------------------------------------------------------------
+   U32_COPY_VAR ZP32_fileSize, dwordPointerFileSize
 
    rts
 .endproc

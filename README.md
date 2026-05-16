@@ -50,6 +50,51 @@ They are also printed to screen as hex string representation: "AA [XXYY]"
   - ignores "speed" field of header
   - crashes on second running
 
+## KNOWN BUGS
+
+- crashes or wonky colors on subsequent runs
+- Around line 200 there's a bar of color (e.g. ATTACK.FLI, EARTH.FLI)
+- sometimes screen goes wonky, probably due to time lag between loading the next color palette and showing the next image
+
+### TEST RESULTS
+
+- 03 F101
+  - APPLE
+  - ASLAMP 
+  - BATTLE
+  - BIRDSHOW
+  - CARBOARD
+  - CHOPCITY
+  - CHUBBY03
+  - MEMBRANE
+  - PUZMORF
+  - SNEEZE
+  - STHELENS
+  - WEIRD01
+  
+  
+- 03 F100
+  - BOOKSPIN
+
+- 02 1000 (seemingly as last frame)
+  - CDROMCLB
+  - NAYLOR
+  - PUZZLE5
+  - SAUCER04
+  
+- 02 0D00
+  - MOONWALK
+  
+- 03 B7B8
+  - PLANET (with squawk)
+
+  
+
+
+
+
+
+
 ## IDEAS / TODO
 
 - stream file into VRAM

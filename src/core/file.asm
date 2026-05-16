@@ -9,6 +9,7 @@
 
 .include "../include/kernal.inc"
 .include "../include/global.inc"
+.include "../include/math.inc"
 .include "../include/petscii.inc"
 
    FILE_LOGICAL_NUMBER := 1 ; arbitrary logical file number
@@ -87,11 +88,11 @@
 ; func_slurp_into_a
 ;
 ; @effect .A holds slurped byte (but status flags do not reflect this)
-; @effect ZP8_slurpTracker incremented by the specified number of bytes
+; @effect ZP32_slurpTracker incremented by the specified number of bytes
 ; @cycles 8 plus whatever ACPTR uses
 ;-----------------------------------------------------------------------------
 .proc func_slurp_into_a: near
-   inc ZP8_slurpTracker
+   U32_INC ZP32_slurpTracker
    jmp KERNAL_ACPTR
 .endproc
 
@@ -101,14 +102,12 @@
 ; @param  .A the number of bytes to slurp (1-255)
 ; @effect .X .Y clobbered
 ; @effect RAM_VOLATILE_BUF is populated with the desired number of bytes
-; @effect ZP8_slurpTracker incremented by the specified number of bytes
+; @effect ZP32_slurpTracker incremented by the specified number of bytes
 ; @cycles 26 plus whatever MACPTR uses
 ;-----------------------------------------------------------------------------
 .proc func_slurp_into_buffer: near
    pha
-      clc
-      adc ZP8_slurpTracker
-      sta ZP8_slurpTracker
+      U32_ADD_A ZP32_slurpTracker
    pla
    ldx #<RAM_VOLATILE_BUF
    ldy #>RAM_VOLATILE_BUF
