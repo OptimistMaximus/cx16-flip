@@ -43,6 +43,11 @@ resets to BASIC (effectively unloading the program).
 
 ### Version History
 
+- 2026/05/16 Version 0.0.4
+  - plays all frames in the file now (rather than stopping after the frame count found in the header)
+  - changed the way errors are handled (see "Error Codes" section above)
+  - lots of experimental code and refactoring and minor bug fixes
+  - performance still poor, since the focus is still on functionality, not optimization
 - 2026/05/12 Version 0.0.3
   - fixed crash on second running
   - add support for zero length packets (skips within deltas)
