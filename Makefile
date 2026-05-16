@@ -49,7 +49,7 @@ TEST_LIBS := zzz/test.lib $(MAIN_LIBS)
 # Target test (default), debug, clean, run
 #------------------------------------------------------------------
 hack: zzz/HACK.PRG
-	cd zzz && x16emu -run -prg HACK.PRG
+	cd zzz && x16emu -run -debug 080D -prg HACK.PRG
 
 test: zzz/TEST.PRG $(TEST_RESOURCES)
 	cd zzz && x16emu -run -debug 080D -prg TEST.PRG
@@ -95,8 +95,8 @@ zzz/MAIN.PRG: zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
 zzz/TEST.PRG: zzz/test.o $(TEST_LIBS) | zzz
 	cl65 -o $@ $< $(TEST_LIBS)
 
-zzz/HACK.PRG: zzz/hack.o | zzz
-	cl65 -o $@ $<
+zzz/HACK.PRG: zzz/hack.o $(MAIN_LIBS) | zzz
+	cl65 -o $@ $< $(MAIN_LIBS)
 
 #------------------------------------------------------------------
 # Targets to build libraries

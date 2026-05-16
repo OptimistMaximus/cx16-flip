@@ -32,7 +32,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    U16_CMP_IMM wordPointerFileType, FILE_TYPE_FLI
    beq @fileType_is_fli
-   BSOD RC_INVALID_CHUNK_TYPE, wordPointerFileType
+   BSOD RC_UNSUPPORTED_FILE_TYPE, wordPointerFileType
 @fileType_is_fli:
 
    ;---------------------------------------------------------------------------

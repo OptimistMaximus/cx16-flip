@@ -171,38 +171,33 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_header_x, 6, '0'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM       $3000,        RC_SUCCESS
-   ASSERT_VAR_U16_EQUALS_IMM $3001, $04A1, ZP16_delaySyncs
-   ASSERT_VAR_U16_EQUALS_IMM $3002, $0024, ZP16_numFrames
+   ASSERT_VAR_U16_EQUALS_IMM $3000, $04A1, ZP16_delaySyncs
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE
-   ASSERT_X_EQUALS_IMM $3011, $12
-   ASSERT_Y_EQUALS_IMM $3012, $AF
+   ASSERT_VAR_U8_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3011, $AF12, GOLDEN_returnDetail
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3050, RC_SPEED_TOO_HIGH
-   ASSERT_X_EQUALS_IMM $3051, $12
-   ASSERT_Y_EQUALS_IMM $3052, $34
+   ASSERT_VAR_U8_EQUALS_IMM $3020, RC_SPEED_TOO_HIGH, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3021, $3412, GOLDEN_returnDetail
 
    ;---------------------------------------------------------------------------
    ; TEST 31 - handle_invalid
    ;           handle_unsupported
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM ZP16_chunkType, $AABB
+   U16_COPY_IMM ZP16_chunkType, $DEAD
    jsr handle_invalid
-   ASSERT_A_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE
-   ASSERT_X_EQUALS_IMM $3101, $BB
-   ASSERT_Y_EQUALS_IMM $3102, $AA
+   ASSERT_VAR_U8_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3101, $DEAD, GOLDEN_returnDetail
 
+   U16_COPY_IMM ZP16_chunkType, $BEEF
    jsr handle_unsupported
-   ASSERT_A_EQUALS_IMM $3103, RC_UNSUPPORTED_CHUNK_TYPE
-   ASSERT_X_EQUALS_IMM $3104, $BB
-   ASSERT_Y_EQUALS_IMM $3105, $AA
+   ASSERT_VAR_U8_EQUALS_IMM $3110, RC_UNSUPPORTED_CHUNK_TYPE, GOLDEN_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GOLDEN_returnDetail
 
    ;---------------------------------------------------------------------------
    ; TEST 32 - handle_frame_type
@@ -210,7 +205,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM fn_frame
    jsr handle_frame_type
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3200, RC_SUCCESS
    ASSERT_VAR_U16_EQUALS_IMM $3201, $3412, ZP16_numSubChunks
 
    ;---------------------------------------------------------------------------
@@ -247,7 +241,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3400, RC_SUCCESS
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3401, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3402, $0101 ; color 1 skip
@@ -261,7 +254,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3410, RC_SUCCESS
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3411, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3412, $0101 ; color 1 skip
@@ -275,7 +267,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3420, RC_SUCCESS
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    lda #0
 @test32_copy_packet_count_loop:
@@ -290,7 +281,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3430, RC_SUCCESS
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    lda #0
 @test32_verify_packet_count_loop:
@@ -317,7 +307,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM fn_byterun
    jsr handle_byte_run
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3500, RC_SUCCESS
 
    SET_VERA_ADDR24_IMM $00, $00000, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3510, $00 ; packet 0 start (line 0)
@@ -355,7 +344,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM fn_deltafli
    jsr handle_delta_fli
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3600, RC_SUCCESS
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0

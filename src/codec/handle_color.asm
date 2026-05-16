@@ -12,8 +12,6 @@
 .include "../include/vera.inc"
 .include "../include/video.inc"
 
-   paletteCopyAddr = ZP_VOLATILE_OP
-
 .macro SLURP_INTO_VAR16 targetAddr
    jsr func_slurp_into_a
    sta targetAddr+0

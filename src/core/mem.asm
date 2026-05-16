@@ -32,7 +32,7 @@
 ; @effect .X
 ;==============================================================================
 .proc func_stash_zeropage: near
-   SHUFFLE GOLDEN_ZP_STASH, $D4
+   SHUFFLE GOLDEN_zpStash, $D4
    rts
 .endproc
 
@@ -44,7 +44,7 @@
 ; @effect .X
 ;==============================================================================
 .proc func_unstash_zeropage: near
-   SHUFFLE $D4, GOLDEN_ZP_STASH 
+   SHUFFLE $D4, GOLDEN_zpStash 
    rts
 .endproc
    

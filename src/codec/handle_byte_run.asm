@@ -23,7 +23,7 @@
 .endproc
 
 .proc sub_render_line: near
-   scratchVar = ZP_VOLATILE_P
+   scratchVar = ZP_VOLATILE_A
    jsr func_slurp_into_a           ; packet count
    tay                             ; .Y is the packet countdown
 @packet_loop:

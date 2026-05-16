@@ -30,6 +30,7 @@
 ; Zero the value in a 16-bit variable
 ;
 ; @param targetAddr the value's address
+; @effect .A
 ;==============================================================================
 .macro U16_STZ targetAddr
    lda #0
@@ -43,6 +44,7 @@
 ; Zero the value in a 24-bit variable
 ;
 ; @param targetAddr the value's address
+; @effect .A
 ;==============================================================================
 .macro U24_STZ targetAddr
    lda #0
@@ -57,6 +59,7 @@
 ; Zero the value in a 32-bit variable
 ;
 ; @param targetAddr the value's address
+; @effect .A
 ;==============================================================================
 .macro U32_STZ targetAddr
    lda #0

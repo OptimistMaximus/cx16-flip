@@ -1,4 +1,6 @@
 .export bsod
+.export smc_anchor_for_bsod
+
 .import func_print_hex
 .import func_vera_restore
 
@@ -15,23 +17,27 @@
    jsr KERNAL_CHROUT
 .endmacro
 
-.proc bsod: near
-   phy
-      phx
-         pha
-            jsr func_vera_restore ; restore vera to text mode
-            PRINT PETSCII_RETURN
-         pla
-         jsr func_print_hex
-         PRINT PETSCII_SPACE
-      pla ; pull .X directly into .A
-      jsr func_print_hex
-      PRINT PETSCII_SPACE
-   pla ; pull .Y directly into .A
+bsod:
+   jsr func_vera_restore ; restore vera to text mode
+   PRINT PETSCII_RETURN
+   lda GOLDEN_returnCode
    jsr func_print_hex
-      
-:  jsr KERNAL_GETIN      ; i.e. press any key to continue
-   beq :-                ; (leaving last image still on-screen)
+   PRINT PETSCII_SPACE
+   lda GOLDEN_returnDetail+0
+   jsr func_print_hex
+   lda GOLDEN_returnDetail+1
+   jsr func_print_hex
 
+   ;---------------------------------------------------------------------------
+   ; This label serves two purposes. In production, it is used to wait for the
+   ; user to hit a key (since the screen will be wiped as soon as we jump back
+   ; to basic). In unit tests, this is used as a self-modifying-code anchor so
+   ; that the JSR can be replaced with an RTS, allowing the unit test to
+   ; verify the return code and details without interactivity, and without
+   ; actually ending the unit test program.
+   ;---------------------------------------------------------------------------
+smc_anchor_for_bsod:
+   jsr KERNAL_GETIN        ; i.e. press any key to continue
+   beq smc_anchor_for_bsod
    jmp KERNAL_ENTER_BASIC
-.endproc
+
