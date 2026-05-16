@@ -43,6 +43,9 @@ resets to BASIC (effectively unloading the program).
 
 ### Version History
 
+- 2026/05/16 Version 0.0.5
+  - fixed random band of color at bottom of image
+
 - 2026/05/16 Version 0.0.4
   - plays all frames in the file now (rather than stopping after the frame count found in the header)
   - changed the way errors are handled (see "Error Codes" section above)
@@ -75,7 +78,6 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
 ## KNOWN BUGS
 
 - crashes or wonky colors on subsequent runs
-- Around line 200 there's a bar of color (e.g. ATTACK.FLI, EARTH.FLI)
 - sometimes screen goes wonky, probably due to time lag between loading the next color palette and showing the next image.  The spec says that encoders should assume color palettes take effect immediately, so in theory there should be no problem (they'd only modify parts of the palette needed by the next frame that aren't used on the current frame) but encoders don't seem to consider that, as they likely assumed the next frame would be rendered immediately after.  This problem should lessen or go away after I start optimizing the implementation. Right now the focus is on functionality, not performance.
 
 ### TEST RESULTS
@@ -110,41 +112,19 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
 - 03 B7B8
   - PLANET (with squawk)
 
-  
-
-
-
-
-
-
 ## IDEAS / TODO
 
-- stream file into VRAM
-  - use MACPTR with .A set to 0 and CLC set to not advance, then send data to VRAM.
-    MACPTR streams in at most 512 bytes and we have 512 bytes of VRAM unused now.
-    ... or maybe just ask for 255 bytes at a time so we have a quick easy 8-bit
-    counter to decrement instead of a 16-bit one if we let KERNAL decide.
-  - change slurp logic to slurp from VRAM letting auto-inc handle advancement
-  - all we need to do is keep track of how many bytes are left from the MACPTR call
-    and when the buffer is exhausted, call MACPTR again
+- stream file into RAM or ZP
+  - use MACPTR with .A set to 0 and CLC set to advance, then send data to a 
+    512 byte block in "golden RAM" ... this streams from disk as fast as possible
+    but is slower to deal with as the buffer offset is 16-bits.
+  - consider using MACPTR but setting .A to $FF (and checking .X and .Y to see
+    if it read $00FF bytes or less) ... same idea as above but now the buffer 
+    offset is 8-bit and faster to inc/dec
   - will this me more efficient than just calling MACPTR a bunch?  Maybe. Less JSRs
     but a lot more fussing with buffer management/loading and keeping track of how
     many bytes left before we need to fill again.  It really depends on how much
     additional overhead there is every time I call MACPTR
 - write a delta-specific stage flipper that takes into account the line skip and
   line count ... needn't waste time copying the whole 320x200 as it currently does.
-- come up with a more clever way to detect odd byte count of chunk that doesn't
-  involve incrementing a counter with every slurp.
-  - maybe a look-ahead at the end of the current chunk ... pull in next 6 bytes
-    and if bytes at offset 4 and 5 aren't a valid chunk type then it might be that
-    there was a padding byte so 4 and 6 are the last byte of the size and the first
-    byte of the frame type. That means we need to slurp 1 more byte to get the
-    second half of the frame type. Then we can resume from that point.
-- make a simpler way to bail out after finding an error while parsing. 
-
-
-
-
-
-
 
