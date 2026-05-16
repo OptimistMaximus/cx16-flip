@@ -102,7 +102,7 @@
 ; relatively small.
 ;==============================================================================
 .proc func_load_palette: near
-   SET_VERA_ADDR24_IMM $00, PALETTE_BUFFER, $10
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
    SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE, $10
    ldy #(512 / 4)
 @loop:

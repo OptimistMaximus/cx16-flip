@@ -56,8 +56,6 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; chunk slurping subroutine to call.  Ideally this should detect invalid
 ; chunk types like $00EE (beyond the jump table) or $1234 (totally bogus)
 ; but to keep things simple for now, just assume the data is well-formed.
-;
-; @effect .A .X .Y per RTS_xxx_DETAIL semantics
 ;==============================================================================
 .proc func_slurp_chunk: near
 
@@ -83,8 +81,6 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    rts
 .endmacro
 
-
-
 ; @param ZP16_chunkType holds the chunk type
 ; @effect .X holds the jump table offset to the handler
 .proc func_resolve_chunk_type: near
@@ -96,7 +92,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    
 @check_types_with_high_byte_F1:
    lda ZP16_chunkType+0
-   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; F1FA FRAME_TYPE
+   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
    SET_OFFSET_TO_ZERO_AND_RETURN
    
 @check_types_with_high_byte_00:

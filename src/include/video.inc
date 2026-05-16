@@ -29,7 +29,11 @@
 ; ZP byte having either a value of $00 or $01 to track which stage is "active".
 ; It will also act as the high byte of the stage address.
 ;##############################################################################
-PALETTE_BUFFER   := $1F400    ; 256 colors at 2 bytes each
+VRAM_IMAGE        := $00000 ; $00000-$0F9FF 320x200 @ 8bpp
+VRAM_BUFF_IMAGE   := $0FA00 ; $0FA00-$1F3FF 320x200 @ 8bpp
+VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
+VRAM_BUFF_SLURPED := $1F600 ; $1F600-$1F6FF 256 bytes slurped in from file
+VRAM_UNUSED       := $1F700 ; $1F700-$1F9BF
 
 .macro ADVANCE_LINE_FOR_ACTIVE_BUFFERING
    U24_ADD_IMM ZP24_vramOffset, 320

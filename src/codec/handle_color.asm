@@ -31,7 +31,7 @@
 ;------------------------------------------------------------------------------
 ; handle_color_64
 ;
-; Parses color chunk and populates RAM_paletteStagingArea
+; Parses color chunk and populates palette buffer
 ;------------------------------------------------------------------------------
 .proc handle_color_64: near
    lda #$EA ; NOP
@@ -48,7 +48,7 @@
 ;------------------------------------------------------------------------------
 ; handle_color_256
 ;
-; Parses color chunk and populates RAM_paletteStagingArea
+; Parses color chunk and populates palette buffer
 ;------------------------------------------------------------------------------
 .proc handle_color_256: near
    lda #$4A ; LSR
@@ -91,7 +91,7 @@ sub_handle_color:
    ; zero (don't skip) but a copy count of zero means 256 (i.e. a full palette
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
-   SET_VERA_ADDR24_IMM $00, PALETTE_BUFFER, $10
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
 
    SLURP_INTO_VAR16 numPackets
 
@@ -142,10 +142,11 @@ smc_anchor_b_shift:
    cpx numPackets                       ; just the low byte
    bne packet_loop
 
-   jsr func_load_palette
+   jmp func_load_palette                ; jsr/rts optimization
 
-   RTS_NO_DETAIL RC_SUCCESS
 
+   
+   
 ; @effect .Y clobbered
 sub_skip_colors:
    jsr func_slurp_into_a ; skip count

@@ -1,5 +1,6 @@
 .export func_slurp_header
 
+.import bsod
 .import func_slurp_into_buffer
 
 .include "../include/global.inc"
@@ -12,8 +13,6 @@ FILE_TYPE_FLI := $AF11
 
 ;==============================================================================
 ; func_slurp_header
-;
-; @effect .A .X .Y per RTS_xxx_DETAIL semantics
 ;==============================================================================
 .proc func_slurp_header: near
 
@@ -26,7 +25,6 @@ FILE_TYPE_FLI := $AF11
    ; These will be used for validation. After that, we can copy stuff into ZP.
    ;---------------------------------------------------------------------------
    wordPointerFileType  =         RAM_VOLATILE_BUF+4  ; pointer to file type
-   wordPointerNumFrames =         RAM_VOLATILE_BUF+6  ; pointer to frames
    dwordPointerSpeed    =         RAM_VOLATILE_BUF+16 ; pointer to speed
 
    ;---------------------------------------------------------------------------
@@ -34,7 +32,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    U16_CMP_IMM wordPointerFileType, FILE_TYPE_FLI
    beq @fileType_is_fli
-   RTS_VAR16_DETAIL RC_UNSUPPORTED_FILE_TYPE, wordPointerFileType
+   BSOD RC_INVALID_CHUNK_TYPE, wordPointerFileType
 @fileType_is_fli:
 
    ;---------------------------------------------------------------------------
@@ -56,7 +54,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    U32_CMP_IMM dwordPointerSpeed, 2293
    bcc @speed_is_cool
-   RTS_VAR16_DETAIL RC_SPEED_TOO_HIGH, dwordPointerSpeed
+   BSOD RC_SPEED_TOO_HIGH, dwordPointerSpeed
 @speed_is_cool:
 
    ;---------------------------------------------------------------------------
@@ -79,12 +77,7 @@ FILE_TYPE_FLI := $AF11
    U16_COPY_IMM varDivisor, 7
    U16_SLOW_DIVIDE ZP16_delaySyncs, varTemp, varDivisor
 
-   ;---------------------------------------------------------------------------
-   ; copy important data out of the volatile buffer and into our ZP vars
-   ;---------------------------------------------------------------------------
-   U16_COPY_VAR ZP16_numFrames,   wordPointerNumFrames
-
-   RTS_NO_DETAIL RC_SUCCESS
+   rts
 .endproc
 
 

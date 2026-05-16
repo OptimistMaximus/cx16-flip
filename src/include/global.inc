@@ -67,25 +67,22 @@ ZP_VOLATILE_P    := $3F
 RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 
 ;------------------------------------------------------------------------------
-; GLOBAL "STATIC" VARIABLES
+; GLOBAL "STATIC" VARIABLES (BASIC AREA)
 ;
 ; These are bespoke variables whose content shouldn't be meddled with except
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
 ZP24_vramOffset        := $22
-ZP8_slurpTracker       := $28
+ZP8_slurpTracker       := $25
 
-ZP16_chunkType         := $40
-ZP16_delaySyncs        := $42
-ZP16_numFrames         := $46
-ZP16_currFrame         := $48
-ZP16_numSubChunks      := $4A
-ZP16_origIrqHandler    := $4C
-ZP16_debugTimerSyncs   := $4E
-ZP16_handlerFuncPtr    := $50
+ZP16_chunkType         := $26
+ZP16_delaySyncs        := $28
+ZP16_origIrqHandler    := $2A
+ZP16_debugTimerSyncs   := $2C
+ZP16_numSubChunks      := $2E
 
-RAM_paletteStagingArea := $600 ; $600-$7FF for staging the palette
+GOLDEN_ZP_STASH        := $5D4 ; $5D4-$5FF
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
@@ -96,33 +93,11 @@ RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
 RC_INVALID_CHUNK_TYPE         := 3  ; type
 RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
 
-;==============================================================================
-; RTS_VAR16_DETAIL
-;
-; This macro establishes a semantic convention where a subroutine can return
-; with .A holding a return code (see above) and .X and .Y holding detail.
-;
-; Note that as part of this macro's contract, it sets .A as the very last
-; action. So, callers can do a quick BEQ or BNE to detect success or failure.
-;==============================================================================
-.macro RTS_VAR16_DETAIL rc, detailAddr
-   ldx detailAddr+0
-   ldy detailAddr+1
-   lda #rc
-   rts
-.endmacro
-
-;==============================================================================
-; RTS_NO_DETAIL
-;
-; This macro is exactly the same as RTS_VAR16_DETAIL, except it forces the
-; .X and .Y values to zero.
-;==============================================================================
-.macro RTS_NO_DETAIL rc
-   ldx #0
-   ldy #0
-   lda #rc
-   rts
+.macro BSOD returnCode, detailWord
+   lda #returnCode
+   ldx detailWord+0
+   ldy detailWord+1
+   jmp bsod
 .endmacro
 
 .endif

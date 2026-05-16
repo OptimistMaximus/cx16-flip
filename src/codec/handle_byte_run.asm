@@ -19,8 +19,7 @@
    jsr sub_render_line
    dex
    bne @line_loop
-   jsr func_vera_flip_stage
-   RTS_NO_DETAIL RC_SUCCESS
+   jmp func_vera_flip_stage
 .endproc
 
 .proc sub_render_line: near

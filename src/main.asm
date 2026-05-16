@@ -12,6 +12,8 @@
 .import func_vera_restore
 .import func_slurp_header
 .import func_slurp_chunk
+.import func_stash_zeropage
+.import func_unstash_zeropage
 
 .segment "INIT"
 .segment "STARTUP"
@@ -34,74 +36,18 @@ default_image_filename: .byte "image.fli,r"
 debug_timer_value: .word $0000
 .endif
 
-;------------------------------------------------------------------------------
-; PRINT
-;------------------------------------------------------------------------------
-.macro PRINT petscii
-   lda #petscii
-   jsr KERNAL_CHROUT
-.endmacro
-
-;------------------------------------------------------------------------------
-; RTS_BSOD (BASIC Screen of Death)
-;
-; Call this to return to BASIC, assuming .A .X and .Y were already set with
-; the return status and detail.  This restores VERA  back to default
-; and prints the return status and detail as text.
-;------------------------------------------------------------------------------
-.macro RTS_BSOD
-   phy
-      phx
-         pha
-            jsr func_vera_restore
-            PRINT PETSCII_RETURN
-            PRINT PETSCII_LOWER_E
-            PRINT PETSCII_LOWER_R
-            PRINT PETSCII_LOWER_R
-            PRINT PETSCII_LOWER_O
-            PRINT PETSCII_LOWER_R
-            PRINT PETSCII_SPACE
-         pla
-         jsr func_print_hex
-         PRINT PETSCII_SPACE
-         PRINT PETSCII_OPEN_SQUARE
-      plx
-      txa
-      jsr func_print_hex
-   ply
-   tya
-   jsr func_print_hex
-   PRINT PETSCII_CLOSE_SQUARE
-   PRINT PETSCII_RETURN
-   PRINT PETSCII_RETURN
-   jsr func_restore_irq_handler
-   rts
-.endmacro
-
 start:
 
    jsr func_setup_irq_handler
 
    DEBUG_TIMER_START
    jsr func_vera_setup
-
    jsr sub_establish_filename
    jsr func_open_inputstream
-   beq @inputstream_is_cool
-   RTS_BSOD
-@inputstream_is_cool:
-
    jsr func_slurp_header
-   beq @header_is_cool
-   RTS_BSOD
-@header_is_cool:
 
-   U16_STZ ZP16_currFrame
 @frame_loop:
    jsr func_slurp_chunk
-   beq @chunk_is_cool
-   RTS_BSOD
-@chunk_is_cool:
 
    lda ZP8_slurpTracker
    bit #%00000001              ; should have added a padding byte, so we need
@@ -109,8 +55,7 @@ start:
    jsr func_slurp_into_a
 @padding_mitigated:
 
-   U16_INC ZP16_currFrame
-   U16_CMP_VAR ZP16_currFrame, ZP16_numFrames
+   lda #42 ; NARF!
    bne @frame_loop
 
    jsr func_close_inputstream
@@ -122,8 +67,9 @@ start:
 
    jsr func_vera_restore        ; restore vera to text mode
    jsr func_restore_irq_handler
+
    DEBUG_TIMER_DUMP debug_timer_value
-   RTS_NO_DETAIL RC_SUCCESS
+   rts
 
 ;------------------------------------------------------------------------------
 ; Establish the filename by looking for a custom argument. If no such arg

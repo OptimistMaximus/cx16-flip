@@ -30,7 +30,6 @@ They are also printed to screen as hex string representation: "AA [XXYY]"
 | .A | .A meaning                | .X and .Y meaning                     |
 |----|---------------------------|---------------------------------------|
 | 0  | success                   | n/a                                   |
-| 1  | cannot open file          | .X is CHKIN statis, .Y is OPEN status |
 | 2  | unsupported file type     | the file type                         |
 | 3  | unsupported frame type    | the frame type                        |
 | 4  | unsupported chunk type    | the chunk type                        |
