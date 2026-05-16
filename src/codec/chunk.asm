@@ -40,7 +40,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .word handle_byte_run      ; $0F   BYTE_RUN   full image, byte oriented RLE
 .word handle_fli_copy      ; $10   FLI_COPY   uncompressed image (rare)
 .word handle_black         ; $0D   BLACK      full black frame (rare)
-   
+
 .segment "CODE"
 
 .include "../include/global.inc"
@@ -62,7 +62,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    lda #6 ; 32-bit chunk size, followed by 16-bit chunk type
    jsr func_slurp_into_buffer
    U16_COPY_VAR ZP16_chunkType, RAM_VOLATILE_BUF+4
-   
+
    jsr func_resolve_chunk_type
    jmp (chunk_type_jump_table,x)
 
@@ -89,12 +89,12 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    cmp #$F1
    beq @check_types_with_high_byte_F1
    SET_OFFSET_TO_ZERO_AND_RETURN
-   
+
 @check_types_with_high_byte_F1:
    lda ZP16_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
    SET_OFFSET_TO_ZERO_AND_RETURN
-   
+
 @check_types_with_high_byte_00:
    lda ZP16_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI

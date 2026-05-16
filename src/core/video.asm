@@ -80,7 +80,7 @@
    stz VERA_CTRL                            ; DCSEL=0
    lda #%00010001                           ; enable Layer 0, VGA mode
    sta VERA_DC0_VIDEO
- 
+
    rts
 .endproc
 
