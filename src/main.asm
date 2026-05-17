@@ -49,12 +49,12 @@ start:
 @frame_loop:
    jsr func_slurp_chunk
 
-   lda ZP32_slurpTracker
+   lda ZP32_totalTracker
    bit #%00000001              ; should have added a padding byte, so we need
    beq @padding_mitigated      ; to burn it before proceeding to the next chunk
    jsr func_slurp_into_a
 @padding_mitigated:
-   U32_CMP_VAR ZP32_slurpTracker, ZP32_fileSize
+   U32_CMP_VAR ZP32_totalTracker, GOLDEN_totalSize
    bcc @frame_loop ; i.e. slurpTracker < fileSize
 
    jsr func_close_inputstream

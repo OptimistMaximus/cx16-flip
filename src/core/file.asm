@@ -88,11 +88,11 @@
 ; func_slurp_into_a
 ;
 ; @effect .A holds slurped byte (but status flags do not reflect this)
-; @effect ZP32_slurpTracker incremented by the specified number of bytes
+; @effect ZP32_totalTracker incremented by the specified number of bytes
 ; @cycles 8 plus whatever ACPTR uses
 ;-----------------------------------------------------------------------------
 .proc func_slurp_into_a: near
-   U32_INC ZP32_slurpTracker
+   U32_INC ZP32_totalTracker
    jmp KERNAL_ACPTR
 .endproc
 
@@ -102,17 +102,32 @@
 ; @param  .A the number of bytes to slurp (1-255)
 ; @effect .X .Y clobbered
 ; @effect RAM_VOLATILE_BUF is populated with the desired number of bytes
-; @effect ZP32_slurpTracker incremented by the specified number of bytes
+; @effect ZP32_totalTracker incremented by the specified number of bytes
 ; @cycles 26 plus whatever MACPTR uses
 ;-----------------------------------------------------------------------------
 .proc func_slurp_into_buffer: near
    pha
-      U32_ADD_A ZP32_slurpTracker
+      U32_ADD_A ZP32_totalTracker
    pla
    ldx #<RAM_VOLATILE_BUF
    ldy #>RAM_VOLATILE_BUF
    clc ; advance on write
    jmp KERNAL_MACPTR
 .endproc
+
+
+;
+; Notes on ACPTR / MACPTR behavior
+;
+; I have a file with 6 bytes in it.  I issue a MACPTR call with .A=4
+; READST returns 00, and .X .Y holds 0400, i.e. it read 3 bytes
+;
+; Then I call MACPTR agian and ask for 10 bytes.
+; READST returns 40 ("eoi") and .X .Y holds 0200 since it read the last 2 bytes
+;
+; ACPTR was called after that and READST returns 42 (eoi, read timeout)
+;
+
+
 
 

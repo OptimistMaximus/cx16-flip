@@ -120,4 +120,9 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
     additional overhead there is every time I call ACPTR or MACPTR
 - write a delta-specific stage flipper that takes into account the line skip and
   line count ... needn't waste time copying the whole 320x200 as it currently does.
+- since we can't use 32-bit FX cache writes for palette, there might be no benefit
+  to storing it in VRAM. Consider storing in "golden" RAM instead.  This way we 
+  can skip/burn palette entries by just doing inx or iny instead of LDA VERA_DATA0.
+  Though, palette updates don't happen as often as FLI_DELTA so optimization should
+  focus there first.
 

@@ -61,7 +61,14 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
    lda #6 ; 32-bit chunk size, followed by 16-bit chunk type
    jsr func_slurp_into_buffer
-   U16_COPY_VAR ZP16_chunkType, RAM_VOLATILE_BUF+4
+   U32_COPY_VAR GOLDEN_chunkSize, RAM_VOLATILE_BUF+0
+   U16_COPY_VAR GOLDEN_chunkType, RAM_VOLATILE_BUF+4
+   lda #4
+   sta ZP32_chunkTracker
+   lda #0
+   sta ZP32_chunkTracker+1
+   sta ZP32_chunkTracker+2
+   sta ZP32_chunkTracker+3
 
    jsr func_resolve_chunk_type
    jmp (chunk_type_jump_table,x)
@@ -81,22 +88,22 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    rts
 .endmacro
 
-; @param ZP16_chunkType holds the chunk type
+; @param GOLDEN_chunkType holds the chunk type
 ; @effect .X holds the jump table offset to the handler
 .proc func_resolve_chunk_type: near
-   lda ZP16_chunkType+1
+   lda GOLDEN_chunkType+1
    beq @check_types_with_high_byte_00
    cmp #$F1
    beq @check_types_with_high_byte_F1
    SET_OFFSET_TO_ZERO_AND_RETURN
 
 @check_types_with_high_byte_F1:
-   lda ZP16_chunkType+0
+   lda GOLDEN_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
    SET_OFFSET_TO_ZERO_AND_RETURN
 
 @check_types_with_high_byte_00:
-   lda ZP16_chunkType+0
+   lda GOLDEN_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
    SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
    SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
