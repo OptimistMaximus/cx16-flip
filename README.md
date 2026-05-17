@@ -82,22 +82,15 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
 
 ### TEST RESULTS
 
-- 03 F101 (off-by-one, encoder didn't pad consistently)
-  - APPLE
-  - ASLAMP 
-  - BATTLE
-  - BIRDSHOW
-  - CARBOARD
-  - CHOPCITY
-  - CHUBBY03
-  - MEMBRANE
-  - PUZMORF
-  - SNEEZE
-  - STHELENS
-  - WEIRD01
-  
-- 03 F100 (off-by-one, encoder didn't pad consistently)
-  - BOOKSPIN
+Good FLI files for regression test:
+
+- BELL (small, simple)
+- OWL  (small, simple)
+- BOOKSPIN (has padding)
+- CHOPCITY (very long)
+- PLANET (squawks)
+- SAUCER04 (FLI_COPY)
+- MOONWALK (BLACK)j
 
 - 03 B7B8
   - PLANET (with squawk)

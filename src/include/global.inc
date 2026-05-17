@@ -68,16 +68,15 @@ RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 ZP16_delaySyncs        := $2E
 
 ZP32_totalTracker      := $30
-ZP32_chunkTracker      := $34
 ZP24_vramOffset        := $38
 ZP8_unused             := $3B
-ZP16_numSubChunks      := $3E
+ZP16_currSubChunk      := $3E
 
 GOLDEN_origIrqHandler  := $600 ; 16-bit
 GOLDEN_debugTimerSyncs := $602 ; 16-bit
 GOLDEN_chunkType       := $604 ; 16-bit
-GOLDEN_totalSize        := $606 ; 32-bit
-GOLDEN_chunkSize       := $60A ; 32-bit
+GOLDEN_numSubChunks    := $606 ; 16-bit
+GOLDEN_totalSize       := $608 ; 32-bit
 
 GOLDEN_returnCode      := $6D0 ; 8-bit
 GOLDEN_returnDetail    := $6D2 ; 16-bit

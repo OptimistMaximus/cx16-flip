@@ -3,6 +3,7 @@
 .export func_slurp_chunk
 
 .import func_slurp_into_buffer
+.import func_slurp_into_a
 .import handle_invalid
 .import handle_frame_type
 .import handle_color_256
@@ -61,16 +62,23 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
    lda #6 ; 32-bit chunk size, followed by 16-bit chunk type
    jsr func_slurp_into_buffer
-   U32_COPY_VAR GOLDEN_chunkSize, RAM_VOLATILE_BUF+0
    U16_COPY_VAR GOLDEN_chunkType, RAM_VOLATILE_BUF+4
-   lda #4
-   sta ZP32_chunkTracker
-   lda #0
-   sta ZP32_chunkTracker+1
-   sta ZP32_chunkTracker+2
-   sta ZP32_chunkTracker+3
 
    jsr func_resolve_chunk_type
+
+   ; If the resolved type is zero it means it didn't match anything.
+   ; That can happen if a chunk was padded with an extra zero.  If so
+   ; we need to offset by one in the volatile buffer, then read one more
+   ; byte and stuff it into the chunk type's high byte. Then try again.
+   cpx #0
+   bne @resolved
+   lda RAM_VOLATILE_BUF+5
+   sta GOLDEN_chunkType+0
+   jsr func_slurp_into_a
+   sta GOLDEN_chunkType+1
+   jsr func_resolve_chunk_type
+@resolved:
+
    jmp (chunk_type_jump_table,x)
 
 .endproc

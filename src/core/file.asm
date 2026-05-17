@@ -85,7 +85,7 @@
 
 
 ;-----------------------------------------------------------------------------
-; func_slurp_into_a
+; func_slurp_into_a (optimistic)
 ;
 ; @effect .A holds slurped byte (but status flags do not reflect this)
 ; @effect ZP32_totalTracker incremented by the specified number of bytes
@@ -97,7 +97,7 @@
 .endproc
 
 ;-----------------------------------------------------------------------------
-; func_slurp_into_buffer
+; func_slurp_into_buffer (optimistic)
 ;
 ; @param  .A the number of bytes to slurp (1-255)
 ; @effect .X .Y clobbered

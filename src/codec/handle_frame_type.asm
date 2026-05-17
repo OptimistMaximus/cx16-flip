@@ -14,6 +14,7 @@
    ; follow.  The remaining 8 are only needed if we eventually support FLC.
    lda #10
    jsr func_slurp_into_buffer
-   U16_COPY_VAR ZP16_numSubChunks, RAM_VOLATILE_BUF
+   U16_COPY_VAR GOLDEN_numSubChunks, RAM_VOLATILE_BUF
+   U16_STZ ZP16_currSubChunk
    rts
 .endproc
