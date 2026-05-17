@@ -4,6 +4,7 @@
 .import func_slurp_into_a
 .import func_vera_flip_stage
 .import func_prep_for_active_buffering
+.import func_snooze_if_necessary
 
 .segment "CODE"
 
@@ -19,7 +20,8 @@
    jsr sub_render_line
    dex
    bne @line_loop
-   jmp func_vera_flip_stage
+   jsr func_vera_flip_stage
+   jmp func_snooze_if_necessary
 .endproc
 
 .proc sub_render_line: near

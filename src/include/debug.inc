@@ -128,14 +128,15 @@
 
 .macro DEBUG_TIMER_INCREMENT
 .ifdef DEBUG_TIMER_ENABLED
-   U16_INC ZP16_debugTimerSyncs
+   U16_INC GOLDEN_debugTimerVSyncs
 .endif
 .endmacro
 
 .macro DEBUG_TIMER_START
 .ifdef DEBUG_TIMER_ENABLED
    sei
-   U16_STZ ZP16_debugTimerSyncs
+   U16_STZ GOLDEN_debugTimerVSyncs
+   U16_STZ GOLDEN_debugSpeedSkips
    cli
 .endif
 .endmacro
@@ -143,7 +144,7 @@
 .macro DEBUG_TIMER_READ destAddr
 .ifdef DEBUG_TIMER_ENABLED
    sei
-   U16_COPY_VAR destAddr, ZP16_debugTimerSyncs
+   U16_COPY_VAR destAddr, GOLDEN_debugTimerVSyncs
    cli
 .endif
 .endmacro
@@ -154,11 +155,18 @@
    DEBUG_PRINT_STRING "elapsed vsyncs: $"
    DEBUG_PRINT_U16_VAR stopAddr
    DEBUG_PRINT_CHAR PETSCII_RETURN
+   DEBUG_PRINT_CHAR PETSCII_RETURN
+   DEBUG_PRINT_STRING "speed overruns: $"
+   DEBUG_PRINT_U16_VAR GOLDEN_debugSpeedSkips
+   DEBUG_PRINT_CHAR PETSCII_RETURN
 .endif
 .endmacro
 
-
-
+.macro DEBUG_TIMER_REGISTER_SPEED_VIOLATION
+.ifdef DEBUG_TIMER_ENABLED
+   U16_INC GOLDEN_debugSpeedSkips
+.endif
+.endmacro
 
 
 

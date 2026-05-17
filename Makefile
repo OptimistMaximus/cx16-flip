@@ -7,7 +7,7 @@ INCDIR := $(SOURCE)/include
 #------------------------------------------------------------------
 # Resources
 #------------------------------------------------------------------
-IMAGE_FILENAME := $(RESDIR)/BELL.FLI
+IMAGE_FILENAME := $(RESDIR)/STARTREK.FLI
 MAIN_RESOURCES := zzz/IMAGE.FLI
 
 TEST_DATA_FILES := \

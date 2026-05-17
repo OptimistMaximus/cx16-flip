@@ -4,29 +4,13 @@
 .import func_slurp_into_a
 .import func_vera_flip_stage
 .import func_prep_for_active_buffering
+.import func_snooze_if_necessary
 
 .segment "CODE"
 
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/video.inc"
-
-.proc sub_skip_columns: near
-   jsr func_slurp_into_a ; (.A holds skip count, where 0 means 0)
-   bne @proceed_to_skip
-   rts
-
-@proceed_to_skip:
-   phy
-   tay
-@burn_loop:
-   lda VERA_DATA0
-   dey
-   bne @burn_loop
-   ply
-   rts
-.endproc
-
 
 .proc handle_delta_fli: near
 
@@ -45,7 +29,8 @@
    dex
    bne @line_loop
 
-   jmp func_vera_flip_stage
+   jsr func_vera_flip_stage
+   jmp func_snooze_if_necessary
 .endproc
 
 .proc sub_render_line: near
@@ -93,5 +78,21 @@
 
    ADVANCE_LINE_FOR_ACTIVE_BUFFERING
 
+   rts
+.endproc
+
+.proc sub_skip_columns: near
+   jsr func_slurp_into_a ; (.A holds skip count, where 0 means 0)
+   bne @proceed_to_skip
+   rts
+
+@proceed_to_skip:
+   phy
+   tay
+@burn_loop:
+   lda VERA_DATA0
+   dey
+   bne @burn_loop
+   ply
    rts
 .endproc

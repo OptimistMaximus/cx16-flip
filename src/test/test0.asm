@@ -1,5 +1,10 @@
 .export test_suite_0
 
+.import func_snooze
+.import func_snooze_if_necessary
+.import func_setup_irq_handler
+.import func_restore_irq_handler
+
 .segment "RODATA"
 
 test_array_data: .byte $11,$22,$33,$44
@@ -8,8 +13,14 @@ test_array_data: .byte $11,$22,$33,$44
 
 .include "../include/global.inc"
 .include "../include/math.inc"
+.include "../include/petscii.inc"
 .include "../include/xunit.inc"
 .include "../include/zeropage.inc"
+
+.macro PRINT petscii
+   lda #petscii
+   jsr KERNAL_CHROUT
+.endmacro
 
 ;##############################################################################
 ; Although all the things tested in this test have no dependencies, some of
@@ -106,6 +117,44 @@ test_array_data: .byte $11,$22,$33,$44
 
    U16_SUB_VAR ZP_VOLATILE_AB, ZP_VOLATILE_CD
    ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, ZP_VOLATILE_AB
+
+   ;---------------------------------------------------------------------------
+   ; TEST 03 (timer)
+   ;
+   ; We can't really assert anything for these tests, but we can view the
+   ; behavior at runtime.  The following code should cause a period to be
+   ; printed on screen every 1 second for 3 seconds (unconditional snooze)
+   ; and then after 2 more seconds, an exlamation point due to a contrived
+   ; 2 second elapsed at speed 3 (3-2=1), then an immediate exclamation point
+   ; due to a contrived 4 seconds elapsed at speed 3 (3-4=-1).
+   ;---------------------------------------------------------------------------
+   jsr func_setup_irq_handler
+   PRINT PETSCII_LOWER_T
+   PRINT PETSCII_PERIOD
+   lda #60
+   jsr func_snooze
+   PRINT PETSCII_PERIOD
+   lda #60
+   jsr func_snooze
+   PRINT PETSCII_PERIOD
+   lda #60
+   jsr func_snooze
+   PRINT PETSCII_PERIOD
+
+   U8_COPY_IMM ZP8_speedLimitVSyncs, 180
+   U8_COPY_IMM ZP8_imageVSyncsElapsed, 120
+   jsr func_snooze_if_necessary
+   PRINT PETSCII_EXCLAMATION
+
+   U8_COPY_IMM ZP8_imageVSyncsElapsed, 240
+   jsr func_snooze_if_necessary
+   PRINT PETSCII_EXCLAMATION
+
+   lda #255
+   jsr func_snooze
+
+   jsr func_restore_irq_handler
+
 
    PASS
 .endproc

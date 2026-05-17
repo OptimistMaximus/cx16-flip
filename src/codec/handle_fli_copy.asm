@@ -2,6 +2,7 @@
 .import func_prep_for_active_buffering
 .import func_slurp_into_buffer
 .import func_vera_flip_stage
+.import func_snooze_if_necessary
 
 .segment "CODE"
 
@@ -27,7 +28,8 @@
    jsr sub_copy_half_line
    dey
    bne @outer_loop
-   jmp func_vera_flip_stage
+   jsr func_vera_flip_stage
+   jmp func_snooze_if_necessary
 .endproc
 
 .proc sub_copy_half_line: near
