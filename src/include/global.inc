@@ -67,21 +67,17 @@ RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 
 ZP16_delaySyncs        := $2E
 
-ZP32_slurpTracker      := $30
-ZP32_fileSize          := $34
+ZP32_totalTracker      := $30
+ZP32_totalSize         := $34
 ZP24_vramOffset        := $38
 ZP8_unused             := $3B
-ZP16_chunkType         := $3C
-ZP16_numSubChunks      := $3E
 
 GOLDEN_origIrqHandler  := $600 ; 16-bit
 GOLDEN_debugTimerSyncs := $602 ; 16-bit
+GOLDEN_chunkType       := $604 ; 16-bit
 
 GOLDEN_returnCode      := $6D0 ; 8-bit
 GOLDEN_returnDetail    := $6D2 ; 16-bit
-GOLDEN_zpStash         := $6D4
-
-GOLDEN_slurpBuffer     := $700 ; 256 bytes (idea not implemented yet)
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

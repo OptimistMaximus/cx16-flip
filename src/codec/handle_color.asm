@@ -9,6 +9,7 @@
 
 .include "../include/global.inc"
 .include "../include/math.inc"
+.include "../include/opcodes.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
 
@@ -32,12 +33,12 @@
 ; Parses color chunk and populates palette buffer
 ;------------------------------------------------------------------------------
 .proc handle_color_64: near
-   lda #$EA ; NOP
+   lda #OPCODE_NOP
    sta smc_anchor_r_shift+0
    sta smc_anchor_r_shift+1
    sta smc_anchor_b_shift+0
    sta smc_anchor_b_shift+1
-   lda #$0A ; ASL
+   lda #OPCODE_ASL_A
    sta smc_anchor_g_shift+0
    sta smc_anchor_g_shift+1
    jmp sub_handle_color
@@ -49,12 +50,12 @@
 ; Parses color chunk and populates palette buffer
 ;------------------------------------------------------------------------------
 .proc handle_color_256: near
-   lda #$4A ; LSR
+   lda #OPCODE_LSR_A
    sta smc_anchor_r_shift+0
    sta smc_anchor_r_shift+1
    sta smc_anchor_b_shift+0
    sta smc_anchor_b_shift+1
-   lda #$EA ; NOP
+   lda #OPCODE_NOP
    sta smc_anchor_g_shift+0
    sta smc_anchor_g_shift+1
    jmp sub_handle_color
@@ -143,8 +144,8 @@ smc_anchor_b_shift:
    jmp func_load_palette                ; jsr/rts optimization
 
 
-   
-   
+
+
 ; @effect .Y clobbered
 sub_skip_colors:
    jsr func_slurp_into_a ; skip count

@@ -18,7 +18,7 @@ FILE_TYPE_FLI := $AF11
 ;==============================================================================
 .proc func_slurp_header: near
 
-   U32_STZ ZP32_slurpTracker
+   U32_STZ ZP32_totalTracker
 
    lda #128 ; header is 128 bytes
    jsr func_slurp_into_buffer
@@ -85,7 +85,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    ; store variables
    ;---------------------------------------------------------------------------
-   U32_COPY_VAR ZP32_fileSize, dwordPointerFileSize
+   U32_COPY_VAR ZP32_totalSize, dwordPointerFileSize
 
    rts
 .endproc

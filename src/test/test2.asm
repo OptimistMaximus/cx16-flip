@@ -189,12 +189,12 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; TEST 31 - handle_invalid
    ;           handle_unsupported
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM ZP16_chunkType, $DEAD
+   U16_COPY_IMM GOLDEN_chunkType, $DEAD
    jsr handle_invalid
    ASSERT_VAR_U8_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE, GOLDEN_returnCode
    ASSERT_VAR_U16_EQUALS_IMM $3101, $DEAD, GOLDEN_returnDetail
 
-   U16_COPY_IMM ZP16_chunkType, $BEEF
+   U16_COPY_IMM GOLDEN_chunkType, $BEEF
    jsr handle_unsupported
    ASSERT_VAR_U8_EQUALS_IMM $3110, RC_UNSUPPORTED_CHUNK_TYPE, GOLDEN_returnCode
    ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GOLDEN_returnDetail
@@ -205,7 +205,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM fn_frame
    jsr handle_frame_type
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U16_EQUALS_IMM $3201, $3412, ZP16_numSubChunks
 
    ;---------------------------------------------------------------------------
    ; TEST 33 - func_load_palette

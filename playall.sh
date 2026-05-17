@@ -3,6 +3,9 @@
 cd zzz
 
 for dude in *.FLI ; do
+  if [ "$dude" = "IMAGE.FLI" ] ; then
+    continue # (can't link to self!)
+  fi
   rm -f IMAGE.FLI
   ln -s $dude IMAGE.FLI
   echo ""

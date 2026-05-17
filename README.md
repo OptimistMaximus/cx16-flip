@@ -82,33 +82,16 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
 
 ### TEST RESULTS
 
-- 03 F101
-  - APPLE
-  - ASLAMP 
-  - BATTLE
-  - BIRDSHOW
-  - CARBOARD
-  - CHOPCITY
-  - CHUBBY03
-  - MEMBRANE
-  - PUZMORF
-  - SNEEZE
-  - STHELENS
-  - WEIRD01
-  
-  
-- 03 F100
-  - BOOKSPIN
+Good FLI files for regression test:
 
-- 02 1000 (seemingly as last frame)
-  - CDROMCLB
-  - NAYLOR
-  - PUZZLE5
-  - SAUCER04
-  
-- 02 0D00
-  - MOONWALK
-  
+- BELL (small, simple)
+- OWL  (small, simple)
+- BOOKSPIN (has padding)
+- CHOPCITY (very long)
+- PLANET (squawks)
+- SAUCER04 (FLI_COPY)
+- MOONWALK (BLACK)j
+
 - 03 B7B8
   - PLANET (with squawk)
 
@@ -121,10 +104,18 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
   - consider using MACPTR but setting .A to $FF (and checking .X and .Y to see
     if it read $00FF bytes or less) ... same idea as above but now the buffer 
     offset is 8-bit and faster to inc/dec
+  - consider buffering in ZP since we have $40-$7F free ... would the performance
+    gain of having data in ZP overcome the performance loss of having a much smaller
+    ($40 byte instead of $FF byte) buffer?
   - will this me more efficient than just calling MACPTR a bunch?  Maybe. Less JSRs
     but a lot more fussing with buffer management/loading and keeping track of how
     many bytes left before we need to fill again.  It really depends on how much
-    additional overhead there is every time I call MACPTR
+    additional overhead there is every time I call ACPTR or MACPTR
 - write a delta-specific stage flipper that takes into account the line skip and
   line count ... needn't waste time copying the whole 320x200 as it currently does.
+- since we can't use 32-bit FX cache writes for palette, there might be no benefit
+  to storing it in VRAM. Consider storing in "golden" RAM instead.  This way we 
+  can skip/burn palette entries by just doing inx or iny instead of LDA VERA_DATA0.
+  Though, palette updates don't happen as often as FLI_DELTA so optimization should
+  focus there first.
 
