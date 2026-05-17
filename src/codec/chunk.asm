@@ -79,6 +79,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    jsr func_resolve_chunk_type
 @resolved:
 
+   stz ZP8_imageVSyncsElapsed
    jmp (chunk_type_jump_table,x)
 
 .endproc

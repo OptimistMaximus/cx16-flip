@@ -7,7 +7,7 @@
 C800       #  WORD [FLC] height
 0800       #  WORD [FLC] depth
 0000       #  WORD flags (meaning unknown)
-67050000   # DWORD speed
+55000000   # DWORD speed
 0000
 00010000   # DWORD [FLC] created date
 00000000   # DWORD [FLC] creator serial number
