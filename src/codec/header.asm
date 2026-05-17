@@ -85,7 +85,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    ; store variables
    ;---------------------------------------------------------------------------
-   U32_COPY_VAR GOLDEN_totalSize, dwordPointerFileSize
+   U32_COPY_VAR ZP32_totalSize, dwordPointerFileSize
 
    rts
 .endproc

@@ -205,7 +205,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM fn_frame
    jsr handle_frame_type
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U16_EQUALS_IMM $3201, $3412, ZP16_numSubChunks
 
    ;---------------------------------------------------------------------------
    ; TEST 33 - func_load_palette

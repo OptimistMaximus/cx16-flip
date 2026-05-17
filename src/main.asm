@@ -56,12 +56,12 @@ start:
    ; after basic functionality has been established.
    U32_COPY_VAR ZP_VOLATILE_ABCD, ZP32_totalTracker
    U32_INC ZP_VOLATILE_ABCD
-   U32_CMP_VAR ZP_VOLATILE_ABCD, GOLDEN_totalSize
+   U32_CMP_VAR ZP_VOLATILE_ABCD, ZP32_totalSize
    beq @frame_loop_done
 
    ; now check if the number of bytes we've slurped overall is still less
    ; than the total advertized file size. If so, loop again to read more.
-   U32_CMP_VAR ZP32_totalTracker, GOLDEN_totalSize
+   U32_CMP_VAR ZP32_totalTracker, ZP32_totalSize
    bcc @frame_loop ; i.e. slurpTracker < fileSize
 
 @frame_loop_done:
