@@ -48,23 +48,8 @@ start:
 
 @frame_loop:
    jsr func_slurp_chunk
-
-   ; Edge case: if we are one byte short of the end it means we just processed
-   ; the last frame, and it happened to need padding, and we're done.  The
-   ; current implementation for tracking padding is a poor-performing hack.
-   ; This should probably be one of the first things to refactor / optimize
-   ; after basic functionality has been established.
-   U32_COPY_VAR ZP_VOLATILE_ABCD, ZP32_totalTracker
-   U32_INC ZP_VOLATILE_ABCD
-   U32_CMP_VAR ZP_VOLATILE_ABCD, ZP32_totalSize
-   beq @frame_loop_done
-
-   ; now check if the number of bytes we've slurped overall is still less
-   ; than the total advertized file size. If so, loop again to read more.
-   U32_CMP_VAR ZP32_totalTracker, ZP32_totalSize
-   bcc @frame_loop ; i.e. slurpTracker < fileSize
-
-@frame_loop_done:
+   bit ZPBOOL_flags       ; if we did not hit EOF while processing the
+   bpl @frame_loop        ; chunk, then we should proceed to next chunk
 
    jsr func_close_inputstream
 

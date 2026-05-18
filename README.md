@@ -16,7 +16,8 @@ will return to BASIC, with the program still loaded.
 
 ## Caveats
 
-- This implementation only supports the FLI format. It does not FLC files.
+- This implementation only supports the FLI format. It does not
+  support FLC files.
 
 - Performance is terrible at the moment, especially for files that have
   huge deltas.  Performance issues will be addressed in future releases.
@@ -74,8 +75,12 @@ will be used.  The results are tracked here, for each released version:
 | Version | VSyncs | Overruns | PRG Bytes |
 |---------|--------|----------|-----------|
 | 0.1.0   | $0183  | $0033    | 1825      |
+| 0.1.1   | $0176  | $0032    | 1705      |
 
 ### Version History
+
+- 2026/05/17 Version 0.1.1
+  - minor performance enhancement
 
 - 2026/05/17 Version 0.1.0
   - basic functionality seems stable
