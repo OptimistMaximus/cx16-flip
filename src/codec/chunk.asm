@@ -53,35 +53,68 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;==============================================================================
 ; func_slurp_chunk
 ;
-; reads the chunk size and type off the input stream, then decides which
-; chunk slurping subroutine to call.  Ideally this should detect invalid
-; chunk types like $00EE (beyond the jump table) or $1234 (totally bogus)
-; but to keep things simple for now, just assume the data is well-formed.
+; Reads the chunk size and chunk type, then looks up the appropriate handler
+; for the chunk type and invokes it.  If it encountered EOF while reading the
+; size and type, it sets the ZPBOOL_flags to indicate that EOF is encountered,
+; then returns.
 ;==============================================================================
 .proc func_slurp_chunk: near
 
-   lda #6 ; 32-bit chunk size, followed by 16-bit chunk type
-   jsr func_slurp_into_buffer
-   U16_COPY_VAR GOLDEN_chunkType, RAM_VOLATILE_BUF+4
-
-   jsr func_resolve_chunk_type
-
-   ; If the resolved type is zero it means it didn't match anything.
-   ; That can happen if a chunk was padded with an extra zero.  If so
-   ; we need to offset by one in the volatile buffer, then read one more
-   ; byte and stuff it into the chunk type's high byte. Then try again.
-   cpx #0
-   bne @resolved
-   lda RAM_VOLATILE_BUF+5
-   sta GOLDEN_chunkType+0
-   jsr func_slurp_into_a
-   sta GOLDEN_chunkType+1
-   jsr func_resolve_chunk_type
-@resolved:
+   jsr sub_slurp_chunk_preamble
+   bit ZPBOOL_flags          ; b7=1 means we hit EOF while reading preamble
+   bpl @preamble_slurped     ; so we fall through and return (calling code
+   rts                       ; should also check the flags and react), else
+@preamble_slurped:           ; preamble was good and it's safe to proceed
 
    stz ZP8_imageVSyncsElapsed
    jmp (chunk_type_jump_table,x)
+.endproc
 
+;==============================================================================
+; sub_slurp_chunk_preamble
+;
+; @effect .X holds the chunk handler jump table offset
+;         ZPBOOL_flags b7 set if we hit EOF while reading the chunk preamble
+;==============================================================================
+.proc sub_slurp_chunk_preamble
+
+   lda #6   ; 32-bit chunk size, followed by 16-bit chunk type
+   jsr func_slurp_into_buffer
+   cpx #6   ; MACPTR sets .X to low byte of how many bytes loaded ... if we
+   bne @eof ; didn't read exactly six, we'll assume it's because we ran out.
+
+   jsr KERNAL_READST
+   bne @eof ; MACPTR sets the read status, which we can check via READST ...
+
+   U16_COPY_VAR GOLDEN_chunkType, RAM_VOLATILE_BUF+4
+
+   jsr func_resolve_chunk_type
+   cpx #0
+   beq @cannot_resolve_chunk_type
+   rts
+
+   ;---------------------------------------------------------------------------
+   ; If we get here, it means we couldn't resolve the chunk type. Either the
+   ; file is malformed (unlikely), or we are one-byte-off because the previous
+   ; chunk had a padding byte that we incorrectly read into the 32-bit chunk
+   ; size value, and which has made us one-byte-off in the chunk type too. This
+   ; is the most likely (and frequently occurring) situation, so we'll shuffle
+   ; the chunk type's high byte into its low byte and then sip another byte off
+   ; the stream and put it into the high byte. Then we'll try to resolve again.
+   ; If that didn't work, then we weren't in the padding/off-by-one situation
+   ; so we'll just proceed with the jump table offset indicating invalid.
+   ;---------------------------------------------------------------------------
+@cannot_resolve_chunk_type:
+   lda GOLDEN_chunkType+1
+   sta GOLDEN_chunkType+0
+   jsr func_slurp_into_a
+   sta GOLDEN_chunkType+1
+   jmp func_resolve_chunk_type
+
+@eof:
+   lda #%10000000
+   tsb ZPBOOL_flags
+   rts
 .endproc
 
 .macro SET_OFFSET_AND_RETURN_IF_MATCH chunkTypeLowerByte, jumpTableOffset

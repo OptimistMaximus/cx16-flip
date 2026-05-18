@@ -68,10 +68,9 @@ RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 ZP8_speedLimitVSyncs    := $2E  ; speed limit expressed as number of VSyncs
 ZP8_imageVSyncsElapsed  := $2F  ; VSyncs elapsed while rendering current image
 
-ZP32_totalTracker       := $30
-ZP32_totalSize          := $34
-ZP24_vramOffset         := $38
-ZP8_timerTrigger        := $3B  ; state variable needed by speed timer
+ZP24_vramOffset         := $30
+ZP8_timerTrigger        := $33 ; state variable needed by speed timer
+ZPBOOL_flags            := $34
 
 GOLDEN_chunkType        := $600 ; 16-bit
 GOLDEN_speedVsyncs      := $602 ; 16-bit
