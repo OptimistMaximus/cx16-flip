@@ -1,7 +1,5 @@
 .export func_open_inputstream
 .export func_close_inputstream
-.export func_slurp_into_buffer
-.export func_slurp_into_a
 .export func_append_access_mode
 .import func_strlen
 
@@ -81,28 +79,4 @@
    jsr KERNAL_CLRCHN        ; restore I/O to keyboard and screen
    lda #FILE_LOGICAL_NUMBER ; A is the logical file number
    jmp KERNAL_CLOSE         ; close the file
-.endproc
-
-
-;-----------------------------------------------------------------------------
-; func_slurp_into_a (optimistic)
-;
-; @effect .A holds slurped byte (but status flags do not reflect this)
-;-----------------------------------------------------------------------------
-.proc func_slurp_into_a: near
-   jmp KERNAL_ACPTR
-.endproc
-
-;-----------------------------------------------------------------------------
-; func_slurp_into_buffer (optimistic)
-;
-; @param  .A the number of bytes to slurp (1-255)
-; @effect .X .Y clobbered
-; @effect RAM_VOLATILE_BUF is populated with the desired number of bytes
-;-----------------------------------------------------------------------------
-.proc func_slurp_into_buffer: near
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
-   clc ; advance on write
-   jmp KERNAL_MACPTR
 .endproc

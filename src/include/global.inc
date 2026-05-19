@@ -59,7 +59,7 @@ ZP_VOLATILE_KL   := ZP_VOLATILE_K
 RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
 
 ;------------------------------------------------------------------------------
-; GLOBAL "STATIC" VARIABLES (BASIC AREA)
+; GLOBAL "STATIC" VARIABLES (ZERO PAGE)
 ;
 ; These are bespoke variables whose content shouldn't be meddled with except
 ; by the subroutines and macros that are associated with them.
@@ -72,13 +72,20 @@ ZP24_vramOffset         := $30
 ZP8_timerTrigger        := $33 ; state variable needed by speed timer
 ZPBOOL_flags            := $34
 
-GOLDEN_chunkType        := $600 ; 16-bit
-GOLDEN_speedVsyncs      := $602 ; 16-bit
-GOLDEN_returnCode       := $604 ; 8-bit
-GOLDEN_returnDetail     := $606 ; 16-bit
-GOLDEN_origIrqHandler   := $608 ; 16-bit
-GOLDEN_debugTimerVSyncs := $60A ; 16-bit
-GOLDEN_debugSpeedSkips  := $60C ; 16-bit
+;------------------------------------------------------------------------------
+; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
+;
+; These are bespoke variables whose content shouldn't be meddled with except
+; by the subroutines and macros that are associated with them.
+;------------------------------------------------------------------------------
+
+GR16_chunkType        := $600 ; 16-bit
+GR16_speedVsyncs      := $602 ; 16-bit
+GR8_returnCode        := $604 ; 8-bit
+GR16_returnDetail     := $606 ; 16-bit
+GR16_origIrqHandler   := $608 ; 16-bit
+GR16_debugTimerVSyncs := $60A ; 16-bit
+GR16_debugSpeedSkips  := $60C ; 16-bit
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
@@ -91,11 +98,11 @@ RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode
-   sta GOLDEN_returnCode
+   sta GR8_returnCode
    lda detailAddr+0
-   sta GOLDEN_returnDetail+0
+   sta GR16_returnDetail+0
    lda detailAddr+1
-   sta GOLDEN_returnDetail+1
+   sta GR16_returnDetail+1
    jmp bsod
 .endmacro
 

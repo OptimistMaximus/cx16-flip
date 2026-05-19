@@ -6,7 +6,6 @@
 .import func_open_inputstream
 .import func_close_inputstream
 .import func_append_access_mode
-.import func_slurp_into_a
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore

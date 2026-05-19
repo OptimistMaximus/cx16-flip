@@ -76,8 +76,13 @@ will be used.  The results are tracked here, for each released version:
 |---------|--------|----------|-----------|
 | 0.1.0   | $0183  | $0033    | 1825      |
 | 0.1.1   | $0176  | $0032    | 1705      |
+| 0.2.0   | $0163  | $0032    | 1741      |
 
 ### Version History
+
+- 2026/05/19 Version 0.2.0
+  - minor tidying up
+  - minor performance enhancement
 
 - 2026/05/17 Version 0.1.1
   - minor performance enhancement
@@ -131,8 +136,7 @@ Good FLI files for regression test:
 - OWL  (small, simple)
 - BOOKSPIN (has padding)
 - CHOPCITY (very long)
-- PLANET (squawks)
-- SAUCER04 (FLI_COPY)
+- SAUCER04 (FLI_COPY) v0.2.0 has padding error
 - MOONWALK (BLACK)
 
 Bad FLI files:

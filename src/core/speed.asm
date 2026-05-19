@@ -18,9 +18,9 @@
    sei
       pha
          lda KERNAL_IRQ_VECTOR+0
-         sta GOLDEN_origIrqHandler+0
+         sta GR16_origIrqHandler+0
          lda KERNAL_IRQ_VECTOR+1
-         sta GOLDEN_origIrqHandler+1
+         sta GR16_origIrqHandler+1
 
          lda #<sub_irq_handler_for_delay
          sta KERNAL_IRQ_VECTOR+0
@@ -34,9 +34,9 @@
 .proc func_restore_irq_handler: near
    sei
       pha
-         lda GOLDEN_origIrqHandler+0
+         lda GR16_origIrqHandler+0
          sta KERNAL_IRQ_VECTOR+0
-         lda GOLDEN_origIrqHandler+1
+         lda GR16_origIrqHandler+1
          sta KERNAL_IRQ_VECTOR+1
       pla
    cli
@@ -75,7 +75,7 @@ sub_irq_handler_for_delay:
    @via_false_alarm:
 
    pla
-   jmp (GOLDEN_origIrqHandler) ; don't RTI, rather chain to previous which will RTI
+   jmp (GR16_origIrqHandler) ; don't RTI, rather chain to previous which will RTI
 
 ;==============================================================================
 ; func_snooze_if_necessary

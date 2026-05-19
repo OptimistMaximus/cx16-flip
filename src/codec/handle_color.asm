@@ -2,30 +2,15 @@
 .export handle_color_256
 
 .import func_load_palette
-.import func_slurp_into_buffer
-.import func_slurp_into_a
 
 .segment "CODE"
 
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/opcodes.inc"
+.include "../include/slurp.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
-
-.macro SLURP_INTO_VAR16 targetAddr
-   jsr func_slurp_into_a
-   sta targetAddr+0
-   jsr func_slurp_into_a
-   sta targetAddr+1
-.endmacro
-
-.macro SLURP_INTO_VAR8 targetAddr
-   jsr func_slurp_into_a
-   sta targetAddr
-.endmacro
-
-
 
 ;------------------------------------------------------------------------------
 ; handle_color_64
@@ -91,51 +76,46 @@ sub_handle_color:
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
    SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
-
-   SLURP_INTO_VAR16 numPackets
+   SLURP_INTO_U16 numPackets
 
    ldx #0
 packet_loop:
 
    jsr sub_skip_colors
 
-   SLURP_INTO_VAR8 copyCount
+   SLURP_INTO_U8 copyCount
    ldy #0
-
-      copy_loop:
-         phx
-            phy
-               SLURP_INTO_VAR8 tempColorRed
+copy_loop:
+   SLURP_INTO_U24 tempColor ; slurp RGB
+   lda tempColor+0          ; load R
 smc_anchor_r_shift:
-               lsr                      ; nop if 6-bit
-               lsr                      ; nop if 6-bit
-               lsr
-               lsr
-               sta tempVeraRed
+   lsr                      ; nop if 6-bit
+   lsr                      ; nop if 6-bit
+   lsr
+   lsr
+   sta tempVeraRed
 
-               SLURP_INTO_VAR8 tempColorGreen
+   lda tempColor+1          ; load G
 smc_anchor_g_shift:
-               nop                      ; asl if 6-bit
-               nop                      ; asl if 6-bit
-               and #$F0
-               sta tempVeraGreen
+   nop                      ; asl if 6-bit
+   nop                      ; asl if 6-bit
+   and #$F0
+   sta tempVeraGreen
 
-               SLURP_INTO_VAR8 tempColorBlue
+   lda tempColor+2          ; load B
 smc_anchor_b_shift:
-               lsr                      ; nop if 6-bit
-               lsr                      ; nop if 6-bit
-               lsr
-               lsr
-               ora tempVeraGreen
-               sta VERA_DATA0           ; store VERA color (GB)
-               lda tempVeraRed          ; store VERA color (R)
-               sta VERA_DATA0
-            ply
-         plx
+   lsr                      ; nop if 6-bit
+   lsr                      ; nop if 6-bit
+   lsr
+   lsr
+   ora tempVeraGreen
+   sta VERA_DATA0           ; store VERA color (GB)
+   lda tempVeraRed          ; store VERA color (R)
+   sta VERA_DATA0
 
-         iny
-         cpy copyCount
-         bne copy_loop
+   iny
+   cpy copyCount
+   bne copy_loop
 
    inx
    cpx numPackets                       ; just the low byte
@@ -144,17 +124,10 @@ smc_anchor_b_shift:
    jmp func_load_palette                ; jsr/rts optimization
 
 
-
-
-; @effect .Y clobbered
-sub_skip_colors:
-   jsr func_slurp_into_a ; skip count
-   beq @skip_done
-   tay
-@skip_loop:
-   lda VERA_DATA0 ; burn low
-   lda VERA_DATA0 ; burn high
-   dey
-   bne @skip_loop
-@skip_done:
+.proc sub_skip_colors: near
+   SLURP_INTO_A ; skip count
+   beq @done
+   SKIP_COLORS
+@done:
    rts
+.endproc
