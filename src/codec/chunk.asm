@@ -80,6 +80,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    SLURP_INTO_U32 ZP_VOLATILE_ABCD
    SLURP_INTO_U16 GR16_chunkType
 
+retry:
    jsr KERNAL_READST
    bne @eof ; ACPTR/MACPTR sets read status, which we can check via READST
 
@@ -91,20 +92,24 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    ;---------------------------------------------------------------------------
    ; If we get here, it means we couldn't resolve the chunk type. Either the
    ; file is malformed (unlikely), or we are one-byte-off because the previous
-   ; chunk had a padding byte that we incorrectly read into the 32-bit chunk
-   ; size value, and which has made us one-byte-off in the chunk type too. This
-   ; is the most likely (and frequently occurring) situation, so we'll shuffle
-   ; the chunk type's high byte into its low byte and then sip another byte off
-   ; the stream and put it into the high byte. Then we'll try to resolve again.
-   ; If that didn't work, then we weren't in the padding/off-by-one situation
-   ; so we'll just proceed with the jump table offset indicating invalid.
+   ; chunk had a padding byte, or we just read a bunch of zeros because the
+   ; encoder used excessive padding (much more than the 1 necessary for odd
+   ; sized frames, or even padding when none is needed).
+   ;
+   ; For now, a crude mitigation technique is employed. We'll assume we are off
+   ; by one and shuffle the type's high byte into its low byte, then replace
+   ; the high byte with the next one from the stream, then retry.  This will
+   ; work fast for a properly encoded file that pads with exactly one zero
+   ; only when necessary.  It will work for a file with excessive padding,
+   ; but only if the padding is zero.  It will have undetermined behavior if
+   ; the frame is padded with garbage.
    ;---------------------------------------------------------------------------
 @cannot_resolve_chunk_type:
    lda GR16_chunkType+1
    sta GR16_chunkType+0
    SLURP_INTO_A
    sta GR16_chunkType+1
-   jmp func_resolve_chunk_type
+   bra retry
 
 @eof:
    lda #%10000000
@@ -145,7 +150,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
    SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
    SET_OFFSET_AND_RETURN_IF_MATCH $0F, $0A ; BYTE_RUN
-;   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
+   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
    SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0E ; BLACK
    SET_OFFSET_TO_ZERO_AND_RETURN
 .endproc
