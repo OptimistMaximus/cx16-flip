@@ -9,6 +9,11 @@
 ; USE_MACPTR_FOR_U24 = 1
 ; USE_MACPTR_FOR_U32 = 1
 
+;==============================================================================
+; SLURP_INTO_A
+;
+; @effect .A holds byte just slurped off the inputstream
+;==============================================================================
 .macro SLURP_INTO_A
    phx
       phy
@@ -156,6 +161,11 @@
    plx
 .endmacro
 
+;==============================================================================
+; SKIP_PIXELS (using VERA_DATA0)
+;
+; @param .A holds the number of pixels to advance (skip over)
+;==============================================================================
 .macro SKIP_PIXELS
    phx
       tax
