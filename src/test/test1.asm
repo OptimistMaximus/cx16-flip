@@ -218,9 +218,6 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    
    jsr func_close_inputstream
 
-   stp
-   nop
-   nop
    ASSERT_VAR_U8_EQUALS_IMM  $1301, $66, u8data
    ASSERT_VAR_U16_EQUALS_IMM $1302, $8877, u16data
    ASSERT_VAR_U24_EQUALS_IMM $1303, $BBAA99, u24data

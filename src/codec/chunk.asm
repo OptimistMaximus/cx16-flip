@@ -2,8 +2,6 @@
 
 .export func_slurp_chunk
 
-.import func_slurp_into_buffer
-.import func_slurp_into_a
 .import handle_invalid
 .import handle_frame_type
 .import handle_color_256
@@ -49,6 +47,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
+.include "../include/slurp.inc"
 
 ;==============================================================================
 ; func_slurp_chunk
@@ -78,15 +77,11 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;==============================================================================
 .proc sub_slurp_chunk_preamble
 
-   lda #6   ; 32-bit chunk size, followed by 16-bit chunk type
-   jsr func_slurp_into_buffer
-   cpx #6   ; MACPTR sets .X to low byte of how many bytes loaded ... if we
-   bne @eof ; didn't read exactly six, we'll assume it's because we ran out.
-
+   SLURP_INTO_U32 ZP_VOLATILE_ABCD
+   SLURP_INTO_U16 GR16_chunkType
+   
    jsr KERNAL_READST
-   bne @eof ; MACPTR sets the read status, which we can check via READST ...
-
-   U16_COPY_VAR GR16_chunkType, RAM_VOLATILE_BUF+4
+   bne @eof ; ACPTR/MACPTR sets read status, which we can check via READST
 
    jsr func_resolve_chunk_type
    cpx #0
@@ -107,7 +102,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 @cannot_resolve_chunk_type:
    lda GR16_chunkType+1
    sta GR16_chunkType+0
-   jsr func_slurp_into_a
+   SLURP_INTO_A
    sta GR16_chunkType+1
    jmp func_resolve_chunk_type
 
@@ -150,7 +145,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
    SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
    SET_OFFSET_AND_RETURN_IF_MATCH $0F, $0A ; BYTE_RUN
-   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
+;   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
    SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0E ; BLACK
    SET_OFFSET_TO_ZERO_AND_RETURN
 .endproc

@@ -239,6 +239,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
+
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3401, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3402, $0101 ; color 1 skip

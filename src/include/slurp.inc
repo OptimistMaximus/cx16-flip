@@ -15,11 +15,7 @@
 ; @effect .A holds byte just slurped off the inputstream
 ;==============================================================================
 .macro SLURP_INTO_A
-   phx
-      phy
-         jsr KERNAL_ACPTR
-      ply
-   plx
+   jsr KERNAL_ACPTR
 .endmacro
 
 ;==============================================================================
@@ -47,24 +43,18 @@
 ;==============================================================================
 .macro SLURP_INTO_VERA_REPEATED
    phx
-      phy
-         pha                  ; push .A (byte count)
-            jsr KERNAL_ACPTR  ; .A now holds the slurped byte to repeat
-         plx                  ; pull byte count directly into .X
-      :  sta VERA_DATA0
-         dex
-         bne :-
-      ply
+      pha                  ; push .A (byte count)
+         jsr KERNAL_ACPTR  ; .A now holds the slurped byte to repeat
+      plx                  ; pull byte count directly into .X
+   :  sta VERA_DATA0
+      dex
+      bne :-
    plx
 .endmacro
 
 .macro SLURP_INTO_U8 targetAddr
-   phx
-      phy
-         jsr KERNAL_ACPTR
-         sta targetAddr
-      ply
-   plx
+   jsr KERNAL_ACPTR
+   sta targetAddr
 .endmacro
 
 .macro SLURP_INTO_U16 targetAddr
@@ -79,14 +69,10 @@
          ply
       plx
    .else
-      phx
-         phy
-            jsr KERNAL_ACPTR
-            sta targetAddr+0
-            jsr KERNAL_ACPTR
-            sta targetAddr+1
-         ply
-      plx
+      jsr KERNAL_ACPTR
+      sta targetAddr+0
+      jsr KERNAL_ACPTR
+      sta targetAddr+1
    .endif
 .endmacro
 
@@ -102,16 +88,12 @@
          ply
       plx
    .else
-      phx
-         phy
-            jsr KERNAL_ACPTR
-            sta targetAddr+0
-            jsr KERNAL_ACPTR
-            sta targetAddr+1
-            jsr KERNAL_ACPTR
-            sta targetAddr+2
-         ply
-      plx
+      jsr KERNAL_ACPTR
+      sta targetAddr+0
+      jsr KERNAL_ACPTR
+      sta targetAddr+1
+      jsr KERNAL_ACPTR
+      sta targetAddr+2
    .endif
 .endmacro
 
@@ -127,18 +109,14 @@
          ply
       plx
    .else
-      phx
-         phy
-            jsr KERNAL_ACPTR
-            sta targetAddr+0
-            jsr KERNAL_ACPTR
-            sta targetAddr+1
-            jsr KERNAL_ACPTR
-            sta targetAddr+2
-            jsr KERNAL_ACPTR
-            sta targetAddr+3
-         ply
-      plx
+      jsr KERNAL_ACPTR
+      sta targetAddr+0
+      jsr KERNAL_ACPTR
+      sta targetAddr+1
+      jsr KERNAL_ACPTR
+      sta targetAddr+2
+      jsr KERNAL_ACPTR
+      sta targetAddr+3
    .endif
 .endmacro
 
@@ -152,13 +130,22 @@
 ;==============================================================================
 .macro SLURP_INTO_OBLIVION
    phx
-      phy
-         tax
-      :  jsr KERNAL_ACPTR
-         dex
-         bne :-
-      ply
+      tax
+   :  jsr KERNAL_ACPTR
+      dex
+      bne :-
    plx
+.endmacro
+
+;==============================================================================
+; SLURP_INTO_OBLIVION_IMM
+;
+; This macro is highly inefficient, but it is assumed to only be used in a few
+; rare situations where performance isn't critical.
+;==============================================================================
+.macro SLURP_INTO_OBLIVION_IMM count
+   lda #count
+   SLURP_INTO_OBLIVION
 .endmacro
 
 ;==============================================================================
@@ -175,7 +162,20 @@
    plx
 .endmacro
 
-
+;==============================================================================
+; SKIP_COLORS (using VERA_DATA0)
+;
+; @param .A holds the number of colors to advance (skip over)
+;==============================================================================
+.macro SKIP_COLORS
+   phx
+      tax
+   :  lda VERA_DATA0 ; low (GB)
+      lda VERA_DATA0 ; high (R)
+      dex
+      bne :-
+   plx
+.endmacro
 
 
 .endif

@@ -10,15 +10,6 @@
 .include "../include/video.inc"
 .include "../include/vera.inc"
 
-; Note, this frame is extremely rare (in fact I've never encountered one in
-;       the wild) so it isn't worth it to optimize for speed.  Instead we'll
-;       optimize for size.
-;
-; Note also, the chunk size will be $FA04 which seems odd because the spec
-;      says that the chunk size is the size of the chunk including the
-;      chunk size, but apparently this means NOT including the 2 byte
-;      chunk type.  Anyway, it's always the full frame of 320x240 ($FA00)
-;      so we don't need to look at the stated chunk size.
 .proc handle_fli_copy: near
    lda #0 ; full screen
    jsr func_prep_for_active_buffering
