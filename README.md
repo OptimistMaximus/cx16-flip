@@ -76,11 +76,11 @@ will be used.  The results are tracked here, for each released version:
 |---------|--------|----------|-----------|
 | 0.1.0   | $0183  | $0033    | 1825      |
 | 0.1.1   | $0176  | $0032    | 1705      |
-| 0.2.0   | $0163  | $0032    | 1741      |
+| 0.2.1   | $0163  | $0032    | 1747      |
 
 ### Version History
 
-- 2026/05/19 Version 0.2.0
+- 2026/05/19 Version 0.2.1
   - minor tidying up
   - minor performance enhancement
 
@@ -134,10 +134,18 @@ Good FLI files for regression test:
 
 - BELL (small, simple)
 - OWL  (small, simple)
-- BOOKSPIN (has padding)
+- BOOKSPIN (minimal padding)
 - CHOPCITY (very long)
-- SAUCER04 (FLI_COPY) v0.2.0 has padding error
+- SAUCER04 (FLI_COPY)
 - MOONWALK (BLACK)
+
+Good Files, but not supported yet:
+
+BADAPPLE.FLI has excessive padding after frames. For example, the first delta
+frame has an extra 48 zeros at the end, even though the frame was already on an
+even boundary.  The player currently doesn't handle this. It tries to scan ahead
+past the padding but quickly goes off the rails, showing pixel garbage on screen
+and squawking (due to buffer overrun into PSG registers)
 
 Bad FLI files:
 
