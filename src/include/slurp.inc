@@ -5,10 +5,6 @@
 .include "./math.inc"
 .include "./vera.inc"
 
-; USE_MACPTR_FOR_U16 = 1
-; USE_MACPTR_FOR_U24 = 1
-; USE_MACPTR_FOR_U32 = 1
-
 ;==============================================================================
 ; SLURP_INTO_A
 ;
@@ -58,66 +54,34 @@
 .endmacro
 
 .macro SLURP_INTO_U16 targetAddr
-   .ifdef USE_MACPTR_FOR_U16
-      phx
-         phy
-            clc
-            lda #2
-            ldx #<targetAddr
-            ldy #>targetAddr
-            jsr KERNAL_MACPTR
-         ply
-      plx
-   .else
-      jsr KERNAL_ACPTR
-      sta targetAddr+0
-      jsr KERNAL_ACPTR
-      sta targetAddr+1
-   .endif
+   jsr KERNAL_ACPTR
+   sta targetAddr+0
+   jsr KERNAL_ACPTR
+   sta targetAddr+1
 .endmacro
 
 .macro SLURP_INTO_U24 targetAddr
-   .ifdef USE_MACPTR_FOR_U24
-      phx
-         phy
-            clc
-            lda #3
-            ldx #<targetAddr
-            ldy #>targetAddr
-            jsr KERNAL_MACPTR
-         ply
-      plx
-   .else
-      jsr KERNAL_ACPTR
-      sta targetAddr+0
-      jsr KERNAL_ACPTR
-      sta targetAddr+1
-      jsr KERNAL_ACPTR
-      sta targetAddr+2
-   .endif
+   phx
+      phy
+         clc
+         lda #3
+         ldx #<targetAddr
+         ldy #>targetAddr
+         jsr KERNAL_MACPTR
+      ply
+   plx
 .endmacro
 
 .macro SLURP_INTO_U32 targetAddr
-   .ifdef USE_MACPTR_FOR_U32
-      phx
-         phy
-            clc
-            lda #4
-            ldx #<targetAddr
-            ldy #>targetAddr
-            jsr KERNAL_MACPTR
-         ply
-      plx
-   .else
-      jsr KERNAL_ACPTR
-      sta targetAddr+0
-      jsr KERNAL_ACPTR
-      sta targetAddr+1
-      jsr KERNAL_ACPTR
-      sta targetAddr+2
-      jsr KERNAL_ACPTR
-      sta targetAddr+3
-   .endif
+   phx
+      phy
+         clc
+         lda #4
+         ldx #<targetAddr
+         ldy #>targetAddr
+         jsr KERNAL_MACPTR
+      ply
+   plx
 .endmacro
 
 ;==============================================================================
