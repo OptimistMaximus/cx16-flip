@@ -79,7 +79,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
    SLURP_INTO_U32 ZP_VOLATILE_ABCD
    SLURP_INTO_U16 GR16_chunkType
-   
+
    jsr KERNAL_READST
    bne @eof ; ACPTR/MACPTR sets read status, which we can check via READST
 

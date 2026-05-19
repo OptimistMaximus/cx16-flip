@@ -85,49 +85,43 @@ packet_loop:
 
    SLURP_INTO_U8 copyCount
    ldy #0
-
-      copy_loop:
-         phx
-            phy
-               SLURP_INTO_U8 tempColorRed
+copy_loop:
+   SLURP_INTO_U24 tempColor ; slurp RGB
+   lda tempColor+0          ; load R
 smc_anchor_r_shift:
-               lsr                      ; nop if 6-bit
-               lsr                      ; nop if 6-bit
-               lsr
-               lsr
-               sta tempVeraRed
+   lsr                      ; nop if 6-bit
+   lsr                      ; nop if 6-bit
+   lsr
+   lsr
+   sta tempVeraRed
 
-               SLURP_INTO_U8 tempColorGreen
+   lda tempColor+1          ; load G
 smc_anchor_g_shift:
-               nop                      ; asl if 6-bit
-               nop                      ; asl if 6-bit
-               and #$F0
-               sta tempVeraGreen
+   nop                      ; asl if 6-bit
+   nop                      ; asl if 6-bit
+   and #$F0
+   sta tempVeraGreen
 
-               SLURP_INTO_U8 tempColorBlue
+   lda tempColor+2          ; load B
 smc_anchor_b_shift:
-               lsr                      ; nop if 6-bit
-               lsr                      ; nop if 6-bit
-               lsr
-               lsr
-               ora tempVeraGreen
-               sta VERA_DATA0           ; store VERA color (GB)
-               lda tempVeraRed          ; store VERA color (R)
-               sta VERA_DATA0
-            ply
-         plx
+   lsr                      ; nop if 6-bit
+   lsr                      ; nop if 6-bit
+   lsr
+   lsr
+   ora tempVeraGreen
+   sta VERA_DATA0           ; store VERA color (GB)
+   lda tempVeraRed          ; store VERA color (R)
+   sta VERA_DATA0
 
-         iny
-         cpy copyCount
-         bne copy_loop
+   iny
+   cpy copyCount
+   bne copy_loop
 
    inx
    cpx numPackets                       ; just the low byte
    bne packet_loop
 
    jmp func_load_palette                ; jsr/rts optimization
-
-
 
 
 .proc sub_skip_colors: near

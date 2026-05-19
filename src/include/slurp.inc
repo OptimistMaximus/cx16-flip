@@ -23,7 +23,7 @@
 ;
 ; @param .A holds the count of bytes to slurp from the inputstream into VRAM
 ;==============================================================================
-.macro SLURP_INTO_VERA
+.macro SLURP_INTO_VRAM
    phx
       phy
          sec
@@ -41,7 +41,7 @@
 ;
 ; @param .A holds the number of times to repeat the slurped byte
 ;==============================================================================
-.macro SLURP_INTO_VERA_REPEATED
+.macro SLURP_INTO_VRAM_REPEATED
    phx
       pha                  ; push .A (byte count)
          jsr KERNAL_ACPTR  ; .A now holds the slurped byte to repeat
@@ -121,31 +121,28 @@
 .endmacro
 
 ;==============================================================================
-; SLURP_INTO_OBLIVION
-;
-; This macro is highly inefficient, but it is assumed to only be used in a few
-; rare situations where performance isn't critical.
+; SLURP_INTO_BUFFER
 ;
 ; @param .A holds the number of bytes to slurp and discard
+; @param targetAddr where to store the bytes
 ;==============================================================================
-.macro SLURP_INTO_OBLIVION
+.macro SLURP_INTO_BUFFER targetAddr
    phx
-      tax
-   :  jsr KERNAL_ACPTR
-      dex
-      bne :-
+      phy
+         clc
+         ldx #<targetAddr
+         ldy #>targetAddr
+         jsr KERNAL_MACPTR
+      ply
    plx
 .endmacro
 
 ;==============================================================================
-; SLURP_INTO_OBLIVION_IMM
-;
-; This macro is highly inefficient, but it is assumed to only be used in a few
-; rare situations where performance isn't critical.
+; SLURP_INTO_BUFFER_IMM
 ;==============================================================================
-.macro SLURP_INTO_OBLIVION_IMM count
+.macro SLURP_INTO_BUFFER_IMM count, targetAddr
    lda #count
-   SLURP_INTO_OBLIVION
+   SLURP_INTO_BUFFER targetAddr
 .endmacro
 
 ;==============================================================================

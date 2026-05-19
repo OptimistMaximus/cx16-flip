@@ -1,7 +1,5 @@
 .export handle_byte_run
 
-.import func_slurp_into_buffer
-.import func_slurp_into_a
 .import func_vera_flip_stage
 .import func_prep_for_active_buffering
 .import func_snooze_if_necessary
@@ -9,6 +7,7 @@
 .segment "CODE"
 
 .include "../include/global.inc"
+.include "../include/slurp.inc"
 .include "../include/video.inc"
 
 .proc handle_byte_run: near
@@ -25,38 +24,20 @@
 .endproc
 
 .proc sub_render_line: near
-   scratchVar = ZP_VOLATILE_A
-   jsr func_slurp_into_a           ; packet count
+   SLURP_INTO_A                    ; packet count
    tay                             ; .Y is the packet countdown
 @packet_loop:
-   jsr func_slurp_into_a        ; byte count
+   SLURP_INTO_A                    ; byte count
    bit #%10000000
    beq @process_positive_count  ; i.e. bit 7 was clear
 
       TWOS_COMPLIMENT_A
-      sta scratchVar
-      phx
-         phy
-            jsr func_slurp_into_buffer ; .A is already set to desired count
-            ldy #0
-         :  lda RAM_VOLATILE_BUF,y
-            sta VERA_DATA0
-            iny
-            cpy scratchVar
-            bne :-
-         ply
-      plx
+      SLURP_INTO_VRAM
 
       bra @process_count_done
    @process_positive_count:
 
-      phy
-         tay                          ; .Y now becomes the repeat count
-         jsr func_slurp_into_a        ; .A now becomes the byte to repeat
-      :  sta VERA_DATA0
-         dey
-         bne :-
-      ply
+      SLURP_INTO_VRAM_REPEATED     ; repeat next byte .A times
 
    @process_count_done:
 
