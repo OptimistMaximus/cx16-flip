@@ -12,15 +12,27 @@
 .segment "RODATA"
 
 test_filename: .asciiz "slurp.bin,r"
-expect_abcdw:  .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
+
+expect_aaa_buffer: .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
+
 test12_expect_1111: .byte $00,$11,$11,$00
 test12_expect_2222: .byte $00,$22,$22,$00
 test12_expect_3333: .byte $00,$33,$33,$00
 test12_expect_4444: .byte $00,$44,$44,$00
 
+test13_expect: .byte $11,$00,$00,$22,$33,$44,$44,$44
+
 .segment "DATA"
 
+actual_aaa_buffer: .byte $61,$62,$63,$64,$00,$00,$00 ; abcd
+
 u24VeraAddr: .res 3, $00
+
+u8data:  .res 1, $00
+u16data: .res 2, $00
+u24data: .res 3, $00
+u32data: .res 4, $00
+u64data: .res 8, $00
 
 .segment "CODE"
 
@@ -28,6 +40,7 @@ u24VeraAddr: .res 3, $00
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
+.include "../include/slurp.inc"
 .include "../include/video.inc"
 .include "../include/xunit.inc"
 
@@ -74,41 +87,22 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ; func_close_inputstream
    ; func_slurp_into_a
    ; func_slurp_into_buffer
-   ; func_append_access_mode
-   ; func_strlen
    ;---------------------------------------------------------------------------
    ldx #<test_filename
    ldy #>test_filename
    jsr func_open_inputstream
 
    lda #4
-   jsr func_slurp_into_buffer     ; should get first 4 chars "abcd"
-   jsr func_slurp_into_a          ; should get the next char "e"
-   pha
-      jsr func_close_inputstream
-   pla
+   jsr func_slurp_into_buffer     ; should get first 4 chars 112233
+   jsr func_slurp_into_a          ; should get the next char 55
+   sta u8data
+   jsr func_close_inputstream
 
-   ASSERT_A_EQUALS_IMM      $1100, $65
-   ASSERT_VAR_U8_EQUALS_IMM $1101, $61, RAM_VOLATILE_BUF+0
-   ASSERT_VAR_U8_EQUALS_IMM $1102, $62, RAM_VOLATILE_BUF+1
-   ASSERT_VAR_U8_EQUALS_IMM $1103, $63, RAM_VOLATILE_BUF+2
-   ASSERT_VAR_U8_EQUALS_IMM $1104, $64, RAM_VOLATILE_BUF+3
-
-   ; since the above test just passed, we know the first 4 bytes of the
-   ; volatile buffer are a,b,c,d. All that's missing is a null terminator!
-   ; After appending the access mode, it should be length 6: "abcd,w"
-   stz RAM_VOLATILE_BUF+4
-   lda #PETSCII_LOWER_W
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
-   jsr func_append_access_mode
-   ASSERT_A_EQUALS_IMM     $1110, 6
-   ASSERT_RAM_EQUALS_ARRAY $1111, $06, expect_abcdw, RAM_VOLATILE_BUF
-
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
-   jsr func_strlen
-   ASSERT_A_EQUALS_IMM $1120, 6
+   ASSERT_VAR_U8_EQUALS_IMM $1101, $11, RAM_VOLATILE_BUF+0
+   ASSERT_VAR_U8_EQUALS_IMM $1102, $22, RAM_VOLATILE_BUF+1
+   ASSERT_VAR_U8_EQUALS_IMM $1103, $33, RAM_VOLATILE_BUF+2
+   ASSERT_VAR_U8_EQUALS_IMM $1104, $44, RAM_VOLATILE_BUF+3
+   ASSERT_VAR_U8_EQUALS_IMM $1105, $55, u8data
 
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
@@ -168,16 +162,118 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ASSERT_VRAM_U8_EQUALS_IMM $1217, $BB
    ASSERT_VRAM_U8_EQUALS_IMM $1218, $00
 
+   ;---------------------------------------------------------------------------
+   ; TEST 13 (string stuff)
+   ;
+   ; func_append_access_mode
+   ; func_strlen
+   ;---------------------------------------------------------------------------
+   lda #PETSCII_LOWER_W
+   ldx #<actual_aaa_buffer
+   ldy #>actual_aaa_buffer
+   jsr func_append_access_mode
+   ASSERT_A_EQUALS_IMM     $1300, 6
+   ASSERT_RAM_EQUALS_ARRAY $1301, $06, expect_aaa_buffer, actual_aaa_buffer
+
+   ldx #<expect_aaa_buffer
+   ldy #>expect_aaa_buffer
+   jsr func_strlen
+   ASSERT_A_EQUALS_IMM $1310, 6
+
+   ;---------------------------------------------------------------------------
+   ; TEST 13 (slurp 'n skip)
+   ;
+   ; SLURP_INTO_A
+   ; SLURP_INTO_VERA
+   ; SLURP_INTO_VERA_REPEATED
+   ; SLURP_INTO_U8
+   ; SLURP_INTO_U16
+   ; SLURP_INTO_U24
+   ; SLURP_INTO_U32
+   ; SKIP_PIXELS
+   ;---------------------------------------------------------------------------
+   jsr sub_init_stages_line0
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
+   
+   ldx #<test_filename
+   ldy #>test_filename
+   jsr func_open_inputstream
+   
+   SLURP_INTO_A              ; VRAM gains 11
+   sta VERA_DATA0
+   lda #2                    ; VRAM skips ahead 2 bytes
+   SKIP_PIXELS
+   lda #2                    ; VRAM gains 2233
+   SLURP_INTO_VERA
+   lda #3                    ; VRAM gains 444444
+   SLURP_INTO_VERA_REPEATED
+   
+   lda #1
+   SLURP_INTO_OBLIVION       ; discard 55
+   
+   SLURP_INTO_U8 u8data      ; var set to 66
+   SLURP_INTO_U16 u16data    ; var set to 7788
+   SLURP_INTO_U24 u24data    ; var set to 99AABB
+   SLURP_INTO_U32 u32data    ; var set to CCDDEEFF
+   
+   jsr func_close_inputstream
+
+   stp
+   nop
+   nop
+   ASSERT_VAR_U8_EQUALS_IMM  $1301, $66, u8data
+   ASSERT_VAR_U16_EQUALS_IMM $1302, $8877, u16data
+   ASSERT_VAR_U24_EQUALS_IMM $1303, $BBAA99, u24data
+   ASSERT_VAR_U16_EQUALS_IMM $1304, $DDCC, u32data+0 ; low half
+   ASSERT_VAR_U16_EQUALS_IMM $1305, $FFEE, u32data+2 ; high half
+   
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
+   ASSERT_VRAM_EQUALS_ARRAY $1310, 7, test13_expect
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
    PASS
 
 .endproc
 
-; zero out both stages
+; zero out both stages, then reset VERA addresses to line 0
 .proc sub_init_stages: near
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-   SET_VERA_ADDR24_IMM $01, VRAM_BUFFER_LINE_0, $10
+   jsr sub_init_vera_addresses
    ldx #200
 @row_loop:
+   jsr sub_init_line
+   dex
+   bne @row_loop
+   rts
+.endproc
+
+; zero out only line 0 in both stages, then reset VERA addresses to line 0
+.proc sub_init_stages_line0: near
+   jsr sub_init_vera_addresses
+   jsr sub_init_line
+   rts
+.endproc
+
+.proc sub_init_vera_addresses: near
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
+   SET_VERA_ADDR24_IMM $01, VRAM_BUFFER_LINE_0, $10
+.endproc
+   
+.proc sub_init_line: near
    ldy #160
    lda #0
 @column_loop:
@@ -187,7 +283,5 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    sta VERA_DATA1
    dey
    bne @column_loop
-   dex
-   bne @row_loop
    rts
 .endproc

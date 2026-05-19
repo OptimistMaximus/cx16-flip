@@ -20,12 +20,12 @@
 bsod:
    jsr func_vera_restore ; restore vera to text mode
    PRINT PETSCII_RETURN
-   lda GOLDEN_returnCode
+   lda GR8_returnCode
    jsr func_print_hex
    PRINT PETSCII_SPACE
-   lda GOLDEN_returnDetail+0
+   lda GR16_returnDetail+0
    jsr func_print_hex
-   lda GOLDEN_returnDetail+1
+   lda GR16_returnDetail+1
    jsr func_print_hex
 
    ;---------------------------------------------------------------------------

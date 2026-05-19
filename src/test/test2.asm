@@ -176,8 +176,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE, GOLDEN_returnCode
-   ASSERT_VAR_U16_EQUALS_IMM $3011, $AF12, GOLDEN_returnDetail
+   ASSERT_VAR_U8_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE, GR8_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3011, $AF12, GR16_returnDetail
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
    jsr func_slurp_header
@@ -188,15 +188,15 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; TEST 31 - handle_invalid
    ;           handle_unsupported
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM GOLDEN_chunkType, $DEAD
+   U16_COPY_IMM GR16_chunkType, $DEAD
    jsr handle_invalid
-   ASSERT_VAR_U8_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE, GOLDEN_returnCode
-   ASSERT_VAR_U16_EQUALS_IMM $3101, $DEAD, GOLDEN_returnDetail
+   ASSERT_VAR_U8_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE, GR8_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3101, $DEAD, GR16_returnDetail
 
-   U16_COPY_IMM GOLDEN_chunkType, $BEEF
+   U16_COPY_IMM GR16_chunkType, $BEEF
    jsr handle_unsupported
-   ASSERT_VAR_U8_EQUALS_IMM $3110, RC_UNSUPPORTED_CHUNK_TYPE, GOLDEN_returnCode
-   ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GOLDEN_returnDetail
+   ASSERT_VAR_U8_EQUALS_IMM $3110, RC_UNSUPPORTED_CHUNK_TYPE, GR8_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GR16_returnDetail
 
    ;---------------------------------------------------------------------------
    ; TEST 32 - handle_frame_type

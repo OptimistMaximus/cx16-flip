@@ -43,6 +43,15 @@
 .endmacro
 
 ;=============================================================================
+; ASSERT_BEQ - assert .P flag Z is set, such that a beq would branch
+;=============================================================================
+.macro ASSERT_BEQ testId
+    beq :+
+    FAIL testId
+:
+.endmacro
+
+;=============================================================================
 ; ASSERT_BCS - assert .P flag C is set, such that a bcs would branch
 ;=============================================================================
 .macro ASSERT_BCS testId
@@ -171,6 +180,25 @@
 :  plx
    FAIL testId
 :  plx
+.endmacro
+
+;=============================================================================
+; ASSERT_VRAM_EQUALS_ARRAY
+;
+; This assumes VERA address is established, data channel 0, stride 1
+;=============================================================================
+.macro ASSERT_VRAM_EQUALS_ARRAY testId, maxOffset, expectAddr
+   ldx #0
+:  lda VERA_DATA0
+   cmp expectAddr,x
+   beq :+
+   FAIL testId
+:
+   cpx #maxOffset
+   beq :+
+   inx
+   bra :--
+:
 .endmacro
 
 ;=============================================================================

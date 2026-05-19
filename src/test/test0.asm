@@ -150,8 +150,8 @@ test_array_data: .byte $11,$22,$33,$44
    jsr func_snooze_if_necessary
    PRINT PETSCII_EXCLAMATION
 
-   lda #255
-   jsr func_snooze
+   lda #60             ; linger 1 extra second, just so a human watching
+   jsr func_snooze     ; the test can see the !! before it disappears.
 
    jsr func_restore_irq_handler
 

@@ -86,7 +86,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    jsr KERNAL_READST
    bne @eof ; MACPTR sets the read status, which we can check via READST ...
 
-   U16_COPY_VAR GOLDEN_chunkType, RAM_VOLATILE_BUF+4
+   U16_COPY_VAR GR16_chunkType, RAM_VOLATILE_BUF+4
 
    jsr func_resolve_chunk_type
    cpx #0
@@ -105,10 +105,10 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    ; so we'll just proceed with the jump table offset indicating invalid.
    ;---------------------------------------------------------------------------
 @cannot_resolve_chunk_type:
-   lda GOLDEN_chunkType+1
-   sta GOLDEN_chunkType+0
+   lda GR16_chunkType+1
+   sta GR16_chunkType+0
    jsr func_slurp_into_a
-   sta GOLDEN_chunkType+1
+   sta GR16_chunkType+1
    jmp func_resolve_chunk_type
 
 @eof:
@@ -130,22 +130,22 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    rts
 .endmacro
 
-; @param GOLDEN_chunkType holds the chunk type
+; @param GR16_chunkType holds the chunk type
 ; @effect .X holds the jump table offset to the handler
 .proc func_resolve_chunk_type: near
-   lda GOLDEN_chunkType+1
+   lda GR16_chunkType+1
    beq @check_types_with_high_byte_00
    cmp #$F1
    beq @check_types_with_high_byte_F1
    SET_OFFSET_TO_ZERO_AND_RETURN
 
 @check_types_with_high_byte_F1:
-   lda GOLDEN_chunkType+0
+   lda GR16_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
    SET_OFFSET_TO_ZERO_AND_RETURN
 
 @check_types_with_high_byte_00:
-   lda GOLDEN_chunkType+0
+   lda GR16_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
    SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
    SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
