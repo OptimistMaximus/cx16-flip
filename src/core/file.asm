@@ -49,7 +49,7 @@
 .endproc
 
 ;==============================================================================
-; open file for streaming (via ACPTR or MACPTR)
+; open file for streaming
 ;
 ; @param  .X holds low byte of addr where the filename exists
 ; @param  .Y holds high byte of addr where the filename exists

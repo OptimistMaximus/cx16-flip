@@ -131,8 +131,8 @@ constReadLen := GOLDEN_cacheSize
    pha                         ; squirrel away .A ($20) for later
       clc                      ;
       adc varPointer           ; .A is now $20 + $88 = $A8
-      sta varScratch           ; store it in scratch to use as loop max 
-      
+      sta varScratch           ; store it in scratch to use as loop max
+
       phy
          ldy varPointer        ; pointer low is where to start, e.g. $88
       :  lda varCacheAddr,y    ; read at offset  e.g. $500 + $55
@@ -153,7 +153,7 @@ constReadLen := GOLDEN_cacheSize
 
 ;
 ; Supposing remaining is 5 and requested is 12, we must do a 5 byte read,
-; then load a fresh page and try again requesting 7.  Generally speaking, 
+; then load a fresh page and try again requesting 7.  Generally speaking,
 ; if remaining is less than or equal to requested, then do a read for all
 ; remaining, then adjust the request to reflect that we just read that
 ; remaining number of bytes, and try again.
@@ -164,8 +164,8 @@ constReadLen := GOLDEN_cacheSize
       lda varRemaining         ; Note, if nothing is remaining, then skip
       sta varScratch           ; over the drain loop. Regardless, we need
       beq @remaining_drained   ; to know the remaining count later to adjust
-                               ; the follow-up read, so store in scratch. 
-                               
+                               ; the follow-up read, so store in scratch.
+
       phy
          ldy #0                ; reading to the end is a special case that
       :  lda (varPointer),y    ; can be done more efficiently than the
@@ -183,8 +183,8 @@ constReadLen := GOLDEN_cacheSize
 
    jmp func_cache_read_into_vram ; i.e. try again
 .endproc
-   
-; @cycles 26 + whatever MACPTR costs 
+
+; @cycles 26 + whatever MACPTR costs
 ; note this does NOT use varScratch, so calling logic is safe to call
 ; this without risk of losing whatever value it might've put into scratch
 sub_load_page:
@@ -199,6 +199,6 @@ smc_anchor_for_cache_size:    ; (for unit test convenience)
          stx varRemaining     ; also how many bytes remaining
          stz varPointer       ; reset the pointer
       ply
-   plx          
+   plx
    rts
 

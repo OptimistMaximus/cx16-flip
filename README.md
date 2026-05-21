@@ -77,6 +77,7 @@ will be used.  The results are tracked here, for each released version:
 | 0.1.0   | $0183  | $0033    | 1825      |
 | 0.1.1   | $0176  | $0032    | 1705      |
 | 0.2.1   | $0163  | $0032    | 1747      |
+| 0.3.0   | $00F1  | $0032    | 1837      |
 
 ### Version History
 

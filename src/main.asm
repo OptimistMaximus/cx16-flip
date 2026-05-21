@@ -11,8 +11,6 @@
 .import func_vera_restore
 .import func_slurp_header
 .import func_slurp_chunk
-.import func_stash_zeropage
-.import func_unstash_zeropage
 
 .segment "INIT"
 .segment "STARTUP"
@@ -24,6 +22,7 @@
 .include "include/kernal.inc"
 .include "include/math.inc"
 .include "include/petscii.inc"
+.include "include/slurp.inc"
 .include "include/vera.inc"
 .include "include/zeropage.inc"
 
@@ -43,6 +42,7 @@ start:
    jsr func_vera_setup
    jsr sub_establish_filename
    jsr func_open_inputstream
+   SLURP_INIT
    jsr func_slurp_header
 
 @frame_loop:

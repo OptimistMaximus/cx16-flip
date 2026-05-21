@@ -20,8 +20,8 @@ FILE_TYPE_FLI := $AF11
 
    varFileType = ZP_VOLATILE_AB
 
-   SLURP_INTO_BUFFER_IMM 4, RAM_VOLATILE_BUF ; dword size (file size)
-   SLURP_INTO_U16 varFileType                ;  word type (file type)
+   SLURP_INTO_OBLIVION 4       ; dword size (file size)
+   SLURP_INTO_U16 varFileType  ;  word type (file type)
 
    ;---------------------------------------------------------------------------
    ; validate file type
@@ -31,7 +31,7 @@ FILE_TYPE_FLI := $AF11
    BSOD RC_UNSUPPORTED_FILE_TYPE, varFileType
 @fileType_is_fli:
 
-   SLURP_INTO_BUFFER_IMM 10, RAM_VOLATILE_BUF ; frames,width,height,depth,flags
+   SLURP_INTO_OBLIVION 10  ; frames,width,height,depth,flags
 
    ;---------------------------------------------------------------------------
    ; validate speed
@@ -79,7 +79,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    ; burn remaining bytes of header
    ;---------------------------------------------------------------------------
-   SLURP_INTO_BUFFER_IMM 108, RAM_VOLATILE_BUF
+   SLURP_INTO_OBLIVION 108
 
    rts
 .endproc

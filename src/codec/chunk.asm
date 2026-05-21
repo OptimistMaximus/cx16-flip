@@ -82,7 +82,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
 retry:
    jsr KERNAL_READST
-   bne @eof ; ACPTR/MACPTR sets read status, which we can check via READST
+   bne @eof ; underlying I/O routines set read status
 
    jsr func_resolve_chunk_type
    cpx #0
