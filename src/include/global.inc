@@ -56,7 +56,10 @@ ZP_VOLATILE_GH   := ZP_VOLATILE_G
 ZP_VOLATILE_IJ   := ZP_VOLATILE_I
 ZP_VOLATILE_KL   := ZP_VOLATILE_K
 
-RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
+RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
+
+GOLDEN_cacheAddr := $500 ; $500-$5FF cache
+GOLDEN_cacheSize := $FF  ; how much to load into cache (at most)
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (ZERO PAGE)
@@ -71,6 +74,15 @@ ZP8_imageVSyncsElapsed  := $2F  ; VSyncs elapsed while rendering current image
 ZP24_vramOffset         := $30
 ZP8_timerTrigger        := $33 ; state variable needed by speed timer
 ZPBOOL_flags            := $34
+
+ZP32_expectFrameBytes   := $40
+ZP32_actualFrameBytes   := $44
+ZP32_expectChunkBytes   := $48
+ZP32_actualChunkBytes   := $4C
+
+ZP16_cachePointer       := $50
+ZP8_cacheRemaining      := $52
+ZP8_cacheScratch        := $54
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
