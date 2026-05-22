@@ -73,13 +73,12 @@ ZP8_imageVSyncsElapsed  := $2F  ; VSyncs elapsed while rendering current image
 
 ZP24_vramOffset         := $30
 ZP8_timerTrigger        := $33 ; state variable needed by speed timer
-ZPBOOL_flags            := $34
 
-ZP32_actualChunkBytes   := $40
+ZP32_chunkReads         := $40 ; how many bytes have been read for curr chunk
 
 ZP16_cachePointer       := $50
 ZP8_cacheRemaining      := $52
-ZP8_cacheScratch        := $54
+ZP8_cacheScratch        := $53
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
@@ -95,7 +94,13 @@ GR16_returnDetail     := $606
 GR16_origIrqHandler   := $608
 GR16_debugTimerVSyncs := $60A
 GR16_debugSpeedSkips  := $60C
-GR32_expectChunkBytes := $610
+
+GR32_chunkSize        := $610
+GR16_frameIndex       := $614
+GR16_frameCount       := $616
+GR16_chunkIndex       := $618
+GR16_chunkCount       := $61A
+
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

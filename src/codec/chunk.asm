@@ -53,69 +53,16 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; func_slurp_chunk
 ;
 ; Reads the chunk size and chunk type, then looks up the appropriate handler
-; for the chunk type and invokes it.  If it encountered EOF while reading the
-; size and type, it sets the ZPBOOL_flags to indicate that EOF is encountered,
-; then returns.
+; for the chunk type and invokes it.
 ;==============================================================================
 .proc func_slurp_chunk: near
 
-   jsr sub_slurp_chunk_preamble
-   bit ZPBOOL_flags          ; b7=1 means we hit EOF while reading preamble
-   bpl @preamble_slurped     ; so we fall through and return (calling code
-   rts                       ; should also check the flags and react), else
-@preamble_slurped:           ; preamble was good and it's safe to proceed
-
    stz ZP8_imageVSyncsElapsed
-   jmp (chunk_type_jump_table,x)
-.endproc
-
-;==============================================================================
-; sub_slurp_chunk_preamble
-;
-; @effect .X holds the chunk handler jump table offset
-;         ZPBOOL_flags b7 set if we hit EOF while reading the chunk preamble
-;==============================================================================
-.proc sub_slurp_chunk_preamble
-
-   U32_STZ ZP32_actualChunkBytes ; TODO: slurp macros must increment this!
-   SLURP_INTO_U32 GR32_expectChunkBytes
+   U32_STZ ZP32_chunkReads
+   SLURP_INTO_U32 GR32_chunkSize
    SLURP_INTO_U16 GR16_chunkType
-
-retry:
-   jsr KERNAL_READST
-   bne @eof ; underlying I/O routines set read status
-
    jsr func_resolve_chunk_type
-   cpx #0
-   beq @cannot_resolve_chunk_type
-   rts
-
-   ;---------------------------------------------------------------------------
-   ; If we get here, it means we couldn't resolve the chunk type. Either the
-   ; file is malformed (unlikely), or we are one-byte-off because the previous
-   ; chunk had a padding byte, or we just read a bunch of zeros because the
-   ; encoder used excessive padding (much more than the 1 necessary for odd
-   ; sized frames, or even padding when none is needed).
-   ;
-   ; For now, a crude mitigation technique is employed. We'll assume we are off
-   ; by one and shuffle the type's high byte into its low byte, then replace
-   ; the high byte with the next one from the stream, then retry.  This will
-   ; work fast for a properly encoded file that pads with exactly one zero
-   ; only when necessary.  It will work for a file with excessive padding,
-   ; but only if the padding is zero.  It will have undetermined behavior if
-   ; the frame is padded with garbage.
-   ;---------------------------------------------------------------------------
-@cannot_resolve_chunk_type:
-   lda GR16_chunkType+1
-   sta GR16_chunkType+0
-   SLURP_INTO_A
-   sta GR16_chunkType+1
-   bra retry
-
-@eof:
-   lda #%10000000
-   tsb ZPBOOL_flags
-   rts
+   jmp (chunk_type_jump_table,x)
 .endproc
 
 .macro SET_OFFSET_AND_RETURN_IF_MATCH chunkTypeLowerByte, jumpTableOffset

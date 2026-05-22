@@ -47,8 +47,8 @@ start:
 
 @frame_loop:
    jsr func_slurp_chunk
-   bit ZPBOOL_flags       ; if we did not hit EOF while processing the
-   bpl @frame_loop        ; chunk, then we should proceed to next chunk
+   jsr KERNAL_READST
+   beq @frame_loop
 
    jsr func_close_inputstream
 
