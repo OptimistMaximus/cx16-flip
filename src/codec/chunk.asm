@@ -77,8 +77,8 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;==============================================================================
 .proc sub_slurp_chunk_preamble
 
-   U32_STZ ZP32_actualChunkBytes
-   SLURP_INTO_U32 ZP32_expectChunkBytes
+   U32_STZ ZP32_actualChunkBytes ; TODO: slurp macros must increment this!
+   SLURP_INTO_U32 GR32_expectChunkBytes
    SLURP_INTO_U16 GR16_chunkType
 
 retry:

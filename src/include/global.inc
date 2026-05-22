@@ -75,10 +75,7 @@ ZP24_vramOffset         := $30
 ZP8_timerTrigger        := $33 ; state variable needed by speed timer
 ZPBOOL_flags            := $34
 
-ZP32_expectFrameBytes   := $40
-ZP32_actualFrameBytes   := $44
-ZP32_expectChunkBytes   := $48
-ZP32_actualChunkBytes   := $4C
+ZP32_actualChunkBytes   := $40
 
 ZP16_cachePointer       := $50
 ZP8_cacheRemaining      := $52
@@ -91,13 +88,14 @@ ZP8_cacheScratch        := $54
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-GR16_chunkType        := $600 ; 16-bit
-GR16_speedVsyncs      := $602 ; 16-bit
-GR8_returnCode        := $604 ; 8-bit
-GR16_returnDetail     := $606 ; 16-bit
-GR16_origIrqHandler   := $608 ; 16-bit
-GR16_debugTimerVSyncs := $60A ; 16-bit
-GR16_debugSpeedSkips  := $60C ; 16-bit
+GR16_chunkType        := $600
+GR16_speedVsyncs      := $602
+GR8_returnCode        := $604
+GR16_returnDetail     := $606
+GR16_origIrqHandler   := $608
+GR16_debugTimerVSyncs := $60A
+GR16_debugSpeedSkips  := $60C
+GR32_expectChunkBytes := $610
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

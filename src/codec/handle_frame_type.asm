@@ -14,9 +14,5 @@
    ; out when we're done (since there's no other way to know when a file
    ; has arbitrary padding the end of the chunk)
    SLURP_INTO_OBLIVION 10
-
-   ; The frame is a special kind of chunk, potentially.
-   ; about the immediate next 2 bytes which is the number of sub-chunks to
-   ; follow.  The remaining 8 are only needed if we eventually support FLC.
    rts
 .endproc

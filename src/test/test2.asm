@@ -325,7 +325,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VRAM_U8_EQUALS_IMM $3519, $07 ; packet 3 start
    SET_VERA_ADDR24_IMM $00, $0013F, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $07 ; packet 3 end
-   ASSERT_VRAM_U8_EQUALS_IMM $3520, $00 ; packet 4 start (line 1)
+   ASSERT_VRAM_U8_EQUALS_IMM $3521, $01 ; packet 4 start (line 1)
 
    ;---------------------------------------------------------------------------
    ; TEST 36 - handle_delta_fli
