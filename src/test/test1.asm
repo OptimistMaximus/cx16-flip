@@ -323,6 +323,8 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
    ASSERT_VRAM_EQUALS_ARRAY $1500, $48, test14_expect
 
+   lda #$FF
+   sta smc_anchor_for_cache_size+1 ; restore cache size
 
 
 

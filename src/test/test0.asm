@@ -127,30 +127,35 @@ test_array_data: .byte $11,$22,$33,$44
    ; and then after 2 more seconds, an exlamation point due to a contrived
    ; 2 second elapsed at speed 3 (3-2=1), then an immediate exclamation point
    ; due to a contrived 4 seconds elapsed at speed 3 (3-4=-1).
+   ;
+   ; When testing by visual cue, set timeout to 60 for 1 second granularity.
+   ; To not waste time when we're confident timing works, set it to 10.
    ;---------------------------------------------------------------------------
+   snoozeUnits = 10
+
    jsr func_setup_irq_handler
    PRINT PETSCII_LOWER_T
    PRINT PETSCII_PERIOD
-   lda #60
+   lda #snoozeUnits
    jsr func_snooze
    PRINT PETSCII_PERIOD
-   lda #60
+   lda #snoozeUnits
    jsr func_snooze
    PRINT PETSCII_PERIOD
-   lda #60
+   lda #snoozeUnits
    jsr func_snooze
    PRINT PETSCII_PERIOD
 
-   U8_COPY_IMM ZP8_speedLimitVSyncs, 180
-   U8_COPY_IMM ZP8_imageVSyncsElapsed, 120
+   U8_COPY_IMM ZP8_speedLimitVSyncs, (snoozeUnits*3)
+   U8_COPY_IMM ZP8_imageVSyncsElapsed, (snoozeUnits*2)
    jsr func_snooze_if_necessary
    PRINT PETSCII_EXCLAMATION
 
-   U8_COPY_IMM ZP8_imageVSyncsElapsed, 240
+   U8_COPY_IMM ZP8_imageVSyncsElapsed, (snoozeUnits*4)
    jsr func_snooze_if_necessary
    PRINT PETSCII_EXCLAMATION
 
-   lda #60             ; linger 1 extra second, just so a human watching
+   lda #snoozeUnits    ; linger 1 extra second, just so a human watching
    jsr func_snooze     ; the test can see the !! before it disappears.
 
    jsr func_restore_irq_handler

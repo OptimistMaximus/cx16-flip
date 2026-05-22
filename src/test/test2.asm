@@ -237,7 +237,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; COLOR2.BIN tests that 256 packets of copy  count 1 works fine. This is a
    ; ridiculous edge case that probably no encoder would use, but it's legal.
    ;---------------------------------------------------------------------------
-.ifdef NARF
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_64
@@ -264,7 +263,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VRAM_U16_EQUALS_IMM $3415, $0111 ; color 4
    ASSERT_VRAM_U16_EQUALS_IMM $3416, $0222 ; color 5
    ASSERT_VRAM_U16_EQUALS_IMM $3417, $0606 ; color 6 untouched
-.endif
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
    jsr sub_init_palette_buffer
