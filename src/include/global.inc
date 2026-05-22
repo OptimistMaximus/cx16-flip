@@ -106,7 +106,7 @@ RC_SUCCESS                    := 0
 RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
 RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
 RC_INVALID_CHUNK_TYPE         := 3  ; type
-RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
+RC_READ_ERROR                 := 4  ; lower byte is READST value
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode
@@ -117,5 +117,14 @@ RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
    sta GR16_returnDetail+1
    jmp bsod
 .endmacro
+
+.macro BSOD_A returnCode
+   lda #returnCode
+   sta GR8_returnCode
+   sta GR16_returnDetail+0
+   stz GR16_returnDetail+1
+   jmp bsod
+.endmacro
+
 
 .endif
