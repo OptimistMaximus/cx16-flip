@@ -82,6 +82,11 @@ will be used.  The results are tracked here, for each released version:
 
 ### Version History
 
+- 2026/05/22 Version 0.3.0
+  - introduced crude file input stream buffering
+  - enhanced support for encodings with non-standard padding
+  - better tolerance of files with garbage bytes after final frame
+
 - 2026/05/19 Version 0.2.1
   - minor tidying up
   - minor performance enhancement
