@@ -10,9 +10,7 @@
 .import func_vera_setup
 .import func_vera_restore
 .import func_slurp_header
-.import func_slurp_chunk
-.import func_stash_zeropage
-.import func_unstash_zeropage
+.import func_slurp_frame
 
 .segment "INIT"
 .segment "STARTUP"
@@ -24,6 +22,7 @@
 .include "include/kernal.inc"
 .include "include/math.inc"
 .include "include/petscii.inc"
+.include "include/slurp.inc"
 .include "include/vera.inc"
 .include "include/zeropage.inc"
 
@@ -43,12 +42,14 @@ start:
    jsr func_vera_setup
    jsr sub_establish_filename
    jsr func_open_inputstream
+   SLURP_INIT
    jsr func_slurp_header
 
 @frame_loop:
-   jsr func_slurp_chunk
-   bit ZPBOOL_flags       ; if we did not hit EOF while processing the
-   bpl @frame_loop        ; chunk, then we should proceed to next chunk
+   jsr func_slurp_frame
+   U16_INC     GR16_frameIndex
+   U16_CMP_VAR GR16_frameIndex, GR16_frameCount
+   bne @frame_loop
 
    jsr func_close_inputstream
 

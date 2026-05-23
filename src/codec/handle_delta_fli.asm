@@ -34,6 +34,7 @@
    scratchVar = ZP_VOLATILE_A
 
    SLURP_INTO_A                     ; packet count
+   cmp #0
    beq @packet_loop_done            ; (packet count can legit be zero)
    tay                              ; .Y is the packet countdown
 @packet_loop:
@@ -63,6 +64,7 @@
 
 .proc sub_skip_columns: near
    SLURP_INTO_A             ; (.A holds skip count, where 0 means 0)
+   cmp #0
    beq @done
    SKIP_PIXELS
 @done:

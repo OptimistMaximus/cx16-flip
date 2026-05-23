@@ -56,7 +56,10 @@ ZP_VOLATILE_GH   := ZP_VOLATILE_G
 ZP_VOLATILE_IJ   := ZP_VOLATILE_I
 ZP_VOLATILE_KL   := ZP_VOLATILE_K
 
-RAM_VOLATILE_BUF := $400 ; $400-$5FF scratch area
+RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
+
+GOLDEN_cacheAddr := $500 ; $500-$5FF cache
+GOLDEN_cacheSize := $FF  ; how much to load into cache (at most)
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (ZERO PAGE)
@@ -70,7 +73,12 @@ ZP8_imageVSyncsElapsed  := $2F  ; VSyncs elapsed while rendering current image
 
 ZP24_vramOffset         := $30
 ZP8_timerTrigger        := $33 ; state variable needed by speed timer
-ZPBOOL_flags            := $34
+
+ZP32_chunkReads         := $40 ; how many bytes have been read for curr chunk
+
+ZP16_cachePointer       := $50
+ZP8_cacheRemaining      := $52
+ZP8_cacheScratch        := $53
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
@@ -79,13 +87,20 @@ ZPBOOL_flags            := $34
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-GR16_chunkType        := $600 ; 16-bit
-GR16_speedVsyncs      := $602 ; 16-bit
-GR8_returnCode        := $604 ; 8-bit
-GR16_returnDetail     := $606 ; 16-bit
-GR16_origIrqHandler   := $608 ; 16-bit
-GR16_debugTimerVSyncs := $60A ; 16-bit
-GR16_debugSpeedSkips  := $60C ; 16-bit
+GR16_chunkType        := $600
+GR16_speedVsyncs      := $602
+GR8_returnCode        := $604
+GR16_returnDetail     := $606
+GR16_origIrqHandler   := $608
+GR16_debugTimerVSyncs := $60A
+GR16_debugSpeedSkips  := $60C
+
+GR32_chunkSize        := $610
+GR16_frameIndex       := $614
+GR16_frameCount       := $616
+GR16_chunkIndex       := $618
+GR16_chunkCount       := $61A
+
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
@@ -94,7 +109,8 @@ RC_SUCCESS                    := 0
 RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
 RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
 RC_INVALID_CHUNK_TYPE         := 3  ; type
-RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
+RC_UNEXPECTED_CHUNK_TYPE      := 4  ; type
+RC_READ_ERROR                 := 5  ; lower byte is READST value
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode
@@ -105,5 +121,14 @@ RC_SPEED_TOO_HIGH             := 4  ; FLI speed, lower half of 32-bit value
    sta GR16_returnDetail+1
    jmp bsod
 .endmacro
+
+.macro BSOD_A returnCode
+   lda #returnCode
+   sta GR8_returnCode
+   sta GR16_returnDetail+0
+   stz GR16_returnDetail+1
+   jmp bsod
+.endmacro
+
 
 .endif

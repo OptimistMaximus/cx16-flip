@@ -19,6 +19,7 @@
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
+.include "../include/slurp.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
 .include "../include/xunit.inc"
@@ -75,12 +76,14 @@ VRAM_IMAGE_LINE_3  := $003C0
    ldx #<filenameLabel
    ldy #>filenameLabel
    jsr func_open_inputstream
+   SLURP_INIT
 .endmacro
 
 .macro OPEN_INPUTSTREAM filenameLabel
    ldx #<filenameLabel
    ldy #>filenameLabel
    jsr func_open_inputstream
+   SLURP_INIT
 .endmacro
 
 .macro CLOSE_INPUTSTREAM
@@ -234,7 +237,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; COLOR2.BIN tests that 256 packets of copy  count 1 works fine. This is a
    ; ridiculous edge case that probably no encoder would use, but it's legal.
    ;---------------------------------------------------------------------------
-
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_64
@@ -267,7 +269,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    SET_VERA_ADDR24_IMM $00, $1F400, $10
-   lda #0
+
+   ldy #0
 @test32_copy_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3421, $0111  ; color 0,2,4,etc
    ASSERT_VRAM_U16_EQUALS_IMM $3422, $0222  ; color 1,3,5,etc
@@ -281,7 +284,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    SET_VERA_ADDR24_IMM $00, $1F400, $10
-   lda #0
+   ldy #0
 @test32_verify_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3431, $0111  ; color 0,2,4,etc
    ASSERT_VRAM_U16_EQUALS_IMM $3432, $0222  ; color 1,3,5,etc
@@ -322,7 +325,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VRAM_U8_EQUALS_IMM $3519, $07 ; packet 3 start
    SET_VERA_ADDR24_IMM $00, $0013F, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3520, $07 ; packet 3 end
-   ASSERT_VRAM_U8_EQUALS_IMM $3520, $00 ; packet 4 start (line 1)
+   ASSERT_VRAM_U8_EQUALS_IMM $3521, $01 ; packet 4 start (line 1)
 
    ;---------------------------------------------------------------------------
    ; TEST 36 - handle_delta_fli

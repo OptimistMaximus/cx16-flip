@@ -174,7 +174,7 @@
 ;==============================================================================
 ; U32_COPY_VAR
 ;
-; Add into a target variable the value in another variable
+; Copy into a target variable the value in another variable
 ;
 ; @param targetAddr the target address
 ; @param sourceAddr the source address
@@ -396,7 +396,31 @@
    sta targetAddr+3
 .endmacro
 
-
+;==============================================================================
+; U32_SUB_VAR
+;
+; Subtract out of a target variable a the value of another variable
+;
+; @param targetAddr the target value's address
+; @param otherAddr the other value's address
+;
+; Note, this macro will set the carry bit before subtracting.
+;==============================================================================
+.macro U32_SUB_VAR targetAddr, otherAddr
+   sec
+   lda targetAddr+0
+   sbc otherAddr+0
+   sta targetAddr+0
+   lda targetAddr+1
+   sbc otherAddr+1
+   sta targetAddr+1
+   lda targetAddr+2
+   sbc otherAddr+2
+   sta targetAddr+2
+   lda targetAddr+3
+   sbc otherAddr+3
+   sta targetAddr+3
+.endmacro
 
 ;==============================================================================
 ; U16_SUB_VAR
@@ -509,6 +533,17 @@
    lda targetAddr+0
    cmp otherAddr+0
 :
+.endmacro
+
+.macro U32_COPY_IMM targetAddr, msb, otherValue
+   lda #<otherValue
+   sta targetAddr+0
+   lda #>otherValue
+   sta targetAddr+1
+   lda #^otherValue
+   sta targetAddr+2
+   lda #msb
+   sta targetAddr+3
 .endmacro
 
 .endif

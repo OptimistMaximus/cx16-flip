@@ -1,15 +1,14 @@
-.segment "CODE"
-
+.export func_slurp_frame
 .export func_slurp_chunk
 
 .import handle_invalid
-.import handle_frame_type
 .import handle_color_256
 .import handle_color_64
 .import handle_delta_fli
 .import handle_black
 .import handle_byte_run
 .import handle_fli_copy
+.import bsod
 
 .segment "RODATA"
 
@@ -31,8 +30,7 @@
 ;##############################################################################
 
 chunk_type_jump_table:     ; listed in order of most to least frequent
-.word handle_invalid
-.word handle_frame_type    ; $F1FA FRAME_TYPE
+.word handle_invalid       ; $00              (not a real type, i.e. invalid)
 .word handle_delta_fli     ; $0C   DELTA_FLI  delta image, byte oriented RLE
 .word handle_color_64      ; $0B   COLOR_64   64-level color palette
 .word handle_color_256     ; $04   COLOR_256  256-level color palette
@@ -50,71 +48,63 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .include "../include/slurp.inc"
 
 ;==============================================================================
-; func_slurp_chunk
+; func_slurp_frame
 ;
-; Reads the chunk size and chunk type, then looks up the appropriate handler
-; for the chunk type and invokes it.  If it encountered EOF while reading the
-; size and type, it sets the ZPBOOL_flags to indicate that EOF is encountered,
-; then returns.
+; Reads the next 16 bytes assuming it MUST be a FRAME_TYPE chunk.  Since only
+; FLI is supported, this is a reasonable assumption.  The chunk type will be
+; sanity-checked, and the chunks field is used to iterate over the sub-chunks.
+; After each subchunk, the read tracker is compared against the expected
+; chunk size, and the stream is advanced beyond any inferred padding.
 ;==============================================================================
-.proc func_slurp_chunk: near
+.proc func_slurp_frame: near
+   SLURP_INTO_U32 GR32_chunkSize
+   SLURP_INTO_U16 GR16_chunkType
+   U16_CMP_IMM GR16_chunkType, $F1FA
+   beq @assumption_met
+   BSOD RC_UNEXPECTED_CHUNK_TYPE, GR16_chunkType
+@assumption_met:
 
-   jsr sub_slurp_chunk_preamble
-   bit ZPBOOL_flags          ; b7=1 means we hit EOF while reading preamble
-   bpl @preamble_slurped     ; so we fall through and return (calling code
-   rts                       ; should also check the flags and react), else
-@preamble_slurped:           ; preamble was good and it's safe to proceed
+   U16_STZ        GR16_chunkIndex
+   SLURP_INTO_U16 GR16_chunkCount
+   SLURP_INTO_OBLIVION 8
 
-   stz ZP8_imageVSyncsElapsed
-   jmp (chunk_type_jump_table,x)
+@subchunk_loop:
+   U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount  ; check first in case zero
+   beq @subchunk_loop_done
+   U32_STZ ZP32_chunkReads
+   jsr func_slurp_chunk
+   jsr sub_mitigate_padding
+   U16_INC     GR16_chunkIndex
+   bra @subchunk_loop
+@subchunk_loop_done:
+   rts
+.endproc
+
+.proc sub_mitigate_padding: near
+   U32_CMP_VAR ZP32_chunkReads, GR32_chunkSize
+   bcc @handle_padding
+   rts
+@handle_padding:
+   SLURP_INTO_A
+   U32_CMP_VAR ZP32_chunkReads, GR32_chunkSize
+   bne @handle_padding
+   rts
 .endproc
 
 ;==============================================================================
-; sub_slurp_chunk_preamble
+; func_slurp_chunk
 ;
-; @effect .X holds the chunk handler jump table offset
-;         ZPBOOL_flags b7 set if we hit EOF while reading the chunk preamble
+; Reads the chunk size and chunk type, then looks up the appropriate handler
+; for the chunk type and invokes it.
 ;==============================================================================
-.proc sub_slurp_chunk_preamble
+.proc func_slurp_chunk: near
 
-   SLURP_INTO_U32 ZP_VOLATILE_ABCD
+   stz ZP8_imageVSyncsElapsed
+   U32_STZ ZP32_chunkReads
+   SLURP_INTO_U32 GR32_chunkSize
    SLURP_INTO_U16 GR16_chunkType
-
-retry:
-   jsr KERNAL_READST
-   bne @eof ; ACPTR/MACPTR sets read status, which we can check via READST
-
    jsr func_resolve_chunk_type
-   cpx #0
-   beq @cannot_resolve_chunk_type
-   rts
-
-   ;---------------------------------------------------------------------------
-   ; If we get here, it means we couldn't resolve the chunk type. Either the
-   ; file is malformed (unlikely), or we are one-byte-off because the previous
-   ; chunk had a padding byte, or we just read a bunch of zeros because the
-   ; encoder used excessive padding (much more than the 1 necessary for odd
-   ; sized frames, or even padding when none is needed).
-   ;
-   ; For now, a crude mitigation technique is employed. We'll assume we are off
-   ; by one and shuffle the type's high byte into its low byte, then replace
-   ; the high byte with the next one from the stream, then retry.  This will
-   ; work fast for a properly encoded file that pads with exactly one zero
-   ; only when necessary.  It will work for a file with excessive padding,
-   ; but only if the padding is zero.  It will have undetermined behavior if
-   ; the frame is padded with garbage.
-   ;---------------------------------------------------------------------------
-@cannot_resolve_chunk_type:
-   lda GR16_chunkType+1
-   sta GR16_chunkType+0
-   SLURP_INTO_A
-   sta GR16_chunkType+1
-   bra retry
-
-@eof:
-   lda #%10000000
-   tsb ZPBOOL_flags
-   rts
+   jmp (chunk_type_jump_table,x)
 .endproc
 
 .macro SET_OFFSET_AND_RETURN_IF_MATCH chunkTypeLowerByte, jumpTableOffset
@@ -134,23 +124,15 @@ retry:
 ; @effect .X holds the jump table offset to the handler
 .proc func_resolve_chunk_type: near
    lda GR16_chunkType+1
-   beq @check_types_with_high_byte_00
-   cmp #$F1
-   beq @check_types_with_high_byte_F1
-   SET_OFFSET_TO_ZERO_AND_RETURN
+   bne @invalid_chunk_type
 
-@check_types_with_high_byte_F1:
    lda GR16_chunkType+0
-   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
-   SET_OFFSET_TO_ZERO_AND_RETURN
-
-@check_types_with_high_byte_00:
-   lda GR16_chunkType+0
-   SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
-   SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
-   SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
-   SET_OFFSET_AND_RETURN_IF_MATCH $0F, $0A ; BYTE_RUN
-   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
-   SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0E ; BLACK
+   SET_OFFSET_AND_RETURN_IF_MATCH $0C, $02 ; DELTA_FLI
+   SET_OFFSET_AND_RETURN_IF_MATCH $0B, $04 ; COLOR_64
+   SET_OFFSET_AND_RETURN_IF_MATCH $04, $06 ; COLOR_256
+   SET_OFFSET_AND_RETURN_IF_MATCH $0F, $08 ; BYTE_RUN
+   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0A ; FLI_COPY
+   SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0C ; BLACK
+@invalid_chunk_type:
    SET_OFFSET_TO_ZERO_AND_RETURN
 .endproc

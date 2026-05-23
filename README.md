@@ -50,10 +50,11 @@ resets to BASIC (effectively unloading the program).
 
 | Code | Meaning                   | Detail                                |
 |------|---------------------------|---------------------------------------|
-| 2    | unsupported file type     | the file type                         |
-| 3    | unsupported frame type    | the frame type                        |
-| 4    | unsupported chunk type    | the chunk type                        |
-| 5    | invalid chunk type        | the chunk type                        |
+| 1    | unsupported file type     | the file type                         |
+| 2    | unsupported chunk type    | the chunk type                        |
+| 3    | invalid chunk type        | the chunk type                        |
+| 4    | unexpected chunk type     | the chunk type                        |
+| 5    | read error                | low byte is READST value              |
 
 ### Performance Timing Info
 
@@ -77,8 +78,14 @@ will be used.  The results are tracked here, for each released version:
 | 0.1.0   | $0183  | $0033    | 1825      |
 | 0.1.1   | $0176  | $0032    | 1705      |
 | 0.2.1   | $0163  | $0032    | 1747      |
+| 0.3.0   | $00F9  | $0031    | 2114      |
 
 ### Version History
+
+- 2026/05/22 Version 0.3.0
+  - introduced crude file input stream buffering
+  - enhanced support for encodings with non-standard padding
+  - better tolerance of files with garbage bytes after final frame
 
 - 2026/05/19 Version 0.2.1
   - minor tidying up
@@ -223,3 +230,12 @@ If we ignore that 5D, then everything else after that DOES make sense.
   can skip/burn palette entries by just doing inx or iny instead of LDA VERA_DATA0.
   Though, palette updates don't happen as often as FLI_DELTA so optimization should
   focus there first.
+- keep a runnning 24-bit value of our VRAM location, and evaluate each skip ...
+  setting VRAM addr takes 26 cycles, and doing 7 LDAs to VERA_DATA0 takes 28 bytes.
+  So any skip of 7 or more is faster to do by moving the VRAM address.  But doing
+  the ADC to keep that value fresh is also expensive, as is doing a U24_INC with
+  every byte written.  Is there a way to ask VERA what its offset currently is?
+
+
+
+
