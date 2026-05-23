@@ -11,6 +11,8 @@
 ;
 ; 297 seventieths = 255 sixtieths
 
+; MINIMIZE_ZEROPAGE_USAGE = 1
+
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page)
 ;
@@ -18,62 +20,60 @@
 ; or for performance reasons.
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
-
-ZP8_timerTrigger        := $24 ; state variable needed by speed timer
-ZP8_imageVSyncsElapsed  := $25 ; VSyncs elapsed while rendering current image
-
-ZP24_chunkReads         := $26 ; how many bytes have been read for curr chunk
+ZP24_vramOffset         := $24
+ZP24_chunkReads         := $27 ; how many bytes have been read for curr chunk
 ZP16_cachePointer       := $2A
 ZP8_cacheRemaining      := $2C
 ZP8_cacheScratch        := $2D
-
-ZP24_vramOffset         := $30
+ZP8_timerTrigger        := $2E ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES
 ;
 ; These can be anywhere in RAM, though the program will be smaller and faster
-; if they exist in Zero Page.
+; if they exist in Zero Page.  As long as the total usage here is under $40
+; bytes, it can easily fit in either ZP or GOLDEN RAM.
 ;------------------------------------------------------------------------------
-GOLDEN_cacheAddr      := $500 ; $400-$4FF cache
-GOLDEN_cacheSize      := $FF  ; (this is a constant, not a variable)
+CONST_cacheAddr       := $400
+CONST_cacheSize       := $FF  ; (this is a constant, not a variable)
 
-GR32_scratch1         := $400
-GR32_scratch2         := $404
+.ifdef MINIMIZE_ZEROPAGE_USAGE
+   GLOBAL_VAR_BASE    := $500
+.else
+   GLOBAL_VAR_BASE    := $0
+.endif
 
-GR16_scratch1         := $408
-GR16_scratch2         := $40A
-GR16_scratch3         := $40C
-GR16_scratch4         := $40E
+GR32_scratch1         := GLOBAL_VAR_BASE + $40
+GR32_scratch2         := GLOBAL_VAR_BASE + $44
 
-GR24_scratch1         := $410
-GR24_scratch2         := $413
+GR16_scratch1         := GLOBAL_VAR_BASE + $48 
+GR16_scratch2         := GLOBAL_VAR_BASE + $4A
+GR16_scratch3         := GLOBAL_VAR_BASE + $4C
+GR16_scratch4         := GLOBAL_VAR_BASE + $4E
 
-GR8_scratch1          := $414
-GR8_scratch2          := $415
-GR8_scratch3          := $416
-GR8_scratch4          := $417
+GR24_scratch1         := GLOBAL_VAR_BASE + $50
+GR24_scratch2         := GLOBAL_VAR_BASE + $53
 
-GR32_chunkSize        := $420
-GR16_frameIndex       := $424
-GR16_frameCount       := $426
-GR16_chunkIndex       := $428
-GR16_chunkCount       := $42A
+GR8_scratch1          := GLOBAL_VAR_BASE + $56
+GR8_scratch2          := GLOBAL_VAR_BASE + $57
+GR8_scratch3          := GLOBAL_VAR_BASE + $58
+GR8_scratch4          := GLOBAL_VAR_BASE + $59
 
-GR16_chunkType        := $430
-GR16_speedVsyncs      := $434
-GR8_speedLimitVSyncs  := $436  ; speed limit expressed as number of VSyncs
+GR32_chunkSize        := GLOBAL_VAR_BASE + $60
+GR16_frameIndex       := GLOBAL_VAR_BASE + $64
+GR16_frameCount       := GLOBAL_VAR_BASE + $66
+GR16_chunkIndex       := GLOBAL_VAR_BASE + $68
+GR16_chunkCount       := GLOBAL_VAR_BASE + $6A
+GR16_chunkType        := GLOBAL_VAR_BASE + $6C
+GR16_speedVsyncs      := GLOBAL_VAR_BASE + $6E
 
-GR8_returnCode        := $437
-GR16_returnDetail     := $438
-GR16_origIrqHandler   := $43A
-GR16_debugTimerVSyncs := $43C
-GR16_debugSpeedSkips  := $43E
-
-
-
-
-
+GR8_speedLimitVSyncs  := GLOBAL_VAR_BASE + $70  ; speed limit as VSyncs
+GR8_returnCode        := GLOBAL_VAR_BASE + $71
+GR16_returnDetail     := GLOBAL_VAR_BASE + $72
+GR16_origIrqHandler   := GLOBAL_VAR_BASE + $74
+GR16_debugTimerVSyncs := GLOBAL_VAR_BASE + $76
+GR16_debugSpeedSkips  := GLOBAL_VAR_BASE + $78
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

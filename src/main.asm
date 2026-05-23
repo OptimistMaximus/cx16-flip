@@ -68,21 +68,24 @@ start:
 ; Establish the filename by looking for a custom argument. If no such arg
 ; was found, then we'll use our default value.  Then, open the file.
 ;
-; Note this does a dirty trick by using the same area of RAM that the file
-; streaming uses ... this is "safe" because we know we will never be using the
-; filestream cache at this moment (necessarily because it is before we open
-; the file) and we know that we never need to know the filename after we open
-; the file.  Though at some point there should be a cleaner divide between the
-; main program and the library's internal buffer! For now, it's tolerable.
+; TODO: overhaul the args so I can just support only parsing the filename
+; from the command line ... just walk ahead past the rem token and find the
+; first non-space.  Then there should be plenty of room to append the ,r
+;
+; This saves space in the binary (no need for a buf) and also smaller binary
+; as the args parser does not need to be general purpose.
+;
+; For now, just hack the buf as $700 ... we aren't using that for anything.
 ;
 ; @effect .A length of the filename
 ; @effect .X low byte of filename address
 ; @effect .Y high byte of filename address
 ;------------------------------------------------------------------------------
 .proc sub_establish_filename: near
+   NARF = $700
    lda #0
-   ldx #<GOLDEN_cacheAddr
-   ldy #>GOLDEN_cacheAddr
+   ldx #<NARF
+   ldy #>NARF
    jsr func_find_arg
    bcc @arg_was_cool              ; .C=0 means it was found
    ldx #<default_image_filename
@@ -91,7 +94,7 @@ start:
 @arg_was_cool:
    lda #PETSCII_LOWER_R
    jsr func_append_access_mode
-   ldx #<GOLDEN_cacheAddr
-   ldy #>GOLDEN_cacheAddr
+   ldx #<NARF
+   ldy #>NARF
    rts
 .endproc
