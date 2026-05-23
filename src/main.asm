@@ -10,7 +10,7 @@
 .import func_vera_setup
 .import func_vera_restore
 .import func_slurp_header
-.import func_slurp_chunk
+.import func_slurp_frame
 
 .segment "INIT"
 .segment "STARTUP"
@@ -46,9 +46,10 @@ start:
    jsr func_slurp_header
 
 @frame_loop:
-   jsr func_slurp_chunk
-   jsr KERNAL_READST
-   beq @frame_loop
+   jsr func_slurp_frame
+   U16_INC     GR16_frameIndex
+   U16_CMP_VAR GR16_frameIndex, GR16_frameCount
+   bne @frame_loop
 
    jsr func_close_inputstream
 

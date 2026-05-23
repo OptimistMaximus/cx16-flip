@@ -14,7 +14,9 @@ FILE_TYPE_FLI := $AF11
 ;==============================================================================
 ; func_slurp_header
 ;
-; This must be the very first thing called after opening the file input stream
+; This must be the very first thing called after opening the file input stream.
+; It sets the frameIndex and the frameCount, which the main logic will use to
+; iterate over all the frames.
 ;==============================================================================
 .proc func_slurp_header: near
 
@@ -31,7 +33,9 @@ FILE_TYPE_FLI := $AF11
    BSOD RC_UNSUPPORTED_FILE_TYPE, varFileType
 @fileType_is_fli:
 
-   SLURP_INTO_OBLIVION 10  ; frames,width,height,depth,flags
+   U16_STZ        GR16_frameIndex
+   SLURP_INTO_U16 GR16_frameCount
+   SLURP_INTO_OBLIVION 8  ; width, height, depth, flags
 
    ;---------------------------------------------------------------------------
    ; validate speed

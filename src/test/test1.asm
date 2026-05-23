@@ -257,6 +257,7 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ;---------------------------------------------------------------------------
    jsr sub_init_stages_line0
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
+   U32_STZ ZP32_chunkReads         ; initialize cache reads stat
 
    lda #16
    sta smc_anchor_for_cache_size+1 ; force cache size for test convenience
@@ -272,12 +273,14 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    jsr func_cache_read_into_a
    jsr func_cache_read_into_a
    sta VERA_DATA0
+   ASSERT_VAR_U32_EQUALS_IMM $1500, 0,2, ZP32_chunkReads
 
    ;
    ; single read/dupe, cache hit scenario with bytes remaining
    ;
    lda #3
    jsr func_cache_dupe_into_vram
+   ASSERT_VAR_U32_EQUALS_IMM $1501, 0,3, ZP32_chunkReads
 
    ;
    ; multi read, cache hit scenario with bytes remaining
@@ -285,24 +288,28 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ;
    lda #12
    jsr func_cache_read_into_vram
+   ASSERT_VAR_U32_EQUALS_IMM $1502, 0,15, ZP32_chunkReads
 
    ;
    ; single read, cache hit but it's an edge-case: the last byte
    ;
    jsr func_cache_read_into_a
    sta VERA_DATA0
+   ASSERT_VAR_U32_EQUALS_IMM $1503, 0,16, ZP32_chunkReads
 
    ;
    ; single read, cache miss, should load 16 fresh, leaving 15 remaining
    ;
    jsr func_cache_read_into_a
    sta VERA_DATA0
+   ASSERT_VAR_U32_EQUALS_IMM $1504, 0,17, ZP32_chunkReads
 
    ;
    ; now another edge case case: multi-read equal to remaining
    ;
    lda #15
    jsr func_cache_read_into_vram
+   ASSERT_VAR_U32_EQUALS_IMM $1505, 0,32, ZP32_chunkReads
 
    ;
    ; edge case, handling a multi-read while cache is exhausted, also
@@ -310,6 +317,8 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ;
    lda #8
    jsr func_cache_read_into_vram
+   ASSERT_VAR_U32_EQUALS_IMM $1506, 0,40, ZP32_chunkReads
+
 
    ;
    ; test split read scenario where we ask for more than is remaining.
@@ -317,11 +326,12 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ; cause 2 page loads behind the scenes.
    lda #32
    jsr func_cache_read_into_vram
+   ASSERT_VAR_U32_EQUALS_IMM $1507, 0,72, ZP32_chunkReads
 
    jsr func_close_inputstream
 
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-   ASSERT_VRAM_EQUALS_ARRAY $1500, $48, test14_expect
+   ASSERT_VRAM_EQUALS_ARRAY $1508, $48, test14_expect
 
    lda #$FF
    sta smc_anchor_for_cache_size+1 ; restore cache size

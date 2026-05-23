@@ -165,6 +165,40 @@
 .endmacro
 
 ;=============================================================================
+; ASSERT_VAR_U32_EQUALS_IMM - assert 32-bit value at addr
+;                             equals the specified immediate value
+;
+; Note, ca65 does not offers any syntax for extracting the most significant
+;       byte, so we'll specify 32-bit values as their MSB and the remaining
+;       24 bits as a 24-bit value (big endian)
+;=============================================================================
+.macro ASSERT_VAR_U32_EQUALS_IMM testId, msb, expectValue, actualAddr
+   lda actualAddr+0
+   cmp #<expectValue
+   beq :+
+   FAIL testId
+:
+   lda actualAddr+1
+   cmp #>expectValue
+   beq :+
+   FAIL testId
+:
+   lda actualAddr+2
+   cmp #^expectValue
+   beq :+
+   FAIL testId
+:
+   lda actualAddr+3
+   cmp #msb
+   beq :+
+   FAIL testId
+:
+.endmacro
+
+
+
+
+;=============================================================================
 ; ASSERT_RAM_EQUALS_ARRAY - assumes expectAddr and actuaAddr are absolute
 ;=============================================================================
 .macro ASSERT_RAM_EQUALS_ARRAY testId, maxOffset, expectAddr, actualAddr

@@ -109,7 +109,8 @@ RC_SUCCESS                    := 0
 RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
 RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
 RC_INVALID_CHUNK_TYPE         := 3  ; type
-RC_READ_ERROR                 := 4  ; lower byte is READST value
+RC_UNEXPECTED_CHUNK_TYPE      := 4  ; type
+RC_READ_ERROR                 := 5  ; lower byte is READST value
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode

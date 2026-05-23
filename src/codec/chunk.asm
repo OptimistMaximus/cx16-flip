@@ -1,15 +1,14 @@
-.segment "CODE"
-
+.export func_slurp_frame
 .export func_slurp_chunk
 
 .import handle_invalid
-.import handle_frame_type
 .import handle_color_256
 .import handle_color_64
 .import handle_delta_fli
 .import handle_black
 .import handle_byte_run
 .import handle_fli_copy
+.import bsod
 
 .segment "RODATA"
 
@@ -31,8 +30,7 @@
 ;##############################################################################
 
 chunk_type_jump_table:     ; listed in order of most to least frequent
-.word handle_invalid
-.word handle_frame_type    ; $F1FA FRAME_TYPE
+.word handle_invalid       ; $00              (not a real type, i.e. invalid)
 .word handle_delta_fli     ; $0C   DELTA_FLI  delta image, byte oriented RLE
 .word handle_color_64      ; $0B   COLOR_64   64-level color palette
 .word handle_color_256     ; $04   COLOR_256  256-level color palette
@@ -48,6 +46,50 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
 .include "../include/slurp.inc"
+
+;==============================================================================
+; func_slurp_frame
+;
+; Reads the next 16 bytes assuming it MUST be a FRAME_TYPE chunk.  Since only
+; FLI is supported, this is a reasonable assumption.  The chunk type will be
+; sanity-checked, and the chunks field is used to iterate over the sub-chunks.
+; After each subchunk, the read tracker is compared against the expected
+; chunk size, and the stream is advanced beyond any inferred padding.
+;==============================================================================
+.proc func_slurp_frame: near
+   SLURP_INTO_U32 GR32_chunkSize
+   SLURP_INTO_U16 GR16_chunkType
+   U16_CMP_IMM GR16_chunkType, $F1FA
+   beq @assumption_met
+   BSOD RC_UNEXPECTED_CHUNK_TYPE, GR16_chunkType
+@assumption_met:
+
+   U16_STZ        GR16_chunkIndex
+   SLURP_INTO_U16 GR16_chunkCount
+   SLURP_INTO_OBLIVION 8
+
+@subchunk_loop:
+   stp
+   nop
+   U32_STZ ZP32_chunkReads
+   jsr func_slurp_chunk
+   jsr sub_mitigate_padding
+   U16_INC     GR16_chunkIndex
+   U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount
+   bne @subchunk_loop
+   rts
+.endproc
+
+.proc sub_mitigate_padding: near
+   U32_CMP_VAR ZP32_chunkReads, GR32_chunkSize
+   bcc @handle_padding
+   rts
+@handle_padding:
+   SLURP_INTO_A
+   U32_CMP_VAR ZP32_chunkReads, GR32_chunkSize
+   bne @handle_padding
+   rts
+.endproc
 
 ;==============================================================================
 ; func_slurp_chunk
@@ -82,23 +124,15 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; @effect .X holds the jump table offset to the handler
 .proc func_resolve_chunk_type: near
    lda GR16_chunkType+1
-   beq @check_types_with_high_byte_00
-   cmp #$F1
-   beq @check_types_with_high_byte_F1
-   SET_OFFSET_TO_ZERO_AND_RETURN
+   bne @invalid_chunk_type
 
-@check_types_with_high_byte_F1:
    lda GR16_chunkType+0
-   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
-   SET_OFFSET_TO_ZERO_AND_RETURN
-
-@check_types_with_high_byte_00:
-   lda GR16_chunkType+0
-   SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
-   SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
-   SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
-   SET_OFFSET_AND_RETURN_IF_MATCH $0F, $0A ; BYTE_RUN
-   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
-   SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0E ; BLACK
+   SET_OFFSET_AND_RETURN_IF_MATCH $0C, $02 ; DELTA_FLI
+   SET_OFFSET_AND_RETURN_IF_MATCH $0B, $04 ; COLOR_64
+   SET_OFFSET_AND_RETURN_IF_MATCH $04, $06 ; COLOR_256
+   SET_OFFSET_AND_RETURN_IF_MATCH $0F, $08 ; BYTE_RUN
+   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0A ; FLI_COPY
+   SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0C ; BLACK
+@invalid_chunk_type:
    SET_OFFSET_TO_ZERO_AND_RETURN
 .endproc

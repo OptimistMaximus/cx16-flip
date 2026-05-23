@@ -39,7 +39,7 @@ test_array_data: .byte $11,$22,$33,$44
    ;            U8_COPY_IMM     U8_COPY_VAR
    ; U16_STZ    U16_COPY_IMM    U16_COPY_VAR
    ; U24_STZ    U24_COPY_IMM    U24_COPY_VAR
-   ; U32_STZ                    U32_COPY_VAR
+   ; U32_STZ    U32_COPY_IMM    U32_COPY_VAR
    ;
    ; ARRAY_COPY
    ;---------------------------------------------------------------------------
@@ -77,11 +77,15 @@ test_array_data: .byte $11,$22,$33,$44
    U24_COPY_IMM ZP_VOLATILE_ABC, $AABBCC
    ASSERT_VAR_U24_EQUALS_IMM $0012, $AABBCC, ZP_VOLATILE_ABC
 
+   U32_STZ ZP_VOLATILE_ABCD
+   U32_COPY_IMM ZP_VOLATILE_ABCD, $AA,$BBCCDD
+   ASSERT_VAR_U32_EQUALS_IMM $0013, $AA,$BBCCDD, ZP_VOLATILE_ABCD
+
    U16_COPY_IMM ZP_VOLATILE_EF, $AABB
    U16_COPY_IMM ZP_VOLATILE_GH, $CCDD
    U24_COPY_IMM ZP_VOLATILE_JKL, $FACADE
 
-   stz ZP_VOLATILE_A
+   stz ZP_VOLATILE_B
    U8_COPY_VAR ZP_VOLATILE_B, ZP_VOLATILE_E
    ASSERT_VAR_U8_EQUALS_IMM $0020, $BB, ZP_VOLATILE_B
 
@@ -102,6 +106,7 @@ test_array_data: .byte $11,$22,$33,$44
    ; TEST 01 (add, subtract)
    ;
    ; U16_ADD_IMM   U16_ADD_VAR   U16_SUB_IMM   U16_SUB_VAR
+   ;                                           U32_SUB_VAR   U32_ADD_A
    ;---------------------------------------------------------------------------
    U16_COPY_IMM ZP_VOLATILE_AB, $00FE
    U16_COPY_IMM ZP_VOLATILE_CD, $0004
@@ -118,8 +123,31 @@ test_array_data: .byte $11,$22,$33,$44
    U16_SUB_VAR ZP_VOLATILE_AB, ZP_VOLATILE_CD
    ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, ZP_VOLATILE_AB
 
+   U32_COPY_IMM ZP_VOLATILE_ABCD, $44,$332211 ; value
+   U32_COPY_IMM ZP_VOLATILE_EFGH, $33,$445566 ; other value
+   U32_SUB_VAR ZP_VOLATILE_ABCD, ZP_VOLATILE_EFGH
+   ASSERT_VAR_U32_EQUALS_IMM $0104, $10,$EECCAB, ZP_VOLATILE_ABCD
+
+   lda #$80
+   U32_ADD_A ZP_VOLATILE_ABCD
+   ASSERT_VAR_U32_EQUALS_IMM $0105, $10,$EECD2B, ZP_VOLATILE_ABCD
+
    ;---------------------------------------------------------------------------
-   ; TEST 03 (timer)
+   ; TEST 02 (inc)
+   ;
+   ; U16_INC
+   ; U32_INC
+   ;---------------------------------------------------------------------------
+   U32_COPY_IMM ZP_VOLATILE_ABCD, $01,$FFFFFE
+   U32_INC      ZP_VOLATILE_ABCD
+   ASSERT_VAR_U32_EQUALS_IMM $0106, $01,$FFFFFF, ZP_VOLATILE_ABCD
+
+   U32_INC      ZP_VOLATILE_ABCD
+   ASSERT_VAR_U32_EQUALS_IMM $0107, $02,$000000, ZP_VOLATILE_ABCD
+
+
+   ;---------------------------------------------------------------------------
+   ; TEST 99 (timer)
    ;
    ; We can't really assert anything for these tests, but we can view the
    ; behavior at runtime.  The following code should cause a period to be
