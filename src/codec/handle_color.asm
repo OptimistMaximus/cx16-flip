@@ -125,7 +125,7 @@ smc_anchor_b_shift:
 
 
 .proc sub_skip_colors: near
-   SLURP_INTO_A ; skip count
+   jsr func_cache_read_into_a           ; skip count
    cmp #0
    beq @done
    SKIP_COLORS

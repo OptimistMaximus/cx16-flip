@@ -210,19 +210,9 @@ If we ignore that 5D, then everything else after that DOES make sense.
 ## IDEAS / TODO
 
 - stream file into RAM or ZP
-  - use MACPTR with .A set to 0 and CLC set to advance, then send data to a
-    512 byte block in "golden RAM" ... this streams from disk as fast as possible
-    but is slower to deal with as the buffer offset is 16-bits.
-  - consider using MACPTR but setting .A to $FF (and checking .X and .Y to see
-    if it read $00FF bytes or less) ... same idea as above but now the buffer
-    offset is 8-bit and faster to inc/dec
   - consider buffering in ZP since we have $40-$7F free ... would the performance
     gain of having data in ZP overcome the performance loss of having a much smaller
     ($40 byte instead of $FF byte) buffer?
-  - will this me more efficient than just calling MACPTR a bunch?  Maybe. Less JSRs
-    but a lot more fussing with buffer management/loading and keeping track of how
-    many bytes left before we need to fill again.  It really depends on how much
-    additional overhead there is every time I call ACPTR or MACPTR
 - write a delta-specific stage flipper that takes into account the line skip and
   line count ... needn't waste time copying the whole 320x200 as it currently does.
 - since we can't use 32-bit FX cache writes for palette, there might be no benefit
@@ -230,7 +220,7 @@ If we ignore that 5D, then everything else after that DOES make sense.
   can skip/burn palette entries by just doing inx or iny instead of LDA VERA_DATA0.
   Though, palette updates don't happen as often as FLI_DELTA so optimization should
   focus there first.
-- keep a runnning 24-bit value of our VRAM location, and evaluate each skip ...
+- keep a running 24-bit value of our VRAM location, and evaluate each skip ...
   setting VRAM addr takes 26 cycles, and doing 7 LDAs to VERA_DATA0 takes 28 bytes.
   So any skip of 7 or more is faster to do by moving the VRAM address.  But doing
   the ADC to keep that value fresh is also expensive, as is doing a U24_INC with

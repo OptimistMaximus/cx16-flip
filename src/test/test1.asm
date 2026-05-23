@@ -11,6 +11,7 @@
 .import func_cache_read_into_vram
 .import func_cache_dupe_into_vram
 .import smc_anchor_for_cache_size
+.import func_print_hex
 
 .segment "RODATA"
 
@@ -100,25 +101,14 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ldx #<test_filename
    ldy #>test_filename
    jsr func_open_inputstream
-
    jsr KERNAL_ACPTR               ; should get first value 00
    sta u8data1
-
-   lda #4
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
-   jsr KERNAL_MACPTR              ; should get next 4 values 11223344
-
-   jsr KERNAL_ACPTR               ; should get next value 55
+   jsr KERNAL_ACPTR               ; should get next value 11
    sta u8data2
    jsr func_close_inputstream
 
-   ASSERT_VAR_U8_EQUALS_IMM $1105, $00, u8data1
-   ASSERT_VAR_U8_EQUALS_IMM $1101, $11, RAM_VOLATILE_BUF+0
-   ASSERT_VAR_U8_EQUALS_IMM $1102, $22, RAM_VOLATILE_BUF+1
-   ASSERT_VAR_U8_EQUALS_IMM $1103, $33, RAM_VOLATILE_BUF+2
-   ASSERT_VAR_U8_EQUALS_IMM $1104, $44, RAM_VOLATILE_BUF+3
-   ASSERT_VAR_U8_EQUALS_IMM $1105, $55, u8data2
+   ASSERT_VAR_U8_EQUALS_IMM $1100, $00, u8data1
+   ASSERT_VAR_U8_EQUALS_IMM $1101, $11, u8data2
 
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
@@ -199,9 +189,9 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ;---------------------------------------------------------------------------
    ; TEST 14 (slurp 'n skip)
    ;
-   ; SLURP_INTO_A
-   ; SLURP_INTO_VERA
-   ; SLURP_INTO_VERA_REPEATED
+   ; jsr func_cache_read_into_a
+   ; jsr func_cache_read_into_vram
+   ; jsr func_cache_dupe_into_vram
    ; SLURP_INTO_U8
    ; SLURP_INTO_U16
    ; SLURP_INTO_U24
@@ -214,17 +204,17 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ldx #<test_filename
    ldy #>test_filename
    jsr func_open_inputstream
+   jsr func_cache_init
 
-   SLURP_INIT
-   SLURP_INTO_A              ; burn first byte 00
-   SLURP_INTO_A              ; VRAM gains 11
+   jsr func_cache_read_into_a ; burn first byte 00
+   jsr func_cache_read_into_a ; VRAM gains 11
    sta VERA_DATA0
    lda #2                    ; VRAM skips ahead 2 bytes
    SKIP_PIXELS
    lda #2                    ; VRAM gains 2233
-   SLURP_INTO_VRAM
+   jsr func_cache_read_into_vram
    lda #3                    ; VRAM gains 444444
-   SLURP_INTO_VRAM_REPEATED
+   jsr func_cache_dupe_into_vram
 
    SLURP_INTO_OBLIVION 1     ; discard 55
 

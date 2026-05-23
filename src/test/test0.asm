@@ -4,6 +4,7 @@
 .import func_snooze_if_necessary
 .import func_setup_irq_handler
 .import func_restore_irq_handler
+.import func_print_hex
 
 .segment "RODATA"
 
@@ -16,6 +17,8 @@ test_array_data: .byte $11,$22,$33,$44
 .include "../include/petscii.inc"
 .include "../include/xunit.inc"
 .include "../include/zeropage.inc"
+
+.include "../include/vera.inc"
 
 .macro PRINT petscii
    lda #petscii
@@ -145,7 +148,6 @@ test_array_data: .byte $11,$22,$33,$44
    U32_INC      ZP_VOLATILE_ABCD
    ASSERT_VAR_U32_EQUALS_IMM $0107, $02,$000000, ZP_VOLATILE_ABCD
 
-
    ;---------------------------------------------------------------------------
    ; TEST 99 (timer)
    ;
@@ -187,7 +189,6 @@ test_array_data: .byte $11,$22,$33,$44
    jsr func_snooze     ; the test can see the !! before it disappears.
 
    jsr func_restore_irq_handler
-
 
    PASS
 .endproc

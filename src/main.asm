@@ -42,7 +42,7 @@ start:
    jsr func_vera_setup
    jsr sub_establish_filename
    jsr func_open_inputstream
-   SLURP_INIT
+   jsr func_cache_init
    jsr func_slurp_header
 
 @frame_loop:

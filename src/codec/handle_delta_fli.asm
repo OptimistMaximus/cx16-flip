@@ -33,23 +33,23 @@
 .proc sub_render_line: near
    scratchVar = ZP_VOLATILE_A
 
-   SLURP_INTO_A                     ; packet count
+   jsr func_cache_read_into_a       ; packet count
    cmp #0
    beq @packet_loop_done            ; (packet count can legit be zero)
    tay                              ; .Y is the packet countdown
 @packet_loop:
    jsr sub_skip_columns
-   SLURP_INTO_A                     ; byte count
+   jsr func_cache_read_into_a       ; byte count
    bit #%10000000
    beq @process_positive_count   ; i.e. bit 7 was clear
 
       TWOS_COMPLIMENT_A
-      SLURP_INTO_VRAM_REPEATED
+      jsr func_cache_dupe_into_vram
       bra @process_count_done
 
    @process_positive_count:
 
-      SLURP_INTO_VRAM
+      jsr func_cache_read_into_vram
 
    @process_count_done:
 
@@ -63,7 +63,7 @@
 .endproc
 
 .proc sub_skip_columns: near
-   SLURP_INTO_A             ; (.A holds skip count, where 0 means 0)
+   jsr func_cache_read_into_a ; (.A holds skip count, where 0 means 0)
    cmp #0
    beq @done
    SKIP_PIXELS

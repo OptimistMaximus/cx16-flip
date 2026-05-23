@@ -24,20 +24,20 @@
 .endproc
 
 .proc sub_render_line: near
-   SLURP_INTO_A                    ; packet count
+   jsr func_cache_read_into_a      ; packet count
    tay                             ; .Y is the packet countdown
 @packet_loop:
-   SLURP_INTO_A                    ; byte count
+   jsr func_cache_read_into_a      ; byte count
    bit #%10000000
    beq @process_positive_count  ; i.e. bit 7 was clear
 
       TWOS_COMPLIMENT_A
-      SLURP_INTO_VRAM
+      jsr func_cache_read_into_vram
 
       bra @process_count_done
    @process_positive_count:
 
-      SLURP_INTO_VRAM_REPEATED     ; repeat next byte .A times
+      jsr func_cache_dupe_into_vram ; repeat next byte .A times
 
    @process_count_done:
 

@@ -20,10 +20,6 @@ BASIC_TOKEN_REM := $8F
 ;
 ; then arg 0 would be "foo" and arg1 would be "bar"
 ;
-; The implementation is crude and does not tolerate leading spaces, nor
-; multiple spaces between arguments. If you have leading spaces or multiple
-; spaces between arguments, behavior is undefined.
-;
 ; @param  .A is the argument position wanted
 ;         .X is the low byte of the target address of where to copy the arg
 ;         .Y is the high byte of the target address

@@ -85,7 +85,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    bcc @handle_padding
    rts
 @handle_padding:
-   SLURP_INTO_A
+   jsr func_cache_read_into_a
    U32_CMP_VAR ZP32_chunkReads, GR32_chunkSize
    bne @handle_padding
    rts
