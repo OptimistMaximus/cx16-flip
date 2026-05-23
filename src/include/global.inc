@@ -40,10 +40,6 @@ ZP_VOLATILE_J    := $2B
 ZP_VOLATILE_K    := $2C
 ZP_VOLATILE_L    := $2D
 
-ZP_VOLATILE_ABCD := ZP_VOLATILE_A
-ZP_VOLATILE_EFGH := ZP_VOLATILE_E
-ZP_VOLATILE_IJKL := ZP_VOLATILE_I
-
 ZP_VOLATILE_ABC  := ZP_VOLATILE_A
 ZP_VOLATILE_DEF  := ZP_VOLATILE_D
 ZP_VOLATILE_GHI  := ZP_VOLATILE_G
@@ -56,9 +52,7 @@ ZP_VOLATILE_GH   := ZP_VOLATILE_G
 ZP_VOLATILE_IJ   := ZP_VOLATILE_I
 ZP_VOLATILE_KL   := ZP_VOLATILE_K
 
-RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
-
-GOLDEN_cacheAddr := $500 ; $500-$5FF cache
+GOLDEN_cacheAddr := $400 ; $400-$4FF cache
 GOLDEN_cacheSize := $FF  ; how much to load into cache (at most)
 
 ;------------------------------------------------------------------------------
@@ -68,17 +62,14 @@ GOLDEN_cacheSize := $FF  ; how much to load into cache (at most)
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP8_speedLimitVSyncs    := $2E  ; speed limit expressed as number of VSyncs
-ZP8_imageVSyncsElapsed  := $2F  ; VSyncs elapsed while rendering current image
+ZP8_timerTrigger        := $2E ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
 
-ZP24_vramOffset         := $30
-ZP8_timerTrigger        := $33 ; state variable needed by speed timer
-
-ZP32_chunkReads         := $40 ; how many bytes have been read for curr chunk
-
-ZP16_cachePointer       := $50
-ZP8_cacheRemaining      := $52
-ZP8_cacheScratch        := $53
+ZP32_chunkReads         := $30 ; how many bytes have been read for curr chunk
+ZP16_cachePointer       := $34
+ZP8_cacheRemaining      := $36
+ZP8_cacheScratch        := $37
+ZP24_vramOffset         := $38
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
@@ -86,9 +77,10 @@ ZP8_cacheScratch        := $53
 ; These are bespoke variables whose content shouldn't be meddled with except
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
-
 GR16_chunkType        := $600
 GR16_speedVsyncs      := $602
+GR8_speedLimitVSyncs  := $603  ; speed limit expressed as number of VSyncs
+
 GR8_returnCode        := $604
 GR16_returnDetail     := $606
 GR16_origIrqHandler   := $608
@@ -100,6 +92,27 @@ GR16_frameIndex       := $614
 GR16_frameCount       := $616
 GR16_chunkIndex       := $618
 GR16_chunkCount       := $61A
+
+GR8_scratch1          := $620
+GR8_scratch2          := $621
+GR8_scratch3          := $622
+GR8_scratch4          := $623
+GR8_scratch5          := $624
+GR8_scratch6          := $625
+GR8_scratch7          := $626
+GR8_scratch8          := $627
+
+GR24_scratch1         := $630
+GR24_scratch2         := $633
+GR24_scratch3         := $636
+GR24_scratch4         := $639
+
+GR32_scratch1         := $640
+GR32_scratch2         := $644
+GR16_scratch1         := $648
+GR16_scratch2         := $64A
+GR16_scratch3         := $64C
+GR16_scratch4         := $64E
 
 
 ;------------------------------------------------------------------------------

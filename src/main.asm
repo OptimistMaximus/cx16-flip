@@ -68,14 +68,21 @@ start:
 ; Establish the filename by looking for a custom argument. If no such arg
 ; was found, then we'll use our default value.  Then, open the file.
 ;
+; Note this does a dirty trick by using the same area of RAM that the file
+; streaming uses ... this is "safe" because we know we will never be using the
+; filestream cache at this moment (necessarily because it is before we open
+; the file) and we know that we never need to know the filename after we open
+; the file.  Though at some point there should be a cleaner divide between the
+; main program and the library's internal buffer! For now, it's tolerable.
+;
 ; @effect .A length of the filename
 ; @effect .X low byte of filename address
 ; @effect .Y high byte of filename address
 ;------------------------------------------------------------------------------
 .proc sub_establish_filename: near
    lda #0
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
+   ldx #<GOLDEN_cacheAddr
+   ldy #>GOLDEN_cacheAddr
    jsr func_find_arg
    bcc @arg_was_cool              ; .C=0 means it was found
    ldx #<default_image_filename
@@ -84,7 +91,7 @@ start:
 @arg_was_cool:
    lda #PETSCII_LOWER_R
    jsr func_append_access_mode
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
+   ldx #<GOLDEN_cacheAddr
+   ldy #>GOLDEN_cacheAddr
    rts
 .endproc

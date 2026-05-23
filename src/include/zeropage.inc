@@ -31,21 +31,21 @@ CX16_ROM_BANK := $01
 ;------------------------------------------------------------------------------
 ; CX16 API pseudo-registers
 ;------------------------------------------------------------------------------
-CX16_API_R0   := $02
-CX16_API_R1   := $04
-CX16_API_R2   := $06
-CX16_API_R3   := $08
-CX16_API_R4   := $0A
-CX16_API_R5   := $0C
-CX16_API_R6   := $0E
-CX16_API_R7   := $10
-CX16_API_R8   := $12
-CX16_API_R9   := $14
-CX16_API_R10  := $16
-CX16_API_R11  := $18
-CX16_API_R12  := $1A
-CX16_API_R13  := $1C
-CX16_API_R14  := $1E
-CX16_API_R15  := $20
+CX16_API_R0   := $02 ; saved (args)
+CX16_API_R1   := $04 ; saved (args)
+CX16_API_R2   := $06 ; saved (args)
+CX16_API_R3   := $08 ; saved (args)
+CX16_API_R4   := $0A ; saved (args)
+CX16_API_R5   := $0C ; saved (args)
+CX16_API_R6   := $0E ; saved
+CX16_API_R7   := $10 ; saved
+CX16_API_R8   := $12 ; saved
+CX16_API_R9   := $14 ; saved
+CX16_API_R10  := $16 ; saved
+CX16_API_R11  := $18 ; scratch
+CX16_API_R12  := $1A ; scratch
+CX16_API_R13  := $1C ; scratch
+CX16_API_R14  := $1E ; scratch
+CX16_API_R15  := $20 ; scratch
 
 .endif

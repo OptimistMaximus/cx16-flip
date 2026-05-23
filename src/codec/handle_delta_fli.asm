@@ -15,7 +15,8 @@
 
    tmpLineSkip = ZP_VOLATILE_AB
    tmpLineCount = ZP_VOLATILE_CD
-   SLURP_INTO_U32 ZP_VOLATILE_ABCD
+   SLURP_INTO_U16 tmpLineSkip
+   SLURP_INTO_U16 tmpLineCount
 
    lda tmpLineSkip                     ; .A now holds line skip
    jsr func_prep_for_active_buffering

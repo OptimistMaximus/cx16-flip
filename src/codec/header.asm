@@ -50,7 +50,7 @@ FILE_TYPE_FLI := $AF11
    ; follow-up math is all 16-bit (it will never look into the upper 2 bytes
    ; of the speed value)
    ;---------------------------------------------------------------------------
-   varSpeed = ZP_VOLATILE_ABCD
+   varSpeed = GR32_scratch1
    SLURP_INTO_U32 varSpeed ; dword speed
    U32_CMP_IMM varSpeed, 297
    bcc @speed_is_cool
@@ -78,7 +78,7 @@ FILE_TYPE_FLI := $AF11
    U16_SLOW_MULTIPLY varTemp, varSpeed, varMultiplier
    U16_COPY_IMM varDivisor, 7
    U16_SLOW_DIVIDE varQuotient, varTemp, varDivisor
-   U8_COPY_VAR ZP8_speedLimitVSyncs, varQuotient+0
+   U8_COPY_VAR GR8_speedLimitVSyncs, varQuotient+0
 
    ;---------------------------------------------------------------------------
    ; burn remaining bytes of header
