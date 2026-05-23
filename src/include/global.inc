@@ -14,46 +14,11 @@
 ;------------------------------------------------------------------------------
 ; GLOBAL "VOLATILE" VARIABLES
 ;
-; Any subroutine or macro can use these at any time for any purpose. As such
-; never assume that the values persist after you JSR or JMP or call another
-; macro.  These are intended for use as quick "scratch" variables.
-;
-; The memory layout is based on alphabet letters, and the number of alphabet
-; letters implies the size (e.g. ABC is 24-bit, EF is 16-bit).  Think of it
-; like a "union" in C ... they all overlap according to their alphabet letters.
-; If you write to ZP_VOLATILE_ABC you can read the middle byte via ZP_VOLATILE_B
-;
 ; Per the honor system, please never use these in an IRQ handler, because if
 ; you did, then no logic could ever safely use them!  If you need ZP vars for
 ; IRQ stuff, declare them in the "STATIC" section.
 ;------------------------------------------------------------------------------
-ZP_VOLATILE_A    := $22
-ZP_VOLATILE_B    := $23
-ZP_VOLATILE_C    := $24
-ZP_VOLATILE_D    := $25
-ZP_VOLATILE_E    := $26
-ZP_VOLATILE_F    := $27
-ZP_VOLATILE_G    := $28
-ZP_VOLATILE_H    := $29
-ZP_VOLATILE_I    := $2A
-ZP_VOLATILE_J    := $2B
-ZP_VOLATILE_K    := $2C
-ZP_VOLATILE_L    := $2D
-
-ZP_VOLATILE_ABC  := ZP_VOLATILE_A
-ZP_VOLATILE_DEF  := ZP_VOLATILE_D
-ZP_VOLATILE_GHI  := ZP_VOLATILE_G
-ZP_VOLATILE_JKL  := ZP_VOLATILE_J
-
-ZP_VOLATILE_AB   := ZP_VOLATILE_A
-ZP_VOLATILE_CD   := ZP_VOLATILE_C
-ZP_VOLATILE_EF   := ZP_VOLATILE_E
-ZP_VOLATILE_GH   := ZP_VOLATILE_G
-ZP_VOLATILE_IJ   := ZP_VOLATILE_I
-ZP_VOLATILE_KL   := ZP_VOLATILE_K
-
-GOLDEN_cacheAddr := $400 ; $400-$4FF cache
-GOLDEN_cacheSize := $FF  ; how much to load into cache (at most)
+ZP_VOLATILE_PTR         := $22
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (ZERO PAGE)
@@ -62,14 +27,16 @@ GOLDEN_cacheSize := $FF  ; how much to load into cache (at most)
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
 
-ZP8_timerTrigger        := $2E ; state variable needed by speed timer
-ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
+ZP8_timerTrigger        := $24 ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $25 ; VSyncs elapsed while rendering current image
 
-ZP32_chunkReads         := $30 ; how many bytes have been read for curr chunk
-ZP16_cachePointer       := $34
-ZP8_cacheRemaining      := $36
-ZP8_cacheScratch        := $37
-ZP24_vramOffset         := $38
+ZP32_chunkReads         := $26 ; how many bytes have been read for curr chunk
+ZP16_cachePointer       := $2A ; TODO make this 24-bit and document chunk size assumption
+ZP8_cacheRemaining      := $2C
+ZP8_cacheScratch        := $2D
+
+ZP24_vramOffset         := $30
+
 
 ;------------------------------------------------------------------------------
 ; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
@@ -77,42 +44,44 @@ ZP24_vramOffset         := $38
 ; These are bespoke variables whose content shouldn't be meddled with except
 ; by the subroutines and macros that are associated with them.
 ;------------------------------------------------------------------------------
-GR16_chunkType        := $600
-GR16_speedVsyncs      := $602
-GR8_speedLimitVSyncs  := $603  ; speed limit expressed as number of VSyncs
+GOLDEN_cacheAddr      := $500 ; $400-$4FF cache
+GOLDEN_cacheSize      := $FF  ; how much to load into cache (at most)
 
-GR8_returnCode        := $604
-GR16_returnDetail     := $606
-GR16_origIrqHandler   := $608
-GR16_debugTimerVSyncs := $60A
-GR16_debugSpeedSkips  := $60C
+GR32_scratch1         := $400
+GR32_scratch2         := $404
 
-GR32_chunkSize        := $610
-GR16_frameIndex       := $614
-GR16_frameCount       := $616
-GR16_chunkIndex       := $618
-GR16_chunkCount       := $61A
+GR16_scratch1         := $408
+GR16_scratch2         := $40A
+GR16_scratch3         := $40C
+GR16_scratch4         := $40E
 
-GR8_scratch1          := $620
-GR8_scratch2          := $621
-GR8_scratch3          := $622
-GR8_scratch4          := $623
-GR8_scratch5          := $624
-GR8_scratch6          := $625
-GR8_scratch7          := $626
-GR8_scratch8          := $627
+GR24_scratch1         := $410
+GR24_scratch2         := $413
 
-GR24_scratch1         := $630
-GR24_scratch2         := $633
-GR24_scratch3         := $636
-GR24_scratch4         := $639
+GR8_scratch1          := $414
+GR8_scratch2          := $415
+GR8_scratch3          := $416
+GR8_scratch4          := $417
 
-GR32_scratch1         := $640
-GR32_scratch2         := $644
-GR16_scratch1         := $648
-GR16_scratch2         := $64A
-GR16_scratch3         := $64C
-GR16_scratch4         := $64E
+GR32_chunkSize        := $420
+GR16_frameIndex       := $424
+GR16_frameCount       := $426
+GR16_chunkIndex       := $428
+GR16_chunkCount       := $42A
+
+GR16_chunkType        := $430
+GR16_speedVsyncs      := $434
+GR8_speedLimitVSyncs  := $436  ; speed limit expressed as number of VSyncs
+
+GR8_returnCode        := $437
+GR16_returnDetail     := $438
+GR16_origIrqHandler   := $43A
+GR16_debugTimerVSyncs := $43C
+GR16_debugSpeedSkips  := $43E
+
+
+
+
 
 
 ;------------------------------------------------------------------------------

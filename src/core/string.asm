@@ -14,12 +14,13 @@
 ; @effect .A holds the string length
 ;==============================================================================
 .proc func_strlen: near
-   stx ZP_VOLATILE_A
-   sty ZP_VOLATILE_B
+   stringAddr = ZP_VOLATILE_PTR
+   stx stringAddr+0
+   sty stringAddr+1
    phy
    ldy #0
 @loop:
-   lda (ZP_VOLATILE_AB),y
+   lda (stringAddr),y
    beq @loop_done
    iny
    bra @loop

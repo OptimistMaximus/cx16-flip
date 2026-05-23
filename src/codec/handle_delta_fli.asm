@@ -13,15 +13,16 @@
 
 .proc handle_delta_fli: near
 
-   tmpLineSkip = ZP_VOLATILE_AB
-   tmpLineCount = ZP_VOLATILE_CD
+   tmpLineSkip  = GR16_scratch1
+   tmpLineCount = GR16_scratch2
    SLURP_INTO_U16 tmpLineSkip
    SLURP_INTO_U16 tmpLineCount
 
-   lda tmpLineSkip                     ; .A now holds line skip
-   jsr func_prep_for_active_buffering
-
    ldx tmpLineCount                    ; .X now holds the line count
+   phx
+      lda tmpLineSkip                  ; .A now holds line skip
+      jsr func_prep_for_active_buffering
+   plx
    @line_loop:
    jsr sub_render_line
    dex
@@ -32,7 +33,7 @@
 .endproc
 
 .proc sub_render_line: near
-   scratchVar = ZP_VOLATILE_A
+   scratchVar = GR8_scratch1
 
    jsr func_cache_read_into_a       ; packet count
    cmp #0

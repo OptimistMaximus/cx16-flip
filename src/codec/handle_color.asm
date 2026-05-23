@@ -48,14 +48,14 @@
 
 sub_handle_color:
 
-   tempColor      = ZP_VOLATILE_ABC
-   tempColorRed   = ZP_VOLATILE_A
-   tempColorGreen = ZP_VOLATILE_B
-   tempColorBlue  = ZP_VOLATILE_C
-   tempVeraRed    = ZP_VOLATILE_E
-   tempVeraGreen  = ZP_VOLATILE_F
-   numPackets     = ZP_VOLATILE_GH
-   copyCount      = ZP_VOLATILE_I
+   tempColor      = GR24_scratch1
+   tempColorRed   = GR24_scratch1+0
+   tempColorGreen = GR24_scratch1+1
+   tempColorBlue  = GR24_scratch1+2
+   tempVeraRed    = GR8_scratch1
+   tempVeraGreen  = GR8_scratch2
+   copyCount      = GR8_scratch3
+   numPackets     = GR16_scratch1
 
    ;---------------------------------------------------------------------------
    ; Although packet count is 16-bit, it doesn't make sense for the size to be

@@ -55,7 +55,7 @@ test_array_data: .byte $11,$22,$33,$44
    sta GR24_scratch1+2
    U24_STZ GR24_scratch1
    ASSERT_VAR_U24_EQUALS_IMM $0001, $000000, GR24_scratch1
-   
+
    lda #$55
    sta GR32_scratch1+0
    sta GR32_scratch1+1
@@ -63,7 +63,7 @@ test_array_data: .byte $11,$22,$33,$44
    sta GR32_scratch1+3
    U32_STZ GR32_scratch1
    ASSERT_VAR_U32_EQUALS_IMM $0002, $00,$000000, GR32_scratch1
-   
+
    ;---------------------------------------------------------------------------
    ; TEST 00 (simple macros that everything else depends upon)
    ;
@@ -122,20 +122,20 @@ test_array_data: .byte $11,$22,$33,$44
    ; U16_ADD_IMM   U16_ADD_VAR   U16_SUB_IMM   U16_SUB_VAR
    ;                                           U32_SUB_VAR   U32_ADD_A
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM ZP_VOLATILE_AB, $00FE
-   U16_COPY_IMM ZP_VOLATILE_CD, $0004
+   U16_COPY_IMM GR16_scratch1, $00FE
+   U16_COPY_IMM GR16_scratch2, $0004
 
-   U16_ADD_IMM ZP_VOLATILE_AB, $0004
-   ASSERT_VAR_U16_EQUALS_IMM $0100, $0102, ZP_VOLATILE_AB
+   U16_ADD_IMM GR16_scratch1, $0004
+   ASSERT_VAR_U16_EQUALS_IMM $0100, $0102, GR16_scratch1
 
-   U16_SUB_IMM ZP_VOLATILE_AB, $0004
-   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FE, ZP_VOLATILE_AB
+   U16_SUB_IMM GR16_scratch1, $0004
+   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FE, GR16_scratch1
 
-   U16_ADD_VAR ZP_VOLATILE_AB, ZP_VOLATILE_CD
-   ASSERT_VAR_U16_EQUALS_IMM $0102, $0102, ZP_VOLATILE_AB
+   U16_ADD_VAR GR16_scratch1, GR16_scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0102, $0102, GR16_scratch1
 
-   U16_SUB_VAR ZP_VOLATILE_AB, ZP_VOLATILE_CD
-   ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, ZP_VOLATILE_AB
+   U16_SUB_VAR GR16_scratch1, GR16_scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, GR16_scratch1
 
    U32_COPY_IMM GR32_scratch1, $44,$332211 ; value
    U32_COPY_IMM GR32_scratch2, $33,$445566 ; other value

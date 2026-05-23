@@ -5,6 +5,7 @@
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/petscii.inc"
+.include "../include/zeropage.inc"
 
 BASIC_BUFFER    := $0200
 BASIC_TOKEN_RUN := $8A
@@ -29,10 +30,15 @@ BASIC_TOKEN_REM := $8F
 ; @effect .Y is clobbered
 ;==============================================================================
 .proc func_find_arg: near
-   stx ZP_VOLATILE_CD+0          ; squirrel away the target address
-   sty ZP_VOLATILE_CD+1
-   sta ZP_VOLATILE_A             ; squirrel away desired arg index
-   stz ZP_VOLATILE_B             ; initialize current arg index
+   targetAddr = ZP_VOLATILE_PTR
+   desiredArgIndex = GR8_scratch1
+   currentArgIndex = GR8_scratch2
+
+
+   stx targetAddr+0              ; squirrel away the target address
+   sty targetAddr+1
+   sta desiredArgIndex           ; squirrel away desired arg index
+   stz currentArgIndex           ; initialize current arg index
 
    ldx #1                        ; quick check for $8A,$00 which is what it
    lda BASIC_BUFFER,x            ; looks like if someone just did "RUN"
@@ -54,12 +60,12 @@ BASIC_TOKEN_REM := $8F
    cmp #PETSCII_SPACE
    beq @arg_matching_loop        ; advance if we're in delimiting space
 
-   lda ZP_VOLATILE_B             ; if we fall through to here, we're in an
-   cmp ZP_VOLATILE_A             ; actual arg. Is it desired?
+   lda currentArgIndex           ; if we fall through to here, we're in an
+   cmp desiredArgIndex           ; actual arg. Is it desired?
    beq @arg_matching_done        ; If so, we are done!
 
    inc                           ; else we fall through here. Take advantage
-   sta ZP_VOLATILE_B             ; of .A still holding the current arg index
+   sta currentArgIndex           ; of .A still holding the current arg index
 @arg_skip_undesired_loop:        ; and increment it now. Then burn through
    inx                           ; characters of the current (the ones that
    lda BASIC_BUFFER,x            ; aren't a space) while also taking care to
@@ -69,8 +75,8 @@ BASIC_TOKEN_REM := $8F
    bra @arg_matching_loop        ; now try again in the big loop.
 @arg_matching_done:
 
-   lda ZP_VOLATILE_B             ; if we made it here but the current arg is
-   cmp ZP_VOLATILE_A             ; not desired, then return with error
+   lda currentArgIndex           ; if we made it here but the current arg is
+   cmp desiredArgIndex           ; not desired, then return with error
    beq @we_got_a_match
    sec
    rts
@@ -91,12 +97,12 @@ BASIC_TOKEN_REM := $8F
    beq @arg_copy_done
    cmp #PETSCII_SPACE
    beq @arg_copy_done
-   sta (ZP_VOLATILE_CD),y
+   sta (targetAddr),y
    bra @arg_copy_loop
 @arg_copy_done:
 
    lda #0                        ; null-terminate our copy
-   sta (ZP_VOLATILE_CD),y
+   sta (targetAddr),y
    clc                           ; indicate success
    rts
 .endproc

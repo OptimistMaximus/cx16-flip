@@ -149,7 +149,7 @@
 ; extremely rare case isn't worth it.
 ;==============================================================================
 .proc func_prep_for_active_buffering
-   scratchAddr = ZP_VOLATILE_EF
+   scratchAddr = GR16_scratch1
 
    sta ZP24_vramOffset+0                     ; .A is now in the 24-bit result
    stz ZP24_vramOffset+1                     ; which is the basis for our

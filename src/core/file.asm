@@ -26,23 +26,26 @@
 ; @effect .A holds the new string length
 ;==============================================================================
 .proc func_append_access_mode: near
+   nameAddr = ZP_VOLATILE_PTR
+   accessMode = GR8_scratch1
+
    phy
-      stx ZP_VOLATILE_A
-      sty ZP_VOLATILE_B
-      sta ZP_VOLATILE_C
+      stx nameAddr+0
+      sty nameAddr+1
+      sta accessMode
       ldy #$FF
    @append_access_mode_loop:                  ; this loop advances us to the
       iny                                     ; position of the NULL terminator
-      lda (ZP_VOLATILE_AB),y
+      lda (nameAddr),y
       bne @append_access_mode_loop
       lda #PETSCII_COMMA                      ; now append the access mode
-      sta (ZP_VOLATILE_AB),y
+      sta (nameAddr),y
       iny
-      lda ZP_VOLATILE_C
-      sta (ZP_VOLATILE_AB),y
+      lda accessMode
+      sta (nameAddr),y
       iny
       lda #PETSCII_NULL
-      sta (ZP_VOLATILE_AB),y
+      sta (nameAddr),y
       tya
    ply
    rts

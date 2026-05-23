@@ -20,7 +20,7 @@ FILE_TYPE_FLI := $AF11
 ;==============================================================================
 .proc func_slurp_header: near
 
-   varFileType = ZP_VOLATILE_AB
+   varFileType = GR16_scratch1 ; can be repurposed after file type validation
 
    SLURP_INTO_OBLIVION 4       ; dword size (file size)
    SLURP_INTO_U16 varFileType  ;  word type (file type)
@@ -69,10 +69,10 @@ FILE_TYPE_FLI := $AF11
    ; be even less than 6/7 of that (which is less than 256). So, we only need
    ; to squirrel away the lower byte for future runtime calculations.
    ;---------------------------------------------------------------------------
-   varTemp       = ZP_VOLATILE_EF
-   varDivisor    = ZP_VOLATILE_GH
-   varMultiplier = ZP_VOLATILE_I
-   varQuotient   = ZP_VOLATILE_KL
+   varTemp       = GR16_scratch1
+   varDivisor    = GR16_scratch2
+   varMultiplier = GR8_scratch1
+   varQuotient   = GR16_scratch3
 
    U8_COPY_IMM varMultiplier, 6
    U16_SLOW_MULTIPLY varTemp, varSpeed, varMultiplier

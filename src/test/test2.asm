@@ -48,7 +48,7 @@ test_arg_expect_bb: .asciiz "bb"
 
 .segment "DATA"
 
-test_arg_buf: .res 16, $55 
+test_arg_buf: .res 16, $55
 
 .segment "CODE"
 
@@ -203,7 +203,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GR16_returnDetail
 
    ;---------------------------------------------------------------------------
-   ; TEST 32 - 
+   ; TEST 32 -
    ;---------------------------------------------------------------------------
 
 

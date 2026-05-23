@@ -81,16 +81,16 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ; U16_SLOW_MULTIPLY
    ; U16_SLOW_DIVIDE
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM ZP_VOLATILE_AB, $4444
-   U8_COPY_IMM ZP_VOLATILE_C, $03
-   U16_SLOW_MULTIPLY ZP_VOLATILE_EF, ZP_VOLATILE_AB, ZP_VOLATILE_C
-   ASSERT_VAR_U16_EQUALS_IMM $1000, $CCCC, ZP_VOLATILE_EF ; result
+   U16_COPY_IMM GR16_scratch1, $4444
+   U8_COPY_IMM GR8_scratch1, $03
+   U16_SLOW_MULTIPLY GR16_scratch2, GR16_scratch1, GR8_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $1000, $CCCC, GR16_scratch2 ; result
 
-   U16_COPY_IMM ZP_VOLATILE_AB, $2222
-   U16_COPY_IMM ZP_VOLATILE_CD, $0777
-   U16_SLOW_DIVIDE ZP_VOLATILE_EF, ZP_VOLATILE_AB, ZP_VOLATILE_CD
-   ASSERT_VAR_U16_EQUALS_IMM $1001, $0004, ZP_VOLATILE_EF ; result
-   ASSERT_VAR_U16_EQUALS_IMM $1002, $0446, ZP_VOLATILE_AB ; remainder
+   U16_COPY_IMM GR16_scratch1, $2222
+   U16_COPY_IMM GR16_scratch2, $0777
+   U16_SLOW_DIVIDE GR16_scratch3, GR16_scratch1, GR16_scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $1001, $0004, GR16_scratch3 ; result
+   ASSERT_VAR_U16_EQUALS_IMM $1002, $0446, GR16_scratch1 ; remainder
 
    ;---------------------------------------------------------------------------
    ; TEST 11 (file stuff)
