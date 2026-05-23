@@ -50,10 +50,11 @@ resets to BASIC (effectively unloading the program).
 
 | Code | Meaning                   | Detail                                |
 |------|---------------------------|---------------------------------------|
-| 2    | unsupported file type     | the file type                         |
-| 3    | unsupported frame type    | the frame type                        |
-| 4    | unsupported chunk type    | the chunk type                        |
-| 5    | invalid chunk type        | the chunk type                        |
+| 1    | unsupported file type     | the file type                         |
+| 2    | unsupported chunk type    | the chunk type                        |
+| 3    | invalid chunk type        | the chunk type                        |
+| 4    | unexpected chunk type     | the chunk type                        |
+| 5    | read error                | low byte is READST value              |
 
 ### Performance Timing Info
 
@@ -77,7 +78,7 @@ will be used.  The results are tracked here, for each released version:
 | 0.1.0   | $0183  | $0033    | 1825      |
 | 0.1.1   | $0176  | $0032    | 1705      |
 | 0.2.1   | $0163  | $0032    | 1747      |
-| 0.3.0   | $00F1  | $0032    | 1837      |
+| 0.3.0   | $00F9  | $0031    | 2114      |
 
 ### Version History
 
