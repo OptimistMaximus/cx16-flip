@@ -69,14 +69,14 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    SLURP_INTO_OBLIVION 8
 
 @subchunk_loop:
-   stp
-   nop
+   U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount  ; check first in case zero
+   beq @subchunk_loop_done
    U32_STZ ZP32_chunkReads
    jsr func_slurp_chunk
    jsr sub_mitigate_padding
    U16_INC     GR16_chunkIndex
-   U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount
-   bne @subchunk_loop
+   bra @subchunk_loop
+@subchunk_loop_done:
    rts
 .endproc
 
