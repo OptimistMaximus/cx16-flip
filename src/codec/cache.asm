@@ -21,13 +21,13 @@ constReadLen := GOLDEN_cacheSize
 
 .macro BUMP
    pha
-      U32_INC ZP32_chunkReads
+      U24_INC ZP24_chunkReads
    pla
 .endmacro
 
 .macro BUMP_A
    pha
-      U32_ADD_A ZP32_chunkReads
+      U24_ADD_A ZP24_chunkReads
    pla
 .endmacro
 

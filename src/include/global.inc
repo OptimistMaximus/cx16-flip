@@ -12,40 +12,31 @@
 ; 297 seventieths = 255 sixtieths
 
 ;------------------------------------------------------------------------------
-; GLOBAL "VOLATILE" VARIABLES
+; GLOBAL VARIABLES (Zero Page)
 ;
-; Per the honor system, please never use these in an IRQ handler, because if
-; you did, then no logic could ever safely use them!  If you need ZP vars for
-; IRQ stuff, declare them in the "STATIC" section.
+; These MUST be in Zero Page, either because of addressing mode requirements,
+; or for performance reasons.
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
-
-;------------------------------------------------------------------------------
-; GLOBAL "STATIC" VARIABLES (ZERO PAGE)
-;
-; These are bespoke variables whose content shouldn't be meddled with except
-; by the subroutines and macros that are associated with them.
-;------------------------------------------------------------------------------
 
 ZP8_timerTrigger        := $24 ; state variable needed by speed timer
 ZP8_imageVSyncsElapsed  := $25 ; VSyncs elapsed while rendering current image
 
-ZP32_chunkReads         := $26 ; how many bytes have been read for curr chunk
-ZP16_cachePointer       := $2A ; TODO make this 24-bit and document chunk size assumption
+ZP24_chunkReads         := $26 ; how many bytes have been read for curr chunk
+ZP16_cachePointer       := $2A
 ZP8_cacheRemaining      := $2C
 ZP8_cacheScratch        := $2D
 
 ZP24_vramOffset         := $30
 
-
 ;------------------------------------------------------------------------------
-; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
+; GLOBAL VARIABLES
 ;
-; These are bespoke variables whose content shouldn't be meddled with except
-; by the subroutines and macros that are associated with them.
+; These can be anywhere in RAM, though the program will be smaller and faster
+; if they exist in Zero Page.
 ;------------------------------------------------------------------------------
 GOLDEN_cacheAddr      := $500 ; $400-$4FF cache
-GOLDEN_cacheSize      := $FF  ; how much to load into cache (at most)
+GOLDEN_cacheSize      := $FF  ; (this is a constant, not a variable)
 
 GR32_scratch1         := $400
 GR32_scratch2         := $404
@@ -92,7 +83,8 @@ RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
 RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
 RC_INVALID_CHUNK_TYPE         := 3  ; type
 RC_UNEXPECTED_CHUNK_TYPE      := 4  ; type
-RC_READ_ERROR                 := 5  ; lower byte is READST value
+RC_UNSUPPORTED_CHUNK_SIZE     := 5  ; type (not the size!)
+RC_READ_ERROR                 := 6  ; lower byte is READST value
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode

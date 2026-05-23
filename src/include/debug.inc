@@ -6,7 +6,7 @@
 
 ; The debug timer assumes your IRQ Handler is incrementing a 16-bit
 ; value ZP16_vsyncs_total on every VERA interrupt for VSync
- DEBUG_TIMER_ENABLED = 1
+DEBUG_TIMER_ENABLED = 1
 
 
 
