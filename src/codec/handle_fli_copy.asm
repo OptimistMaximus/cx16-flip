@@ -16,11 +16,14 @@
    ldy #200
 @outer_loop:
    lda #160
-   SLURP_INTO_VRAM
+   jsr func_cache_read_into_vram
    lda #160
-   SLURP_INTO_VRAM
+   jsr func_cache_read_into_vram
    dey
    bne @outer_loop
+
+   ldx #200
+   ldy #0
    jsr func_vera_flip_stage
    jmp func_snooze_if_necessary
 .endproc

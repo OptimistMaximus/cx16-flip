@@ -2,12 +2,28 @@
 
 .import func_snooze
 .import func_snooze_if_necessary
+.import func_detect_filename
 .import func_setup_irq_handler
 .import func_restore_irq_handler
+.import func_print_hex
 
 .segment "RODATA"
 
-test_array_data: .byte $11,$22,$33,$44
+test_bb_no_args:  .byte $8A,$00   ; "RUN"
+test_bb_spaces:   .byte $8A,$20,$3A,$20,$8F,$20,$20,$41,$41,$20,$20,$00
+test_bb_two_args: .byte $8A,$3A,$8F,$20,$41,$41,$20,$42,$42,$20,$00
+test_bb_cheeky:   ; i.e. someone's trying a buffer overrun attack
+.byte $8A,$3A,$8F,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$43,$43,$00
+
+test_bb_expect_found: .asciiz "aa,r"
+test_bb_expect_default: .asciiz "image.fli,r"
 
 .segment "CODE"
 
@@ -16,6 +32,8 @@ test_array_data: .byte $11,$22,$33,$44
 .include "../include/petscii.inc"
 .include "../include/xunit.inc"
 .include "../include/zeropage.inc"
+
+.include "../include/vera.inc"
 
 .macro PRINT petscii
    lda #petscii
@@ -36,71 +54,82 @@ test_array_data: .byte $11,$22,$33,$44
    ;---------------------------------------------------------------------------
    ; TEST 00 (simple macros that everything else depends upon)
    ;
-   ;            U8_COPY_IMM     U8_COPY_VAR
-   ; U16_STZ    U16_COPY_IMM    U16_COPY_VAR
-   ; U24_STZ    U24_COPY_IMM    U24_COPY_VAR
-   ; U32_STZ    U32_COPY_IMM    U32_COPY_VAR
-   ;
-   ; ARRAY_COPY
+   ; U16_STZ
+   ; U24_STZ
+   ; U32_STZ
    ;---------------------------------------------------------------------------
    lda #$55
-   sta ZP_VOLATILE_A
-   sta ZP_VOLATILE_B
-   U16_STZ ZP_VOLATILE_AB
-   ASSERT_VAR_U16_EQUALS_IMM $0000, $0000, ZP_VOLATILE_AB
+   sta GR16_scratch1+0
+   sta GR16_scratch1+1
+   U16_STZ GR16_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0000, $0000, GR16_scratch1
 
    lda #$55
-   sta ZP_VOLATILE_A
-   sta ZP_VOLATILE_B
-   sta ZP_VOLATILE_C
-   U24_STZ ZP_VOLATILE_ABC
-   ASSERT_VAR_U24_EQUALS_IMM $0001, $000000, ZP_VOLATILE_ABC
+   sta GR24_scratch1+0
+   sta GR24_scratch1+1
+   sta GR24_scratch1+2
+   U24_STZ GR24_scratch1
+   ASSERT_VAR_U24_EQUALS_IMM $0001, $000000, GR24_scratch1
 
    lda #$55
-   sta ZP_VOLATILE_A
-   sta ZP_VOLATILE_B
-   sta ZP_VOLATILE_C
-   sta ZP_VOLATILE_D
-   U32_STZ ZP_VOLATILE_ABCD
-   ASSERT_VAR_U16_EQUALS_IMM $0002, $0000, ZP_VOLATILE_AB
-   ASSERT_VAR_U16_EQUALS_IMM $0003, $0000, ZP_VOLATILE_CD
+   sta GR32_scratch1+0
+   sta GR32_scratch1+1
+   sta GR32_scratch1+2
+   sta GR32_scratch1+3
+   U32_STZ GR32_scratch1
+   ASSERT_VAR_U32_EQUALS_IMM $0002, $00,$000000, GR32_scratch1
 
-   stz ZP_VOLATILE_A
-   U8_COPY_IMM ZP_VOLATILE_A, $AA
-   ASSERT_VAR_U8_EQUALS_IMM $0010, $AA, ZP_VOLATILE_A
+   ;---------------------------------------------------------------------------
+   ; TEST 00 (simple macros that everything else depends upon)
+   ;
+   ; U8_COPY_IMM
+   ; U16_COPY_IMM
+   ; U24_COPY_IMM
+   ; U32_COPY_IMM
+   ;---------------------------------------------------------------------------
+   stz GR8_scratch1
+   U8_COPY_IMM GR8_scratch1, $AA
+   ASSERT_VAR_U8_EQUALS_IMM $0010, $AA, GR8_scratch1
 
-   U16_STZ ZP_VOLATILE_AB
-   U16_COPY_IMM ZP_VOLATILE_AB, $AABB
-   ASSERT_VAR_U16_EQUALS_IMM $0011, $AABB, ZP_VOLATILE_AB
+   U16_STZ GR16_scratch1
+   U16_COPY_IMM GR16_scratch1, $AABB
+   ASSERT_VAR_U16_EQUALS_IMM $0011, $AABB, GR16_scratch1
 
-   U24_STZ ZP_VOLATILE_ABC
-   U24_COPY_IMM ZP_VOLATILE_ABC, $AABBCC
-   ASSERT_VAR_U24_EQUALS_IMM $0012, $AABBCC, ZP_VOLATILE_ABC
+   U24_STZ GR24_scratch1
+   U24_COPY_IMM GR24_scratch1, $AABBCC
+   ASSERT_VAR_U24_EQUALS_IMM $0012, $AABBCC, GR24_scratch1
 
-   U32_STZ ZP_VOLATILE_ABCD
-   U32_COPY_IMM ZP_VOLATILE_ABCD, $AA,$BBCCDD
-   ASSERT_VAR_U32_EQUALS_IMM $0013, $AA,$BBCCDD, ZP_VOLATILE_ABCD
+   U32_STZ GR32_scratch1
+   U32_COPY_IMM GR32_scratch1, $AA,$BBCCDD
+   ASSERT_VAR_U32_EQUALS_IMM $0013, $AA,$BBCCDD, GR32_scratch1
 
-   U16_COPY_IMM ZP_VOLATILE_EF, $AABB
-   U16_COPY_IMM ZP_VOLATILE_GH, $CCDD
-   U24_COPY_IMM ZP_VOLATILE_JKL, $FACADE
+   ;---------------------------------------------------------------------------
+   ; TEST 00 (simple macros that everything else depends upon)
+   ;
+   ; U8_COPY_VAR
+   ; U16_COPY_VAR
+   ; U24_COPY_VAR
+   ; U32_COPY_VAR
+   ;---------------------------------------------------------------------------
+   stz         GR8_scratch1
+   U8_COPY_IMM GR8_scratch2, $AA
+   U8_COPY_VAR GR8_scratch1, GR8_scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0020, $AA, GR8_scratch1
 
-   stz ZP_VOLATILE_B
-   U8_COPY_VAR ZP_VOLATILE_B, ZP_VOLATILE_E
-   ASSERT_VAR_U8_EQUALS_IMM $0020, $BB, ZP_VOLATILE_B
+   U16_STZ      GR16_scratch1
+   U16_COPY_IMM GR16_scratch2, $AABB
+   U16_COPY_VAR GR16_scratch1, GR16_scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0021, $AABB, GR16_scratch1
 
-   U16_STZ ZP_VOLATILE_AB
-   U16_COPY_VAR ZP_VOLATILE_AB, ZP_VOLATILE_EF
-   ASSERT_VAR_U16_EQUALS_IMM $0021, $AABB, ZP_VOLATILE_AB
+   U24_STZ      GR24_scratch1
+   U24_COPY_IMM GR24_scratch2, $AABB
+   U24_COPY_VAR GR24_scratch1, GR24_scratch2
+   ASSERT_VAR_U24_EQUALS_IMM $0022, $AABB, GR24_scratch1
 
-   U24_STZ ZP_VOLATILE_ABC
-   U24_COPY_VAR ZP_VOLATILE_ABC, ZP_VOLATILE_JKL
-   ASSERT_VAR_U24_EQUALS_IMM $0022, $FACADE, ZP_VOLATILE_ABC
-
-   U32_STZ ZP_VOLATILE_ABCD
-   U32_COPY_VAR ZP_VOLATILE_ABCD, ZP_VOLATILE_EFGH
-   ASSERT_VAR_U16_EQUALS_IMM $0023, $AABB, ZP_VOLATILE_AB
-   ASSERT_VAR_U16_EQUALS_IMM $0024, $CCDD, ZP_VOLATILE_CD
+   U32_STZ      GR32_scratch1
+   U32_COPY_IMM GR32_scratch2, $AA,$BBCCDD
+   U32_COPY_VAR GR32_scratch1, GR32_scratch2
+   ASSERT_VAR_U32_EQUALS_IMM $0023, $AA,$BBCCDD, GR32_scratch1
 
    ;---------------------------------------------------------------------------
    ; TEST 01 (add, subtract)
@@ -108,29 +137,29 @@ test_array_data: .byte $11,$22,$33,$44
    ; U16_ADD_IMM   U16_ADD_VAR   U16_SUB_IMM   U16_SUB_VAR
    ;                                           U32_SUB_VAR   U32_ADD_A
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM ZP_VOLATILE_AB, $00FE
-   U16_COPY_IMM ZP_VOLATILE_CD, $0004
+   U16_COPY_IMM GR16_scratch1, $00FE
+   U16_COPY_IMM GR16_scratch2, $0004
 
-   U16_ADD_IMM ZP_VOLATILE_AB, $0004
-   ASSERT_VAR_U16_EQUALS_IMM $0100, $0102, ZP_VOLATILE_AB
+   U16_ADD_IMM GR16_scratch1, $0004
+   ASSERT_VAR_U16_EQUALS_IMM $0100, $0102, GR16_scratch1
 
-   U16_SUB_IMM ZP_VOLATILE_AB, $0004
-   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FE, ZP_VOLATILE_AB
+   U16_SUB_IMM GR16_scratch1, $0004
+   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FE, GR16_scratch1
 
-   U16_ADD_VAR ZP_VOLATILE_AB, ZP_VOLATILE_CD
-   ASSERT_VAR_U16_EQUALS_IMM $0102, $0102, ZP_VOLATILE_AB
+   U16_ADD_VAR GR16_scratch1, GR16_scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0102, $0102, GR16_scratch1
 
-   U16_SUB_VAR ZP_VOLATILE_AB, ZP_VOLATILE_CD
-   ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, ZP_VOLATILE_AB
+   U16_SUB_VAR GR16_scratch1, GR16_scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, GR16_scratch1
 
-   U32_COPY_IMM ZP_VOLATILE_ABCD, $44,$332211 ; value
-   U32_COPY_IMM ZP_VOLATILE_EFGH, $33,$445566 ; other value
-   U32_SUB_VAR ZP_VOLATILE_ABCD, ZP_VOLATILE_EFGH
-   ASSERT_VAR_U32_EQUALS_IMM $0104, $10,$EECCAB, ZP_VOLATILE_ABCD
+   U32_COPY_IMM GR32_scratch1, $44,$332211 ; value
+   U32_COPY_IMM GR32_scratch2, $33,$445566 ; other value
+   U32_SUB_VAR GR32_scratch1, GR32_scratch2
+   ASSERT_VAR_U32_EQUALS_IMM $0104, $10,$EECCAB, GR32_scratch1
 
    lda #$80
-   U32_ADD_A ZP_VOLATILE_ABCD
-   ASSERT_VAR_U32_EQUALS_IMM $0105, $10,$EECD2B, ZP_VOLATILE_ABCD
+   U32_ADD_A GR32_scratch1
+   ASSERT_VAR_U32_EQUALS_IMM $0105, $10,$EECD2B, GR32_scratch1
 
    ;---------------------------------------------------------------------------
    ; TEST 02 (inc)
@@ -138,13 +167,47 @@ test_array_data: .byte $11,$22,$33,$44
    ; U16_INC
    ; U32_INC
    ;---------------------------------------------------------------------------
-   U32_COPY_IMM ZP_VOLATILE_ABCD, $01,$FFFFFE
-   U32_INC      ZP_VOLATILE_ABCD
-   ASSERT_VAR_U32_EQUALS_IMM $0106, $01,$FFFFFF, ZP_VOLATILE_ABCD
+   U32_COPY_IMM GR32_scratch1, $01,$FFFFFE
+   U32_INC      GR32_scratch1
+   ASSERT_VAR_U32_EQUALS_IMM $0106, $01,$FFFFFF, GR32_scratch1
 
-   U32_INC      ZP_VOLATILE_ABCD
-   ASSERT_VAR_U32_EQUALS_IMM $0107, $02,$000000, ZP_VOLATILE_ABCD
+   U32_INC      GR32_scratch1
+   ASSERT_VAR_U32_EQUALS_IMM $0107, $02,$000000, GR32_scratch1
 
+   ;---------------------------------------------------------------------------
+   ; TEST 9 - func_detect_filename
+   ;
+   ; White box testing: We know func_find_arg parses the BASIC buffer.  We know
+   ; the BASIC buffer is located at $200 to $281, including the NULL terminator.
+   ; We know the buffer holds tokenized BASIC, left and right trimmed.
+   ;---------------------------------------------------------------------------
+   .macro PREP_BASIC_BUFFER sourceLabel
+      ldy #$FF
+   :  iny
+      lda sourceLabel,y
+      sta $200,y
+      bne :-
+   .endmacro
+
+   .macro DETECT_FILENAME testId, expectSize, expectText
+      jsr func_detect_filename
+      stx ZP_VOLATILE_PTR+0
+      sty ZP_VOLATILE_PTR+1
+      ASSERT_A_EQUALS_IMM testId, expectSize
+      ASSERT_RAM_EQUALS_ARRAY_INDIRECT (testId+1), (expectSize-1), expectText, ZP_VOLATILE_PTR
+   .endmacro
+
+   PREP_BASIC_BUFFER test_bb_no_args
+   DETECT_FILENAME $0900, 11, test_bb_expect_default
+
+   PREP_BASIC_BUFFER test_bb_spaces
+   DETECT_FILENAME $0910, 4, test_bb_expect_found
+
+   PREP_BASIC_BUFFER test_bb_cheeky
+   DETECT_FILENAME $0920, 11, test_bb_expect_default
+
+   PREP_BASIC_BUFFER test_bb_two_args
+   DETECT_FILENAME $0930, 4, test_bb_expect_found
 
    ;---------------------------------------------------------------------------
    ; TEST 99 (timer)
@@ -174,7 +237,7 @@ test_array_data: .byte $11,$22,$33,$44
    jsr func_snooze
    PRINT PETSCII_PERIOD
 
-   U8_COPY_IMM ZP8_speedLimitVSyncs, (snoozeUnits*3)
+   U8_COPY_IMM GR8_speedLimitVSyncs, (snoozeUnits*3)
    U8_COPY_IMM ZP8_imageVSyncsElapsed, (snoozeUnits*2)
    jsr func_snooze_if_necessary
    PRINT PETSCII_EXCLAMATION
@@ -187,7 +250,6 @@ test_array_data: .byte $11,$22,$33,$44
    jsr func_snooze     ; the test can see the !! before it disappears.
 
    jsr func_restore_irq_handler
-
 
    PASS
 .endproc

@@ -14,7 +14,6 @@
 .include "../include/stack.inc"
 .include "../include/zeropage.inc"
 
-.import func_strlen
 .import func_print_hex
 
 .segment "CODE"
@@ -30,7 +29,7 @@
 ; @effect .Y
 ;-----------------------------------------------------------------------------
 .proc debug_print_istring : near
-   inlineAddr = ZP_VOLATILE_AB
+   inlineAddr = ZP_VOLATILE_PTR
 
    U16_STACK_PULL_RETURN_ADDR_INTO_INLINED_ARG_ADDR inlineAddr
    ldy #0
@@ -52,18 +51,20 @@
 ; prep: .X holds low byte of string address
 ; prep: .Y holds high byte of string address
 ;
-; effects .A, .Y, ZP_VOLATILE_AB
+; effects .A, .Y
 ;
 ;    jsr debug_print_istring
 ;    .asciiz "hello"
 ;-----------------------------------------------------------------------------
 .proc debug_print_string : near
-   stx ZP_VOLATILE_A
-   sty ZP_VOLATILE_B
+   stringAddr = ZP_VOLATILE_PTR
+
+   stx stringAddr+0
+   sty stringAddr+1
 
    ldy #0
 @print_loop:
-   lda (ZP_VOLATILE_AB),y
+   lda (stringAddr),y
    beq @print_done
    jsr KERNAL_CHROUT
    iny

@@ -3,6 +3,7 @@
 .import func_vera_flip_stage
 .import func_prep_for_active_buffering
 .import func_snooze_if_necessary
+.import fnc_slurp_into_a
 
 .segment "CODE"
 
@@ -12,44 +13,50 @@
 .include "../include/video.inc"
 
 .proc handle_delta_fli: near
+   jsr func_cache_read_into_a   ; slurp low byte of line skip
+   tay                          ; and store it in .Y
+   jsr func_cache_read_into_a   ; burn high byte of line skip (always zero)
 
-   tmpLineSkip = ZP_VOLATILE_AB
-   tmpLineCount = ZP_VOLATILE_CD
-   SLURP_INTO_U32 ZP_VOLATILE_ABCD
-
-   lda tmpLineSkip                     ; .A now holds line skip
-   jsr func_prep_for_active_buffering
-
-   ldx tmpLineCount                    ; .X now holds the line count
-   @line_loop:
-   jsr sub_render_line
-   dex
-   bne @line_loop
-
+   jsr func_cache_read_into_a   ; slurp low byte of line count
+   tax                          ; and store it in .X
+   jsr func_cache_read_into_a   ; burn high byte of line count (always zero)
+   
+   phx                          ; squirrel .X for later
+      phy                       ; squirrel .Y for later
+         phx
+            tya
+            jsr func_prep_for_active_buffering
+         plx
+      @line_loop:
+         jsr sub_render_line 
+         dex
+         bne @line_loop
+      ply                       ; pull .Y so it has the line skip again
+   plx                          ; pull .X so it has the line count again
    jsr func_vera_flip_stage
    jmp func_snooze_if_necessary
 .endproc
 
 .proc sub_render_line: near
-   scratchVar = ZP_VOLATILE_A
+   scratchVar = GR8_scratch1
 
-   SLURP_INTO_A                     ; packet count
+   jsr func_cache_read_into_a       ; packet count
    cmp #0
    beq @packet_loop_done            ; (packet count can legit be zero)
    tay                              ; .Y is the packet countdown
 @packet_loop:
    jsr sub_skip_columns
-   SLURP_INTO_A                     ; byte count
+   jsr func_cache_read_into_a       ; byte count
    bit #%10000000
    beq @process_positive_count   ; i.e. bit 7 was clear
 
       TWOS_COMPLIMENT_A
-      SLURP_INTO_VRAM_REPEATED
+      jsr func_cache_dupe_into_vram
       bra @process_count_done
 
    @process_positive_count:
 
-      SLURP_INTO_VRAM
+      jsr func_cache_read_into_vram
 
    @process_count_done:
 
@@ -63,7 +70,7 @@
 .endproc
 
 .proc sub_skip_columns: near
-   SLURP_INTO_A             ; (.A holds skip count, where 0 means 0)
+   jsr func_cache_read_into_a ; (.A holds skip count, where 0 means 0)
    cmp #0
    beq @done
    SKIP_PIXELS

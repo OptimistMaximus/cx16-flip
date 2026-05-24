@@ -141,19 +141,19 @@
 .endif
 .endmacro
 
-.macro DEBUG_TIMER_READ destAddr
+.macro DEBUG_TIMER_READ
 .ifdef DEBUG_TIMER_ENABLED
    sei
-   U16_COPY_VAR destAddr, GR16_debugTimerVSyncs
+   U16_COPY_VAR GR16_debugTimerValue, GR16_debugTimerVSyncs
    cli
 .endif
 .endmacro
 
-.macro DEBUG_TIMER_DUMP stopAddr
+.macro DEBUG_TIMER_DUMP
 .ifdef DEBUG_TIMER_ENABLED
    DEBUG_PRINT_CHAR PETSCII_RETURN
    DEBUG_PRINT_STRING "elapsed vsyncs: $"
-   DEBUG_PRINT_U16_VAR stopAddr
+   DEBUG_PRINT_U16_VAR GR16_debugTimerValue
    DEBUG_PRINT_CHAR PETSCII_RETURN
    DEBUG_PRINT_CHAR PETSCII_RETURN
    DEBUG_PRINT_STRING "speed overruns: $"

@@ -11,96 +11,70 @@
 ;
 ; 297 seventieths = 255 sixtieths
 
+; MINIMIZE_ZEROPAGE_USAGE = 1
+
 ;------------------------------------------------------------------------------
-; GLOBAL "VOLATILE" VARIABLES
+; GLOBAL VARIABLES (Zero Page)
 ;
-; Any subroutine or macro can use these at any time for any purpose. As such
-; never assume that the values persist after you JSR or JMP or call another
-; macro.  These are intended for use as quick "scratch" variables.
+; These MUST be in Zero Page, either because of addressing mode requirements,
+; or for performance reasons.
+;------------------------------------------------------------------------------
+ZP_VOLATILE_PTR         := $22
+ZP24_vramOffset         := $24
+ZP24_chunkReads         := $27 ; how many bytes have been read for curr chunk
+ZP16_cachePointer       := $2A
+ZP8_cacheRemaining      := $2C
+ZP8_cacheScratch        := $2D
+ZP8_timerTrigger        := $2E ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
+
+;------------------------------------------------------------------------------
+; GLOBAL VARIABLES
 ;
-; The memory layout is based on alphabet letters, and the number of alphabet
-; letters implies the size (e.g. ABC is 24-bit, EF is 16-bit).  Think of it
-; like a "union" in C ... they all overlap according to their alphabet letters.
-; If you write to ZP_VOLATILE_ABC you can read the middle byte via ZP_VOLATILE_B
-;
-; Per the honor system, please never use these in an IRQ handler, because if
-; you did, then no logic could ever safely use them!  If you need ZP vars for
-; IRQ stuff, declare them in the "STATIC" section.
+; These can be anywhere in RAM, though the program will be smaller and faster
+; if they exist in Zero Page.  As long as the total usage here is under $40
+; bytes, it can easily fit in either ZP or GOLDEN RAM.
 ;------------------------------------------------------------------------------
-ZP_VOLATILE_A    := $22
-ZP_VOLATILE_B    := $23
-ZP_VOLATILE_C    := $24
-ZP_VOLATILE_D    := $25
-ZP_VOLATILE_E    := $26
-ZP_VOLATILE_F    := $27
-ZP_VOLATILE_G    := $28
-ZP_VOLATILE_H    := $29
-ZP_VOLATILE_I    := $2A
-ZP_VOLATILE_J    := $2B
-ZP_VOLATILE_K    := $2C
-ZP_VOLATILE_L    := $2D
+CONST_cacheAddr       := $400
+CONST_cacheSize       := $FF  ; (this is a constant, not a variable)
 
-ZP_VOLATILE_ABCD := ZP_VOLATILE_A
-ZP_VOLATILE_EFGH := ZP_VOLATILE_E
-ZP_VOLATILE_IJKL := ZP_VOLATILE_I
+.ifdef MINIMIZE_ZEROPAGE_USAGE
+   GLOBAL_VAR_BASE    := $500
+.else
+   GLOBAL_VAR_BASE    := $0
+.endif
 
-ZP_VOLATILE_ABC  := ZP_VOLATILE_A
-ZP_VOLATILE_DEF  := ZP_VOLATILE_D
-ZP_VOLATILE_GHI  := ZP_VOLATILE_G
-ZP_VOLATILE_JKL  := ZP_VOLATILE_J
+GR32_scratch1         := GLOBAL_VAR_BASE + $40
+GR32_scratch2         := GLOBAL_VAR_BASE + $44
 
-ZP_VOLATILE_AB   := ZP_VOLATILE_A
-ZP_VOLATILE_CD   := ZP_VOLATILE_C
-ZP_VOLATILE_EF   := ZP_VOLATILE_E
-ZP_VOLATILE_GH   := ZP_VOLATILE_G
-ZP_VOLATILE_IJ   := ZP_VOLATILE_I
-ZP_VOLATILE_KL   := ZP_VOLATILE_K
+GR16_scratch1         := GLOBAL_VAR_BASE + $48
+GR16_scratch2         := GLOBAL_VAR_BASE + $4A
+GR16_scratch3         := GLOBAL_VAR_BASE + $4C
+GR16_scratch4         := GLOBAL_VAR_BASE + $4E
 
-RAM_VOLATILE_BUF := $400 ; $400-$4FF scratch area
+GR24_scratch1         := GLOBAL_VAR_BASE + $50
+GR24_scratch2         := GLOBAL_VAR_BASE + $53
 
-GOLDEN_cacheAddr := $500 ; $500-$5FF cache
-GOLDEN_cacheSize := $FF  ; how much to load into cache (at most)
+GR8_scratch1          := GLOBAL_VAR_BASE + $56
+GR8_scratch2          := GLOBAL_VAR_BASE + $57
+GR8_scratch3          := GLOBAL_VAR_BASE + $58
+GR8_scratch4          := GLOBAL_VAR_BASE + $59
+GR16_debugTimerValue  := GLOBAL_VAR_BASE + $5A
 
-;------------------------------------------------------------------------------
-; GLOBAL "STATIC" VARIABLES (ZERO PAGE)
-;
-; These are bespoke variables whose content shouldn't be meddled with except
-; by the subroutines and macros that are associated with them.
-;------------------------------------------------------------------------------
+GR32_chunkSize        := GLOBAL_VAR_BASE + $60
+GR16_frameIndex       := GLOBAL_VAR_BASE + $64
+GR16_frameCount       := GLOBAL_VAR_BASE + $66
+GR16_chunkIndex       := GLOBAL_VAR_BASE + $68
+GR16_chunkCount       := GLOBAL_VAR_BASE + $6A
+GR16_chunkType        := GLOBAL_VAR_BASE + $6C
+GR16_speedVsyncs      := GLOBAL_VAR_BASE + $6E
 
-ZP8_speedLimitVSyncs    := $2E  ; speed limit expressed as number of VSyncs
-ZP8_imageVSyncsElapsed  := $2F  ; VSyncs elapsed while rendering current image
-
-ZP24_vramOffset         := $30
-ZP8_timerTrigger        := $33 ; state variable needed by speed timer
-
-ZP32_chunkReads         := $40 ; how many bytes have been read for curr chunk
-
-ZP16_cachePointer       := $50
-ZP8_cacheRemaining      := $52
-ZP8_cacheScratch        := $53
-
-;------------------------------------------------------------------------------
-; GLOBAL "STATIC" VARIABLES (GOLDEN RAM)
-;
-; These are bespoke variables whose content shouldn't be meddled with except
-; by the subroutines and macros that are associated with them.
-;------------------------------------------------------------------------------
-
-GR16_chunkType        := $600
-GR16_speedVsyncs      := $602
-GR8_returnCode        := $604
-GR16_returnDetail     := $606
-GR16_origIrqHandler   := $608
-GR16_debugTimerVSyncs := $60A
-GR16_debugSpeedSkips  := $60C
-
-GR32_chunkSize        := $610
-GR16_frameIndex       := $614
-GR16_frameCount       := $616
-GR16_chunkIndex       := $618
-GR16_chunkCount       := $61A
-
+GR8_speedLimitVSyncs  := GLOBAL_VAR_BASE + $70  ; speed limit as VSyncs
+GR8_returnCode        := GLOBAL_VAR_BASE + $71
+GR16_returnDetail     := GLOBAL_VAR_BASE + $72
+GR16_origIrqHandler   := GLOBAL_VAR_BASE + $74
+GR16_debugTimerVSyncs := GLOBAL_VAR_BASE + $76
+GR16_debugSpeedSkips  := GLOBAL_VAR_BASE + $78
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)
@@ -110,7 +84,8 @@ RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
 RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
 RC_INVALID_CHUNK_TYPE         := 3  ; type
 RC_UNEXPECTED_CHUNK_TYPE      := 4  ; type
-RC_READ_ERROR                 := 5  ; lower byte is READST value
+RC_UNSUPPORTED_CHUNK_SIZE     := 5  ; type (not the size!)
+RC_READ_ERROR                 := 6  ; lower byte is READST value
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode

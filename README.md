@@ -79,8 +79,12 @@ will be used.  The results are tracked here, for each released version:
 | 0.1.1   | $0176  | $0032    | 1705      |
 | 0.2.1   | $0163  | $0032    | 1747      |
 | 0.3.0   | $00F9  | $0031    | 2114      |
+| 0.4.0   | $00A7  | $0024    | 1998      |
 
 ### Version History
+
+- 2026/05/24 Version 0.4.0
+  - more performance enhancements
 
 - 2026/05/22 Version 0.3.0
   - introduced crude file input stream buffering
@@ -141,96 +145,28 @@ Good FLI files for regression test:
 
 - BELL (small, simple)
 - OWL  (small, simple)
-- BOOKSPIN (minimal padding)
+- BOOKSPIN (padding, per the spec (align to even boundaries)
 - CHOPCITY (very long)
 - SAUCER04 (FLI_COPY)
 - MOONWALK (BLACK)
-
-Good Files, but not supported yet:
-
-BADAPPLE.FLI has excessive padding after frames. For example, the first delta
-frame has an extra 48 zeros at the end, even though the frame was already on an
-even boundary.  The player currently doesn't handle this. It tries to scan ahead
-past the padding but quickly goes off the rails, showing pixel garbage on screen
-and squawking (due to buffer overrun into PSG registers)
+- BADAPPLE (excessive padding, well beyond what the spec suggests)
 
 Bad FLI files:
 
-PLANET.FLI (used during testing) will not play properly because the RLE count
-is incorrect in one of the packets on line 51, in the first Delta FLI chunk.
-This particular file even has problems playing in industry-standard FLI players,
-but those players have proper sanity checks to avoid buffer overruns, so the
-result is just pixel mess on screen.
-
-For reference, here is the run of bytes where the problem exists:
-
-```
-12
-  38 F9 4C
-  00 1D 4D4F505152535455 565758595A5B5C5D
-        5E5F606263646566 6768696B6C
-  00 FB 6D
-  00 FA 6E
-  00 FA 6F
-  00 5C 6E6D6C6B69686766 6564636261605F5E
-        5C5B5A5857565453 51504F4D4C4B4A49
-        4948484847474646 4545454444434445
-        46474849494A4B4C 4D4E4F5051515354
-        55565758595B5C5D 5E5F606163636364
-        6464646465656565 65666666
-  00 0C 6666656464636262 6161605F
-  00 03 5F5E01
-
-  5D
-
-  00 FB 5C
-  00 FC 5B
-  00 FB 5A
-  00 0A 59595A5A5A5B5B5C 5C5C
-  00 03 5D5D5E
-  00 01 5E
-  00 F7 5F
-  00 F8 5E
-  00 03 5D5C5B
-
-0F
-  37 F7 57
-```
-
-Whitespace above has been added to help visualize the 12 packets in the
-line.  Next are 12 packets, having format SKIP COUNT DATA.  When COUNT
-is negative it means there is 1 byte of data to be replicated.  When COUNT
-is positive, it means there are that many bytes of data to follow.
-
-Everything looks fine until packet `00 03 5F5E01` ... it's count should
-have been 04 because a count of 03 means that 5D is interpreted as the
-SKIP of the next packet, and then everything after that makes no sense.
-If we ignore that 5D, then everything else after that DOES make sense.
+- PLANET.FLI (used during testing) will not play properly because the RLE count
+  is incorrect in one of the packets on line 51, in the first Delta FLI chunk.
+  This particular file even has problems playing in industry-standard FLI players,
+  but those players have proper sanity checks to avoid buffer overruns, so the
+  result is just pixel mess on screen.
 
 ## IDEAS / TODO
 
-- stream file into RAM or ZP
-  - use MACPTR with .A set to 0 and CLC set to advance, then send data to a
-    512 byte block in "golden RAM" ... this streams from disk as fast as possible
-    but is slower to deal with as the buffer offset is 16-bits.
-  - consider using MACPTR but setting .A to $FF (and checking .X and .Y to see
-    if it read $00FF bytes or less) ... same idea as above but now the buffer
-    offset is 8-bit and faster to inc/dec
-  - consider buffering in ZP since we have $40-$7F free ... would the performance
-    gain of having data in ZP overcome the performance loss of having a much smaller
-    ($40 byte instead of $FF byte) buffer?
-  - will this me more efficient than just calling MACPTR a bunch?  Maybe. Less JSRs
-    but a lot more fussing with buffer management/loading and keeping track of how
-    many bytes left before we need to fill again.  It really depends on how much
-    additional overhead there is every time I call ACPTR or MACPTR
-- write a delta-specific stage flipper that takes into account the line skip and
-  line count ... needn't waste time copying the whole 320x200 as it currently does.
 - since we can't use 32-bit FX cache writes for palette, there might be no benefit
   to storing it in VRAM. Consider storing in "golden" RAM instead.  This way we
   can skip/burn palette entries by just doing inx or iny instead of LDA VERA_DATA0.
   Though, palette updates don't happen as often as FLI_DELTA so optimization should
   focus there first.
-- keep a runnning 24-bit value of our VRAM location, and evaluate each skip ...
+- keep a running 24-bit value of our VRAM location, and evaluate each skip ...
   setting VRAM addr takes 26 cycles, and doing 7 LDAs to VERA_DATA0 takes 28 bytes.
   So any skip of 7 or more is faster to do by moving the VRAM address.  But doing
   the ADC to keep that value fresh is also expensive, as is doing a U24_INC with

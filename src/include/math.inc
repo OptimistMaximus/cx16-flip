@@ -243,6 +243,26 @@
 .endmacro
 
 ;==============================================================================
+; U24_INC
+;
+; Increment the value in a variable
+;
+; @param targetAddr the value's address
+;
+; @cycles  8 if ZP and no low rollover
+;         16 if ZP and low rollover
+;         24 if ZP and mid rollover
+;==============================================================================
+.macro U24_INC targetAddr
+    inc targetAddr+0
+    bne :+
+    inc targetAddr+1
+    bne :+
+    inc targetAddr+2
+:
+.endmacro
+
+;==============================================================================
 ; U32_INC
 ;
 ; Increment the value in a variable
@@ -283,6 +303,29 @@
    lda targetAddr+1
    sbc #>otherValue
    sta targetAddr+1
+.endmacro
+
+;==============================================================================
+; U24_SUB_IMM
+;
+; Subtract out of a target variable an immediate value
+;
+; @param targetAddr the target value's address
+; @param otherValue the other value
+;
+; Note, this macro will set the carry bit before subtracting.
+;==============================================================================
+.macro U24_SUB_IMM targetAddr, otherValue
+   sec
+   lda targetAddr+0
+   sbc #<otherValue
+   sta targetAddr+0
+   lda targetAddr+1
+   sbc #>otherValue
+   sta targetAddr+1
+   lda targetAddr+2
+   sbc #^otherValue
+   sta targetAddr+2
 .endmacro
 
 ;==============================================================================
@@ -369,6 +412,28 @@
    lda targetAddr+1
    adc #0
    sta targetAddr+1
+.endmacro
+
+;==============================================================================
+; U24_ADD_A
+;
+; Add into a target variable the value in a .A
+;
+; @param targetAddr the target value's address
+; @cycles 26 if ZP
+;
+; Note, this macro will clear the carry bit before adding.
+;==============================================================================
+.macro U24_ADD_A targetAddr
+   clc
+   adc targetAddr+0
+   sta targetAddr+0
+   lda targetAddr+1
+   adc #0
+   sta targetAddr+1
+   lda targetAddr+2
+   adc #0
+   sta targetAddr+2
 .endmacro
 
 ;==============================================================================
@@ -511,6 +576,24 @@
    bne :+
    lda targetAddr+0
    cmp #<otherValue
+:
+.endmacro
+
+;==============================================================================
+; U24_CMP_VAR
+;
+; @param valueAddr the value's address
+; @param otherValue the argument
+;==============================================================================
+.macro U24_CMP_VAR targetAddr, otherAddr
+   lda targetAddr+2
+   cmp otherAddr+2
+   bne :+
+   lda targetAddr+1
+   cmp otherAddr+1
+   bne :+
+   lda targetAddr+0
+   cmp otherAddr+0
 :
 .endmacro
 

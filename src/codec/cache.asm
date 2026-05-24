@@ -13,21 +13,19 @@
 .include "../include/math.inc"
 .include "../include/vera.inc"
 
-varCacheAddr := GOLDEN_cacheAddr
 varPointer   := ZP16_cachePointer
 varRemaining := ZP8_cacheRemaining
 varScratch   := ZP8_cacheScratch
-constReadLen := GOLDEN_cacheSize
 
 .macro BUMP
    pha
-      U32_INC ZP32_chunkReads
+      U24_INC ZP24_chunkReads
    pla
 .endmacro
 
 .macro BUMP_A
    pha
-      U32_ADD_A ZP32_chunkReads
+      U24_ADD_A ZP24_chunkReads
    pla
 .endmacro
 
@@ -38,9 +36,9 @@ constReadLen := GOLDEN_cacheSize
 ; cache routines.
 ;==============================================================================
 .proc func_cache_init: near
-   lda #>varCacheAddr  ; high byte of actual cache address
-   sta varPointer+1    ; stored as high byte of our pointer
-   jmp sub_load_page   ; loads page and zeros low byte of pointer
+   lda #>CONST_cacheAddr  ; high byte of actual cache address
+   sta varPointer+1       ; stored as high byte of our pointer
+   jmp sub_load_page      ; loads page and zeros low byte of pointer
 .endproc
 
 ;==============================================================================
@@ -151,7 +149,7 @@ constReadLen := GOLDEN_cacheSize
 
       phy
          ldy varPointer        ; pointer low is where to start, e.g. $88
-      :  lda varCacheAddr,y    ; read at offset  e.g. $500 + $55
+      :  lda CONST_cacheAddr,y ; read at offset  e.g. $500 + $55
          sta VERA_DATA0        ; write to VRAM
          iny
          cpy varScratch
@@ -207,10 +205,10 @@ constReadLen := GOLDEN_cacheSize
 sub_load_page:
    phx
       phy
-         ldx #<varCacheAddr
-         ldy #>varCacheAddr
+         ldx #<CONST_cacheAddr
+         ldy #>CONST_cacheAddr
 smc_anchor_for_cache_size:    ; (for unit test convenience)
-         lda #constReadLen    ; how many bytes we want
+         lda #CONST_cacheSize ; how many bytes we want
          clc                  ; (advance, since going to RAM)
          jsr KERNAL_MACPTR    ; (actually acquire bytes)
          cpx #0               ; if KERNAL gave us zero, something

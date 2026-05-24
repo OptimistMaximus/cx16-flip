@@ -80,12 +80,11 @@ sub_irq_handler_for_delay:
 ;==============================================================================
 ; func_snooze_if_necessary
 ;
-; @prep  .A holds the number of sixtieths to snooze
 ; @effect .A .X .Y
 ;==============================================================================
 .proc func_snooze_if_necessary: near
    sec
-   lda ZP8_speedLimitVSyncs
+   lda GR8_speedLimitVSyncs
    sbc ZP8_imageVSyncsElapsed
    bmi @handle_negative
    jmp func_snooze

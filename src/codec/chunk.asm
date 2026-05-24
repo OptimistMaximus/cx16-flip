@@ -62,6 +62,11 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    U16_CMP_IMM GR16_chunkType, $F1FA
    beq @assumption_met
    BSOD RC_UNEXPECTED_CHUNK_TYPE, GR16_chunkType
+
+   lda GR32_chunkSize
+   beq @assumption_met
+   BSOD RC_UNSUPPORTED_CHUNK_SIZE, GR16_chunkType
+
 @assumption_met:
 
    U16_STZ        GR16_chunkIndex
@@ -71,7 +76,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 @subchunk_loop:
    U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount  ; check first in case zero
    beq @subchunk_loop_done
-   U32_STZ ZP32_chunkReads
+   U24_STZ ZP24_chunkReads
    jsr func_slurp_chunk
    jsr sub_mitigate_padding
    U16_INC     GR16_chunkIndex
@@ -81,12 +86,12 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .endproc
 
 .proc sub_mitigate_padding: near
-   U32_CMP_VAR ZP32_chunkReads, GR32_chunkSize
+   U24_CMP_VAR ZP24_chunkReads, GR32_chunkSize
    bcc @handle_padding
    rts
 @handle_padding:
-   SLURP_INTO_A
-   U32_CMP_VAR ZP32_chunkReads, GR32_chunkSize
+   jsr func_cache_read_into_a
+   U24_CMP_VAR ZP24_chunkReads, GR32_chunkSize
    bne @handle_padding
    rts
 .endproc
@@ -100,7 +105,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .proc func_slurp_chunk: near
 
    stz ZP8_imageVSyncsElapsed
-   U32_STZ ZP32_chunkReads
+   U24_STZ ZP24_chunkReads
    SLURP_INTO_U32 GR32_chunkSize
    SLURP_INTO_U16 GR16_chunkType
    jsr func_resolve_chunk_type

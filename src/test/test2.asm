@@ -1,13 +1,12 @@
 .export test_suite_2
 
-.import func_find_arg
+.import func_detect_filename
 .import func_open_inputstream
 .import func_close_inputstream
 .import func_slurp_header
 .import func_slurp_chunk
 .import handle_invalid
 .import handle_unsupported
-.import handle_frame_type
 .import handle_color_256
 .import handle_color_64
 .import handle_delta_fli
@@ -32,23 +31,6 @@ fn_color_x:  .asciiz "colorx.bin,r"
 fn_byterun:  .asciiz "byterun.bin,r"
 fn_deltafli: .asciiz "deltafli.bin,r"
 
-
-
-; "RUN" results in tokenized $8A
-test_basic_buffer_no_args:
-.byte $8A,$00
-
-; "RUN:REM AA BB" results in tokenized $8A and $8F
-test_basic_buffer_compact:
-.byte $8A,$3A,$8F,$20,$41,$41,$20,$42,$42,$00
-
-; " RUN  :  REM  AA  BB  " results in trimmed string with inner spaces
-test_basic_buffer_spaced_out:
-.byte $8A,$20,$20,$3A,$20,$20,$8F,$20,$20,$41,$41,$20,$42,$42,$00
-
-test_arg_expect_aa: .asciiz "aa"
-test_arg_expect_bb: .asciiz "bb"
-
 .segment "CODE"
 
 VRAM_IMAGE_LINE_0  := $00000
@@ -56,34 +38,21 @@ VRAM_IMAGE_LINE_1  := $00140
 VRAM_IMAGE_LINE_2  := $00280
 VRAM_IMAGE_LINE_3  := $003C0
 
-.macro PREP_BASIC_BUFFER sourceLabel
-   ldy #$FF
-:  iny
-   lda sourceLabel,y
-   sta $200,y
-   bne :-
-.endmacro
-
-.macro FIND_ARG arg
-   lda #arg
-   ldx #<RAM_VOLATILE_BUF
-   ldy #>RAM_VOLATILE_BUF
-   jsr func_find_arg
-.endmacro
-
 .macro OPEN_INPUTSTREAM_R filenameLabel, replacementOffset, replacementChar
    U8_COPY_IMM filenameLabel+replacementOffset, replacementChar
    ldx #<filenameLabel
    ldy #>filenameLabel
+   jsr sub_strlen
    jsr func_open_inputstream
-   SLURP_INIT
+   jsr func_cache_init
 .endmacro
 
 .macro OPEN_INPUTSTREAM filenameLabel
    ldx #<filenameLabel
    ldy #>filenameLabel
+   jsr sub_strlen
    jsr func_open_inputstream
-   SLURP_INIT
+   jsr func_cache_init
 .endmacro
 
 .macro CLOSE_INPUTSTREAM
@@ -133,40 +102,6 @@ VRAM_IMAGE_LINE_3  := $003C0
 
 .proc test_suite_2: near
 
-   ;---------------------------------------------------------------------------
-   ; TEST 20 - func_find_arg
-   ;
-   ; White box testing: We know func_find_arg parses the BASIC buffer.  We know
-   ; the BASIC buffer is located at $200 to $281, including the NULL terminator.
-   ; We know the buffer holds tokenized BASIC, left and right trimmed.
-   ;---------------------------------------------------------------------------
-   PREP_BASIC_BUFFER test_basic_buffer_no_args
-   FIND_ARG 0
-   ASSERT_BCS $2000
-
-   PREP_BASIC_BUFFER test_basic_buffer_compact
-   FIND_ARG 0
-   ASSERT_BCC $2010
-   ASSERT_RAM_EQUALS_ARRAY $2011, 2, test_arg_expect_aa, RAM_VOLATILE_BUF
-
-   FIND_ARG 1
-   ASSERT_BCC $2012
-   ASSERT_RAM_EQUALS_ARRAY $2013, 2, test_arg_expect_bb, RAM_VOLATILE_BUF
-
-   FIND_ARG 2
-   ASSERT_BCS $2014
-
-   PREP_BASIC_BUFFER test_basic_buffer_spaced_out
-   FIND_ARG 0
-   ASSERT_BCC $2020
-   ASSERT_RAM_EQUALS_ARRAY $2021, 2, test_arg_expect_aa, RAM_VOLATILE_BUF
-
-   FIND_ARG 1
-   ASSERT_BCC $2022
-   ASSERT_RAM_EQUALS_ARRAY $2023, 2, test_arg_expect_bb, RAM_VOLATILE_BUF
-
-   FIND_ARG 2
-   ASSERT_BCS $2024
 
    ;---------------------------------------------------------------------------
    ; TEST 30 - slurp_header
@@ -174,7 +109,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_header_x, 6, '0'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3000, $48, ZP8_speedLimitVSyncs ; $55 * 6 / 7 = $48
+   ASSERT_VAR_U8_EQUALS_IMM $3000, $48, GR8_speedLimitVSyncs ; $55 * 6 / 7 = $48
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
@@ -185,7 +120,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3020, $FE, ZP8_speedLimitVSyncs
+   ASSERT_VAR_U8_EQUALS_IMM $3020, $FE, GR8_speedLimitVSyncs
 
    ;---------------------------------------------------------------------------
    ; TEST 31 - handle_invalid
@@ -202,11 +137,9 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GR16_returnDetail
 
    ;---------------------------------------------------------------------------
-   ; TEST 32 - handle_frame_type
+   ; TEST 32 -
    ;---------------------------------------------------------------------------
-   OPEN_INPUTSTREAM fn_frame
-   jsr handle_frame_type
-   CLOSE_INPUTSTREAM
+
 
    ;---------------------------------------------------------------------------
    ; TEST 33 - func_load_palette
@@ -331,8 +264,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; TEST 36 - handle_delta_fli
    ;
    ; The test data establishes the initial line number as line 4, with line
-   ; count 2.  This test establishes Layer 1 as active, so expect data to be
-   ; written to Layer 0 at the following offsets.
+   ; count 2.
    ;
    ; line 0 -> 0000 + F800 = 0F800
    ; line 1 -> 0140 + F800 = 0F940
@@ -389,3 +321,18 @@ VRAM_IMAGE_LINE_3  := $003C0
 .endproc
 
 
+.proc sub_strlen: near
+   stx ZP_VOLATILE_PTR+0
+   sty ZP_VOLATILE_PTR+1
+   phy
+      ldy #0
+   @loop:
+      lda (ZP_VOLATILE_PTR),y
+      beq @loop_done
+      iny
+      bra @loop
+   @loop_done:
+      tya
+   ply
+   rts
+.endproc

@@ -195,11 +195,30 @@
 :
 .endmacro
 
-
-
+;=============================================================================
+; ASSERT_RAM_EQUALS_ARRAY_INDIRECT
+; @param expectAddr is an absolute address in RAM
+; @param actualPtr  is a zero-page pointer holding address of actual data
+;=============================================================================
+.macro ASSERT_RAM_EQUALS_ARRAY_INDIRECT testId, maxOffset, expectAddr, actualPtr
+   phy
+   ldy #0
+:  lda (actualPtr),y
+   cmp expectAddr,y
+   bne :+
+   cpy #maxOffset
+   beq :++
+   iny
+   bra :-
+:  plx
+   FAIL testId
+:  ply
+.endmacro
 
 ;=============================================================================
-; ASSERT_RAM_EQUALS_ARRAY - assumes expectAddr and actuaAddr are absolute
+; ASSERT_RAM_EQUALS_ARRAY
+; @param expectAddr is an absolute address in RAM
+; @param actualAddr is an absolute address in RAM
 ;=============================================================================
 .macro ASSERT_RAM_EQUALS_ARRAY testId, maxOffset, expectAddr, actualAddr
    phx
