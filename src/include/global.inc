@@ -59,6 +59,7 @@ GR8_scratch1          := GLOBAL_VAR_BASE + $56
 GR8_scratch2          := GLOBAL_VAR_BASE + $57
 GR8_scratch3          := GLOBAL_VAR_BASE + $58
 GR8_scratch4          := GLOBAL_VAR_BASE + $59
+GR16_debugTimerValue  := GLOBAL_VAR_BASE + $5A
 
 GR32_chunkSize        := GLOBAL_VAR_BASE + $60
 GR16_frameIndex       := GLOBAL_VAR_BASE + $64

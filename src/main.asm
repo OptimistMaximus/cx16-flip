@@ -27,12 +27,6 @@
 
    jmp start
 
-default_image_filename: .byte "image.fli,r"
-
-.ifdef DEBUG_TIMER_ENABLED
-debug_timer_value: .word $0000
-.endif
-
 start:
 
    jsr func_setup_irq_handler
@@ -52,7 +46,7 @@ start:
 
    jsr func_close_inputstream
 
-   DEBUG_TIMER_READ debug_timer_value
+   DEBUG_TIMER_READ
 
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)
@@ -60,5 +54,5 @@ start:
    jsr func_vera_restore        ; restore vera to text mode
    jsr func_restore_irq_handler
 
-   DEBUG_TIMER_DUMP debug_timer_value
+   DEBUG_TIMER_DUMP
    rts
