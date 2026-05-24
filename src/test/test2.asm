@@ -264,8 +264,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; TEST 36 - handle_delta_fli
    ;
    ; The test data establishes the initial line number as line 4, with line
-   ; count 2.  This test establishes Layer 1 as active, so expect data to be
-   ; written to Layer 0 at the following offsets.
+   ; count 2.
    ;
    ; line 0 -> 0000 + F800 = 0F800
    ; line 1 -> 0140 + F800 = 0F940

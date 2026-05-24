@@ -306,6 +306,29 @@
 .endmacro
 
 ;==============================================================================
+; U24_SUB_IMM
+;
+; Subtract out of a target variable an immediate value
+;
+; @param targetAddr the target value's address
+; @param otherValue the other value
+;
+; Note, this macro will set the carry bit before subtracting.
+;==============================================================================
+.macro U24_SUB_IMM targetAddr, otherValue
+   sec
+   lda targetAddr+0
+   sbc #<otherValue
+   sta targetAddr+0
+   lda targetAddr+1
+   sbc #>otherValue
+   sta targetAddr+1
+   lda targetAddr+2
+   sbc #^otherValue
+   sta targetAddr+2
+.endmacro
+
+;==============================================================================
 ; U16_ADD_VAR
 ;
 ; Add into a target variable the value in another 16-bit variable

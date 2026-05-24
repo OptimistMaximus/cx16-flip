@@ -3,6 +3,7 @@
 .import func_vera_flip_stage
 .import func_prep_for_active_buffering
 .import func_snooze_if_necessary
+.import fnc_slurp_into_a
 
 .segment "CODE"
 
@@ -12,22 +13,26 @@
 .include "../include/video.inc"
 
 .proc handle_delta_fli: near
+   jsr func_cache_read_into_a   ; slurp low byte of line skip
+   tay                          ; and store it in .Y
+   jsr func_cache_read_into_a   ; burn high byte of line skip (always zero)
 
-   tmpLineSkip  = GR16_scratch1
-   tmpLineCount = GR16_scratch2
-   SLURP_INTO_U16 tmpLineSkip
-   SLURP_INTO_U16 tmpLineCount
-
-   ldx tmpLineCount                    ; .X now holds the line count
-   phx
-      lda tmpLineSkip                  ; .A now holds line skip
-      jsr func_prep_for_active_buffering
-   plx
-   @line_loop:
-   jsr sub_render_line
-   dex
-   bne @line_loop
-
+   jsr func_cache_read_into_a   ; slurp low byte of line count
+   tax                          ; and store it in .X
+   jsr func_cache_read_into_a   ; burn high byte of line count (always zero)
+   
+   phx                          ; squirrel .X for later
+      phy                       ; squirrel .Y for later
+         phx
+            tya
+            jsr func_prep_for_active_buffering
+         plx
+      @line_loop:
+         jsr sub_render_line 
+         dex
+         bne @line_loop
+      ply                       ; pull .Y so it has the line skip again
+   plx                          ; pull .X so it has the line count again
    jsr func_vera_flip_stage
    jmp func_snooze_if_necessary
 .endproc

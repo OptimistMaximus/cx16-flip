@@ -169,23 +169,56 @@
    rts
 .endproc
 
+.macro INNER_BATCH_COPY
+   lda VERA_DATA0
+   lda VERA_DATA0
+   lda VERA_DATA0
+   lda VERA_DATA0
+   stz VERA_DATA1
+.endmacro
+
 ;==============================================================================
 ; func_vera_flip_stage
 ;
-; If Stage 0 is active, that means we've been buffering to it, so now it is
-; time to "show" Stage 0, and change the active Stage value so we'll start
-; buffering to to Stage 1 next.  If Layer 1 then essentially do the opposite.
+; The original implementation used to "flip" between layer 0 and layer 1. Now
+; it just quickly copies data from the staging area to layer 0 always.
 ;
-; After establishing the new active stage, it is now safe to prime the freshly
-; active stage with what the now-shown stage has, so that relative changes to
-; it (coming up soon) will build off the same base established by the previous
-; active stage.
-;
+; @param  .X line count
+; @param  .Y line skip
 ; @effect .X clobbered
 ; @effect .Y clobbered
 ;==============================================================================
 .proc func_vera_flip_stage: near
-   PREP_BULK_VRAM_COPY $00000, $0FA00
-   EXEC_BULK_VRAM_COPY 200, 320
+
+   phx
+   tya                                          ; now .A is the line skip
+   jsr func_prep_for_active_buffering           ; now ZP24_vramOffset is source
+   U24_COPY_VAR GR24_scratch1, ZP24_vramOffset  ; store it in scratch 1
+   U24_SUB_IMM ZP24_vramOffset, VRAM_BUFF_IMAGE ; subtract $FA00 to get target
+   
+   lda #%00000100                   ; DCSEL=2
+   sta VERA_CTRL
+   lda #%01100000                   ; Enable Cache Fill & Cache Write
+   sta VERA_DC2_FX_CTRL
+
+   SET_VERA_ADDR24_VAR $00, GR24_scratch1, $10
+   SET_VERA_ADDR24_VAR $01, ZP24_vramOffset, $30
+
+   plx                              ; .X is the line count
+@bulk_vram_copy_outer_loop:
+   ldy #(320 / 16)                  ; .Y is for columns, adjusted for batching
+@bulk_vram_copy_inner_loop:
+   INNER_BATCH_COPY
+   INNER_BATCH_COPY
+   INNER_BATCH_COPY
+   INNER_BATCH_COPY
+   dey
+   bne @bulk_vram_copy_inner_loop
+   dex
+   bne @bulk_vram_copy_outer_loop
+
+   lda #%00000100                   ; DCSEL=2
+   sta VERA_CTRL
+   stz VERA_DC2_FX_CTRL             ; Disable Cache Fill & Cache Write
    rts
 .endproc

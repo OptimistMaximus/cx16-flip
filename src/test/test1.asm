@@ -59,11 +59,13 @@ VRAM_IMAGE_LINE_0  := $00000
 VRAM_IMAGE_LINE_1  := $00140
 VRAM_IMAGE_LINE_2  := $00280
 VRAM_IMAGE_LINE_3  := $003C0
+VRAM_IMAGE_LINE_4  := $00500
 
 VRAM_BUFFER_LINE_0 := $0FA00 + VRAM_IMAGE_LINE_0
 VRAM_BUFFER_LINE_1 := $0FA00 + VRAM_IMAGE_LINE_1
 VRAM_BUFFER_LINE_2 := $0FA00 + VRAM_IMAGE_LINE_2
 VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
+VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
 
 .macro BURN_THEN_WRITE value
    lda VERA_DATA0 ; burn
@@ -118,55 +120,88 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ; func_vera_flip_stage
    ;---------------------------------------------------------------------------
    jsr sub_init_stages
-   lda #0                                       ; prep for line 0
+   lda #0                                       ; line 0 has $AA
    jsr func_prep_for_active_buffering
    lda VERA_DATA0
    lda #$AA
    sta VERA_DATA0
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 1 skipped
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 2
+   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 1 has $BB
    lda VERA_DATA0
    lda #$BB
    sta VERA_DATA0
 
-   lda #1                                       ; prep for line 1
-   jsr func_prep_for_active_buffering
+   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 2 is skipped
+
+   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 3 has $CC
    lda VERA_DATA0
    lda #$CC
    sta VERA_DATA0
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_0, $10
+   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 4 has $DD
+   lda VERA_DATA0
+   lda #$DD
+   sta VERA_DATA0
+
+   lda #2                                       ; go back to line 2
+   jsr func_prep_for_active_buffering           ; and put $EE into it
+   lda VERA_DATA0
+   lda #$EE
+   sta VERA_DATA0
+
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_0, $10 ; verify 0 has $AA
    ASSERT_VRAM_U8_EQUALS_IMM $1200, $00
    ASSERT_VRAM_U8_EQUALS_IMM $1201, $AA
    ASSERT_VRAM_U8_EQUALS_IMM $1202, $00
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_1, $10
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_1, $10 ; verify 1 has $EE
    ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1204, $CC
+   ASSERT_VRAM_U8_EQUALS_IMM $1204, $BB
    ASSERT_VRAM_U8_EQUALS_IMM $1205, $00
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_2, $10
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_2, $10 ; verify 2 has $BB
    ASSERT_VRAM_U8_EQUALS_IMM $1206, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1207, $BB
+   ASSERT_VRAM_U8_EQUALS_IMM $1207, $EE
    ASSERT_VRAM_U8_EQUALS_IMM $1208, $00
 
-   jsr func_vera_flip_stage                     ; flip buffer to image
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_3, $10 ; verify 3 has $CC
+   ASSERT_VRAM_U8_EQUALS_IMM $1209, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1210, $CC
+   ASSERT_VRAM_U8_EQUALS_IMM $1211, $00
 
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $1210, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1211, $AA
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_4, $10 ; verify 4 has $DD
    ASSERT_VRAM_U8_EQUALS_IMM $1212, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1213, $DD
+   ASSERT_VRAM_U8_EQUALS_IMM $1214, $00
 
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_1, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $1213, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1214, $CC
-   ASSERT_VRAM_U8_EQUALS_IMM $1215, $00
+   ldx #3                         ; flip 3 lines
+   ldy #1                         ; skipping 1 line (i.e. lines 1-3)
+   jsr func_vera_flip_stage       ; flip buffer to image
+   
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10 ; verify 0 untouched
+   ASSERT_VRAM_U8_EQUALS_IMM $1220, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1221, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
 
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_2, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $1216, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1217, $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1218, $00
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_1, $10 ; verify 1 copied
+   ASSERT_VRAM_U8_EQUALS_IMM $1223, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1224, $BB
+   ASSERT_VRAM_U8_EQUALS_IMM $1225, $00
+
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_2, $10 ; verify 2 copied
+   ASSERT_VRAM_U8_EQUALS_IMM $1226, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1227, $EE
+   ASSERT_VRAM_U8_EQUALS_IMM $1228, $00
+
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_3, $10 ; verify 3 copied
+   ASSERT_VRAM_U8_EQUALS_IMM $1229, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1230, $CC
+   ASSERT_VRAM_U8_EQUALS_IMM $1231, $00
+
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_4, $10 ; verify 4 untouched
+   ASSERT_VRAM_U8_EQUALS_IMM $1232, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1233, $00
+   ASSERT_VRAM_U8_EQUALS_IMM $1234, $00
 
    ;---------------------------------------------------------------------------
    ; TEST 13

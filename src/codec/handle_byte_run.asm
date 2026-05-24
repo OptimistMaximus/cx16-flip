@@ -19,6 +19,9 @@
    jsr sub_render_line
    dex
    bne @line_loop
+
+   ldx #200
+   ldy #0
    jsr func_vera_flip_stage
    jmp func_snooze_if_necessary
 .endproc
