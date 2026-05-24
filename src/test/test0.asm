@@ -2,13 +2,28 @@
 
 .import func_snooze
 .import func_snooze_if_necessary
+.import func_detect_filename
 .import func_setup_irq_handler
 .import func_restore_irq_handler
 .import func_print_hex
 
 .segment "RODATA"
 
-test_array_data: .byte $11,$22,$33,$44
+test_bb_no_args:  .byte $8A,$00   ; "RUN"
+test_bb_spaces:   .byte $8A,$20,$3A,$20,$8F,$20,$20,$41,$41,$20,$20,$00
+test_bb_two_args: .byte $8A,$3A,$8F,$20,$41,$41,$20,$42,$42,$20,$00
+test_bb_cheeky:   ; i.e. someone's trying a buffer overrun attack
+.byte $8A,$3A,$8F,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$20,$20,$20
+.byte $20,$20,$20,$20,$20,$20,$20,$43,$43,$00
+
+test_bb_expect_found: .asciiz "aa,r"
+test_bb_expect_default: .asciiz "image.fli,r"
 
 .segment "CODE"
 
@@ -158,6 +173,41 @@ test_array_data: .byte $11,$22,$33,$44
 
    U32_INC      GR32_scratch1
    ASSERT_VAR_U32_EQUALS_IMM $0107, $02,$000000, GR32_scratch1
+
+   ;---------------------------------------------------------------------------
+   ; TEST 9 - func_detect_filename
+   ;
+   ; White box testing: We know func_find_arg parses the BASIC buffer.  We know
+   ; the BASIC buffer is located at $200 to $281, including the NULL terminator.
+   ; We know the buffer holds tokenized BASIC, left and right trimmed.
+   ;---------------------------------------------------------------------------
+   .macro PREP_BASIC_BUFFER sourceLabel
+      ldy #$FF
+   :  iny
+      lda sourceLabel,y
+      sta $200,y
+      bne :-
+   .endmacro
+
+   .macro DETECT_FILENAME testId, expectSize, expectText
+      jsr func_detect_filename
+      stx ZP_VOLATILE_PTR+0
+      sty ZP_VOLATILE_PTR+1
+      ASSERT_A_EQUALS_IMM testId, expectSize
+      ASSERT_RAM_EQUALS_ARRAY_INDIRECT (testId+1), (expectSize-1), expectText, ZP_VOLATILE_PTR
+   .endmacro
+
+   PREP_BASIC_BUFFER test_bb_no_args
+   DETECT_FILENAME $0900, 11, test_bb_expect_default
+
+   PREP_BASIC_BUFFER test_bb_spaces
+   DETECT_FILENAME $0910, 4, test_bb_expect_found
+
+   PREP_BASIC_BUFFER test_bb_cheeky
+   DETECT_FILENAME $0920, 11, test_bb_expect_default
+
+   PREP_BASIC_BUFFER test_bb_two_args
+   DETECT_FILENAME $0930, 4, test_bb_expect_found
 
    ;---------------------------------------------------------------------------
    ; TEST 99 (timer)

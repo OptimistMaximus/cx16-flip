@@ -47,7 +47,7 @@ CONST_cacheSize       := $FF  ; (this is a constant, not a variable)
 GR32_scratch1         := GLOBAL_VAR_BASE + $40
 GR32_scratch2         := GLOBAL_VAR_BASE + $44
 
-GR16_scratch1         := GLOBAL_VAR_BASE + $48 
+GR16_scratch1         := GLOBAL_VAR_BASE + $48
 GR16_scratch2         := GLOBAL_VAR_BASE + $4A
 GR16_scratch3         := GLOBAL_VAR_BASE + $4C
 GR16_scratch4         := GLOBAL_VAR_BASE + $4E

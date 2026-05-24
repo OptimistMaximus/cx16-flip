@@ -2,8 +2,6 @@
 
 .import func_open_inputstream
 .import func_close_inputstream
-.import func_append_access_mode
-.import func_strlen
 .import func_prep_for_active_buffering
 .import func_vera_flip_stage
 .import func_cache_init
@@ -16,6 +14,7 @@
 .segment "RODATA"
 
 test_filename: .asciiz "slurp.bin,r"
+test_filename_end:
 
 expect_aaa_buffer: .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
 
@@ -98,6 +97,7 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ; func_open_inputstream
    ; func_close_inputstream
    ;---------------------------------------------------------------------------
+   lda #(test_filename_end - test_filename)
    ldx #<test_filename
    ldy #>test_filename
    jsr func_open_inputstream
@@ -169,22 +169,8 @@ VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
    ASSERT_VRAM_U8_EQUALS_IMM $1218, $00
 
    ;---------------------------------------------------------------------------
-   ; TEST 13 (string stuff)
-   ;
-   ; func_append_access_mode
-   ; func_strlen
+   ; TEST 13
    ;---------------------------------------------------------------------------
-   lda #PETSCII_LOWER_W
-   ldx #<actual_aaa_buffer
-   ldy #>actual_aaa_buffer
-   jsr func_append_access_mode
-   ASSERT_A_EQUALS_IMM     $1300, 6
-   ASSERT_RAM_EQUALS_ARRAY $1301, $06, expect_aaa_buffer, actual_aaa_buffer
-
-   ldx #<expect_aaa_buffer
-   ldy #>expect_aaa_buffer
-   jsr func_strlen
-   ASSERT_A_EQUALS_IMM $1310, 6
 
    ;---------------------------------------------------------------------------
    ; TEST 14 (slurp 'n skip)

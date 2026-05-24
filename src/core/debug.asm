@@ -14,7 +14,6 @@
 .include "../include/stack.inc"
 .include "../include/zeropage.inc"
 
-.import func_strlen
 .import func_print_hex
 
 .segment "CODE"

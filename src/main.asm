@@ -2,10 +2,9 @@
 
 .import func_setup_irq_handler
 .import func_restore_irq_handler
-.import func_find_arg
+.import func_detect_filename
 .import func_open_inputstream
 .import func_close_inputstream
-.import func_append_access_mode
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore
@@ -40,7 +39,7 @@ start:
 
    DEBUG_TIMER_START
    jsr func_vera_setup
-   jsr sub_establish_filename
+   jsr func_detect_filename
    jsr func_open_inputstream
    jsr func_cache_init
    jsr func_slurp_header
@@ -63,38 +62,3 @@ start:
 
    DEBUG_TIMER_DUMP debug_timer_value
    rts
-
-;------------------------------------------------------------------------------
-; Establish the filename by looking for a custom argument. If no such arg
-; was found, then we'll use our default value.  Then, open the file.
-;
-; TODO: overhaul the args so I can just support only parsing the filename
-; from the command line ... just walk ahead past the rem token and find the
-; first non-space.  Then there should be plenty of room to append the ,r
-;
-; This saves space in the binary (no need for a buf) and also smaller binary
-; as the args parser does not need to be general purpose.
-;
-; For now, just hack the buf as $700 ... we aren't using that for anything.
-;
-; @effect .A length of the filename
-; @effect .X low byte of filename address
-; @effect .Y high byte of filename address
-;------------------------------------------------------------------------------
-.proc sub_establish_filename: near
-   NARF = $700
-   lda #0
-   ldx #<NARF
-   ldy #>NARF
-   jsr func_find_arg
-   bcc @arg_was_cool              ; .C=0 means it was found
-   ldx #<default_image_filename
-   ldy #>default_image_filename
-   rts
-@arg_was_cool:
-   lda #PETSCII_LOWER_R
-   jsr func_append_access_mode
-   ldx #<NARF
-   ldy #>NARF
-   rts
-.endproc
