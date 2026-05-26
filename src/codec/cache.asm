@@ -195,14 +195,15 @@ smc_anchor_for_cache_size:    ; (for unit test convenience)
          lda #CONST_cacheSize ; how many bytes we want
          clc                  ; (advance, since going to RAM)
          jsr KERNAL_MACPTR    ; (actually acquire bytes)
-         cpx #0               ; if we just read zero bytes, something might
-         bne :+               ; have gone wrong, so check READST ...
-         jsr KERNAL_READST    ; ... if not zero, bail out
-         bne :+
-         sta GR16_returnDetail+0
-         stz GR16_returnDetail+1
+         cpx #0               ; if KERNAL gave us zero, something
+         bne @read_success    ; something may have gone wrong
+
+         jsr KERNAL_READST    ; ERROR! BSOD, but make sure we don't
+         ply                  ; have a stack imbalance upon exist, so in
+         plx                  ; this conditional block, pull .Y and .X
          BSOD_A RC_READ_ERROR
-      :  stx varRemaining     ; how many bytes remaining
+      @read_success:
+         stx varRemaining     ; also how many bytes remaining
          stz varPointer       ; reset the pointer
       ply
    plx
