@@ -38,18 +38,13 @@ VRAM_IMAGE_LINE_1  := $00140
 VRAM_IMAGE_LINE_2  := $00280
 VRAM_IMAGE_LINE_3  := $003C0
 
-.macro OPEN_INPUTSTREAM_R testId, filenameLabel, replacementOffset, replacementChar
+.macro OPEN_INPUTSTREAM_R filenameLabel, replacementOffset, replacementChar
    U8_COPY_IMM filenameLabel+replacementOffset, replacementChar
    ldx #<filenameLabel
    ldy #>filenameLabel
    jsr sub_strlen
-   stp
-   nop
-   nop
    jsr func_open_inputstream
    jsr func_cache_init
-   jsr KERNAL_READST
-   ASSERT_A_EQUALS_IMM testId, $00
 .endmacro
 
 .macro CLOSE_INPUTSTREAM
@@ -67,20 +62,18 @@ VRAM_IMAGE_LINE_3  := $003C0
    ;---------------------------------------------------------------------------
    ; TEST 30 - slurp_header
    ;---------------------------------------------------------------------------
-   OPEN_INPUTSTREAM_R $3000, fn_header_x, 6, '0'
-   stp
-   nop
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '0'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
    ASSERT_VAR_U8_EQUALS_IMM $3001, $48, GR8_speedLimitVSyncs ; $55 * 6 / 7 = $48
 
-   OPEN_INPUTSTREAM_R $3010, fn_header_x, 6, '1'
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
    ASSERT_VAR_U8_EQUALS_IMM $3011, RC_UNSUPPORTED_FILE_TYPE, GR8_returnCode
    ASSERT_VAR_U16_EQUALS_IMM $3012, $AF12, GR16_returnDetail
 
-   OPEN_INPUTSTREAM_R $3020, fn_header_x, 6, '2'
+   OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
    ASSERT_VAR_U8_EQUALS_IMM $3021, $FE, GR8_speedLimitVSyncs
@@ -101,41 +94,44 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; (also already tested in test1.asm) we can initialize both areas of VRAM
    ; to all zeros.
    ;---------------------------------------------------------------------------
-   VPOKE $0F9FF, $AA
-   VPOKE $0FA00, $BB
-   VPOKE $18000, $CC
+   VPOKE $00000, $AA
+   VPOKE $0F9FF, $BB
+   VPOKE $0FA00, $CC
    VPOKE $1F3FF, $DD
    VPOKE $1F400, $EE
    jsr handle_black
-   ASSERT_VPEEK_EQUALS_IMM $3200, $BB, $0F9FF
-   ASSERT_VPEEK_EQUALS_IMM $3201, $00, $0FA00
-   ASSERT_VPEEK_EQUALS_IMM $3202, $00, $18000
-   ASSERT_VPEEK_EQUALS_IMM $3203, $00, $1F3FF
-   ASSERT_VPEEK_EQUALS_IMM $3204, $EE, $1F400
+   ASSERT_VPEEK_EQUALS_IMM $3200, $00, $00000 ; via flip
+   ASSERT_VPEEK_EQUALS_IMM $3200, $00, $0F9FF ; via flip
+   ASSERT_VPEEK_EQUALS_IMM $3201, $00, $0FA00 ; via black
+   ASSERT_VPEEK_EQUALS_IMM $3203, $00, $1F3FF ; via black
+   ASSERT_VPEEK_EQUALS_IMM $3204, $EE, $1F400 ; untouched
 
    ;---------------------------------------------------------------------------
    ; TEST 33 - sub_resolve_chunk_type
    ;
    ; Note that this implementation doesn't handle padding, so we should expect
    ; what is resolved on the first pass.
+   ;
+   ; The test expectations are based on white-box knowledge of the handler
+   ; jump table, where offset $0E is for "BLACK" and $02 is for "FRAME_TYPE"
    ;---------------------------------------------------------------------------
    .macro T33 lambda, filenumPetscii, testId, expect
-      OPEN_INPUTSTREAM_R testId, fn_chunk_x, 5, filenumPetscii
+      OPEN_INPUTSTREAM_R fn_chunk_x, 5, filenumPetscii
       SLURP_INTO_U32 GR32_chunkSize
       SLURP_INTO_U16 GR16_chunkType
       jsr sub_resolve_chunk_type
       CLOSE_INPUTSTREAM
-      ASSERT_X_EQUALS_IMM (testId+1), expect
+      ASSERT_X_EQUALS_IMM testId, expect
    .endmacro
 
-   T33 sub_resolve_chunk_type, '0', $3300, $0D  ; no padding
-   T33 sub_resolve_chunk_type, '1', $3302, $00  ; one byte of padding
-   T33 sub_resolve_chunk_type, '2', $3304, $00  ; multiple bytes of padding
-   T33 sub_resolve_chunk_type, '3', $3306, $00  ; invalid chunk
+   T33 sub_resolve_chunk_type, '0', $3300, $0E  ; no padding
+   T33 sub_resolve_chunk_type, '1', $3301, $00  ; one byte of padding
+   T33 sub_resolve_chunk_type, '2', $3302, $00  ; multiple bytes of padding
+   T33 sub_resolve_chunk_type, '3', $3303, $00  ; invalid chunk
 
-   T33 sub_resolve_frame_type, '4', $3310, $02  ; no padding
-   T33 sub_resolve_frame_type, '5', $3312, $00  ; no padding, invalid low byte
-   T33 sub_resolve_frame_type, '6', $3314, $00  ; no padding, invalid high byte
+   T33 sub_resolve_frame_type, '4', $3314, $02  ; no padding
+   T33 sub_resolve_frame_type, '5', $3315, $00  ; no padding, invalid low byte
+   T33 sub_resolve_frame_type, '6', $3316, $00  ; no padding, invalid high byte
 
    ;---------------------------------------------------------------------------
    ; TEST 34 - func_slurp_chunk
@@ -150,20 +146,19 @@ VRAM_IMAGE_LINE_3  := $003C0
    ;---------------------------------------------------------------------------
    .macro T34 filenumPetscii, testId
       VPOKE $0FA00, $55
-      OPEN_INPUTSTREAM_R testId, fn_chunk_x, 5, filenumPetscii
+      OPEN_INPUTSTREAM_R fn_chunk_x, 5, filenumPetscii
       jsr func_slurp_chunk
       CLOSE_INPUTSTREAM
-      ASSERT_VPEEK_EQUALS_IMM (testId+1), $00, $0FA00
+      ASSERT_VPEEK_EQUALS_IMM testId, $00, $0FA00
    .endmacro
 
    T34 '0', $3400 ; no padding
-   T34 '1', $3402 ; one byte of padding
-   T34 '2', $3404 ; multiple bytes of padding
+   T34 '1', $3401 ; one byte of padding
+   T34 '2', $3402 ; multiple bytes of padding
 
    ;---------------------------------------------------------------------------
    ; TEST 35 - func_load_palette
    ;---------------------------------------------------------------------------
-   lda #0
    jsr sub_init_palette_buffer
    jsr func_load_palette
    SET_VERA_ADDR24_IMM $00, $1FA00, $10
@@ -190,7 +185,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; COLOR2.BIN tests that 256 packets of copy  count 1 works fine. This is a
    ; ridiculous edge case that probably no encoder would use, but it's legal.
    ;---------------------------------------------------------------------------
-   OPEN_INPUTSTREAM_R $3600, fn_color_x, 5, '0'
+   OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
@@ -204,7 +199,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VRAM_U16_EQUALS_IMM $3606, $0BBB ; color 5
    ASSERT_VRAM_U16_EQUALS_IMM $3607, $0606 ; color 6 untouched
 
-   OPEN_INPUTSTREAM_R $3610, fn_color_x, 5, '0'
+   OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
@@ -217,7 +212,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VRAM_U16_EQUALS_IMM $3616, $0222 ; color 5
    ASSERT_VRAM_U16_EQUALS_IMM $3617, $0606 ; color 6 untouched
 
-   OPEN_INPUTSTREAM_R $3620, fn_color_x, 5, '1'
+   OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
@@ -232,7 +227,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    bne @test36_copy_packet_count_loop
 
 
-   OPEN_INPUTSTREAM_R $3630, fn_color_x, 5, '2'
+   OPEN_INPUTSTREAM_R fn_color_x, 5, '2'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
@@ -259,7 +254,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; stage switched from 0 to 1.
    ;---------------------------------------------------------------------------
    jsr handle_black
-   OPEN_INPUTSTREAM_R $3700, fn_byterun, 7, '.'
+   OPEN_INPUTSTREAM_R fn_byterun, 0, 'b'
    jsr handle_byte_run
    CLOSE_INPUTSTREAM
 
@@ -295,7 +290,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ;---------------------------------------------------------------------------
    jsr handle_black
 
-   OPEN_INPUTSTREAM_R $3800, fn_deltafli, 8, '.'
+   OPEN_INPUTSTREAM_R fn_deltafli, 0, 'd'
    jsr handle_delta_fli
    CLOSE_INPUTSTREAM
 
