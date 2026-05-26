@@ -21,7 +21,6 @@
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
 ZP24_vramOffset         := $24
-ZP24_chunkReads         := $27 ; how many bytes have been read for curr chunk
 ZP16_cachePointer       := $2A
 ZP8_cacheRemaining      := $2C
 ZP8_cacheScratch        := $2D
@@ -62,11 +61,11 @@ GR8_scratch4          := GLOBAL_VAR_BASE + $59
 GR16_debugTimerValue  := GLOBAL_VAR_BASE + $5A
 
 GR32_chunkSize        := GLOBAL_VAR_BASE + $60
-GR16_frameIndex       := GLOBAL_VAR_BASE + $64
-GR16_frameCount       := GLOBAL_VAR_BASE + $66
-GR16_chunkIndex       := GLOBAL_VAR_BASE + $68
-GR16_chunkCount       := GLOBAL_VAR_BASE + $6A
-GR16_chunkType        := GLOBAL_VAR_BASE + $6C
+GR16_chunkType        := GLOBAL_VAR_BASE + $64
+GR16_frameIndex       := GLOBAL_VAR_BASE + $66
+GR16_frameCount       := GLOBAL_VAR_BASE + $68
+GR16_chunkIndex       := GLOBAL_VAR_BASE + $6A
+GR16_chunkCount       := GLOBAL_VAR_BASE + $6C
 GR16_speedVsyncs      := GLOBAL_VAR_BASE + $6E
 
 GR8_speedLimitVSyncs  := GLOBAL_VAR_BASE + $70  ; speed limit as VSyncs
@@ -81,11 +80,8 @@ GR16_debugSpeedSkips  := GLOBAL_VAR_BASE + $78
 ;------------------------------------------------------------------------------
 RC_SUCCESS                    := 0
 RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
-RC_UNSUPPORTED_CHUNK_TYPE     := 2  ; type
-RC_INVALID_CHUNK_TYPE         := 3  ; type
-RC_UNEXPECTED_CHUNK_TYPE      := 4  ; type
-RC_UNSUPPORTED_CHUNK_SIZE     := 5  ; type (not the size!)
-RC_READ_ERROR                 := 6  ; lower byte is READST value
+RC_INVALID_CHUNK_TYPE         := 2  ; type
+RC_READ_ERROR                 := 3  ; lower byte is READST value
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode

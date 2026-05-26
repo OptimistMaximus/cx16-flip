@@ -1,0 +1,5 @@
+# Chunk Type no padding
+
+01234567 ; DWORD size
+0D00     ;  WORD type
+88888888 ;      (data)

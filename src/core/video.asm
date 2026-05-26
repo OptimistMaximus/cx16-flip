@@ -195,7 +195,7 @@
    jsr func_prep_for_active_buffering           ; now ZP24_vramOffset is source
    U24_COPY_VAR GR24_scratch1, ZP24_vramOffset  ; store it in scratch 1
    U24_SUB_IMM ZP24_vramOffset, VRAM_BUFF_IMAGE ; subtract $FA00 to get target
-   
+
    lda #%00000100                   ; DCSEL=2
    sta VERA_CTRL
    lda #%01100000                   ; Enable Cache Fill & Cache Write

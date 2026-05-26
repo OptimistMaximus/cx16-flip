@@ -6,7 +6,6 @@
 .import func_slurp_header
 .import func_slurp_chunk
 .import handle_invalid
-.import handle_unsupported
 .import handle_color_256
 .import handle_color_64
 .import handle_delta_fli
@@ -14,6 +13,7 @@
 .import handle_byte_run
 .import handle_fli_copy
 .import func_load_palette
+.import sub_resolve_chunk_type
 
 .include "../include/global.inc"
 .include "../include/math.inc"
@@ -26,7 +26,7 @@
 .segment "RODATA"     ; Read-Only data
 
 fn_header_x: .asciiz "headerx.bin,r"
-fn_frame:    .asciiz "frame.bin,r"
+fn_chunk_x:  .asciiz "chunkx.bin,r"
 fn_color_x:  .asciiz "colorx.bin,r"
 fn_byterun:  .asciiz "byterun.bin,r"
 fn_deltafli: .asciiz "deltafli.bin,r"
@@ -38,21 +38,18 @@ VRAM_IMAGE_LINE_1  := $00140
 VRAM_IMAGE_LINE_2  := $00280
 VRAM_IMAGE_LINE_3  := $003C0
 
-.macro OPEN_INPUTSTREAM_R filenameLabel, replacementOffset, replacementChar
+.macro OPEN_INPUTSTREAM_R testId, filenameLabel, replacementOffset, replacementChar
    U8_COPY_IMM filenameLabel+replacementOffset, replacementChar
    ldx #<filenameLabel
    ldy #>filenameLabel
    jsr sub_strlen
+   stp
+   nop
+   nop
    jsr func_open_inputstream
    jsr func_cache_init
-.endmacro
-
-.macro OPEN_INPUTSTREAM filenameLabel
-   ldx #<filenameLabel
-   ldy #>filenameLabel
-   jsr sub_strlen
-   jsr func_open_inputstream
-   jsr func_cache_init
+   jsr KERNAL_READST
+   ASSERT_A_EQUALS_IMM testId, $00
 .endmacro
 
 .macro CLOSE_INPUTSTREAM
@@ -65,102 +62,125 @@ VRAM_IMAGE_LINE_3  := $003C0
    pla
 .endmacro
 
-; simple subroutine to zero out $00000 to $1F8C0
-; this covers both bitmaps and the palette buffer
-.proc sub_zero_bitmaps: near
-   SET_VERA_ADDR24_IMM $00, $00000, $10
-   lda #0
-   ldx #$FC               ; $FC * $100 = $FC00 = $1F800
-@outer_loop:
-   ldy #0
-@inner_loop:
-   sta VERA_DATA0
-   sta VERA_DATA0
-   dey
-   bne @inner_loop
-   dex
-   bne @outer_loop
-
-   ldx #$C0
-@remainder_loop:
-   sta VERA_DATA0
-   dex
-   bne @remainder_loop
-   rts
-.endproc
-
-.proc sub_init_palette_buffer: near
-   SET_VERA_ADDR24_IMM $00, $1F400, $10
-   ldy #0
-@loop:
-   sty VERA_DATA0
-   sty VERA_DATA0
-   iny
-   bne @loop
-   rts
-.endproc
-
 .proc test_suite_2: near
-
 
    ;---------------------------------------------------------------------------
    ; TEST 30 - slurp_header
    ;---------------------------------------------------------------------------
-   OPEN_INPUTSTREAM_R fn_header_x, 6, '0'
+   OPEN_INPUTSTREAM_R $3000, fn_header_x, 6, '0'
+   stp
+   nop
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3000, $48, GR8_speedLimitVSyncs ; $55 * 6 / 7 = $48
+   ASSERT_VAR_U8_EQUALS_IMM $3001, $48, GR8_speedLimitVSyncs ; $55 * 6 / 7 = $48
 
-   OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
+   OPEN_INPUTSTREAM_R $3010, fn_header_x, 6, '1'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3010, RC_UNSUPPORTED_FILE_TYPE, GR8_returnCode
-   ASSERT_VAR_U16_EQUALS_IMM $3011, $AF12, GR16_returnDetail
+   ASSERT_VAR_U8_EQUALS_IMM $3011, RC_UNSUPPORTED_FILE_TYPE, GR8_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3012, $AF12, GR16_returnDetail
 
-   OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
+   OPEN_INPUTSTREAM_R $3020, fn_header_x, 6, '2'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3020, $FE, GR8_speedLimitVSyncs
+   ASSERT_VAR_U8_EQUALS_IMM $3021, $FE, GR8_speedLimitVSyncs
 
    ;---------------------------------------------------------------------------
    ; TEST 31 - handle_invalid
-   ;           handle_unsupported
    ;---------------------------------------------------------------------------
    U16_COPY_IMM GR16_chunkType, $DEAD
    jsr handle_invalid
    ASSERT_VAR_U8_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE, GR8_returnCode
    ASSERT_VAR_U16_EQUALS_IMM $3101, $DEAD, GR16_returnDetail
 
-   U16_COPY_IMM GR16_chunkType, $BEEF
-   jsr handle_unsupported
-   ASSERT_VAR_U8_EQUALS_IMM $3110, RC_UNSUPPORTED_CHUNK_TYPE, GR8_returnCode
-   ASSERT_VAR_U16_EQUALS_IMM $3111, $BEEF, GR16_returnDetail
+   ;---------------------------------------------------------------------------
+   ; TEST 32 - handle_black
+   ;
+   ; Test this early so we can use it in subsequent tests to establish VRAM
+   ; to a known state. When used in conjunction with func_vera_flip_stage
+   ; (also already tested in test1.asm) we can initialize both areas of VRAM
+   ; to all zeros.
+   ;---------------------------------------------------------------------------
+   VPOKE $0F9FF, $AA
+   VPOKE $0FA00, $BB
+   VPOKE $18000, $CC
+   VPOKE $1F3FF, $DD
+   VPOKE $1F400, $EE
+   jsr handle_black
+   ASSERT_VPEEK_EQUALS_IMM $3200, $BB, $0F9FF
+   ASSERT_VPEEK_EQUALS_IMM $3201, $00, $0FA00
+   ASSERT_VPEEK_EQUALS_IMM $3202, $00, $18000
+   ASSERT_VPEEK_EQUALS_IMM $3203, $00, $1F3FF
+   ASSERT_VPEEK_EQUALS_IMM $3204, $EE, $1F400
 
    ;---------------------------------------------------------------------------
-   ; TEST 32 -
+   ; TEST 33 - sub_resolve_chunk_type
+   ;
+   ; Note that this implementation doesn't handle padding, so we should expect
+   ; what is resolved on the first pass.
    ;---------------------------------------------------------------------------
+   .macro T33 lambda, filenumPetscii, testId, expect
+      OPEN_INPUTSTREAM_R testId, fn_chunk_x, 5, filenumPetscii
+      SLURP_INTO_U32 GR32_chunkSize
+      SLURP_INTO_U16 GR16_chunkType
+      jsr sub_resolve_chunk_type
+      CLOSE_INPUTSTREAM
+      ASSERT_X_EQUALS_IMM (testId+1), expect
+   .endmacro
 
+   T33 sub_resolve_chunk_type, '0', $3300, $0D  ; no padding
+   T33 sub_resolve_chunk_type, '1', $3302, $00  ; one byte of padding
+   T33 sub_resolve_chunk_type, '2', $3304, $00  ; multiple bytes of padding
+   T33 sub_resolve_chunk_type, '3', $3306, $00  ; invalid chunk
+
+   T33 sub_resolve_frame_type, '4', $3310, $02  ; no padding
+   T33 sub_resolve_frame_type, '5', $3312, $00  ; no padding, invalid low byte
+   T33 sub_resolve_frame_type, '6', $3314, $00  ; no padding, invalid high byte
 
    ;---------------------------------------------------------------------------
-   ; TEST 33 - func_load_palette
+   ; TEST 34 - func_slurp_chunk
+   ;
+   ; Now that handle_black and sub_resolve_chunk_type are confirmed to work,
+   ; this test can focus on looking for evidence that padding is handled
+   ; correctly. This will re-use the chunk files 0, 1, and 2, because they all
+   ; have chunk type BLACK type with varying amounts of padding.
+   ;
+   ; Since handle_black is already confirmed to work, we don't need to verify
+   ; the whole vram buffer; we can just verify $FA00 turns to zero.
    ;---------------------------------------------------------------------------
+   .macro T34 filenumPetscii, testId
+      VPOKE $0FA00, $55
+      OPEN_INPUTSTREAM_R testId, fn_chunk_x, 5, filenumPetscii
+      jsr func_slurp_chunk
+      CLOSE_INPUTSTREAM
+      ASSERT_VPEEK_EQUALS_IMM (testId+1), $00, $0FA00
+   .endmacro
+
+   T34 '0', $3400 ; no padding
+   T34 '1', $3402 ; one byte of padding
+   T34 '2', $3404 ; multiple bytes of padding
+
+   ;---------------------------------------------------------------------------
+   ; TEST 35 - func_load_palette
+   ;---------------------------------------------------------------------------
+   lda #0
    jsr sub_init_palette_buffer
    jsr func_load_palette
    SET_VERA_ADDR24_IMM $00, $1FA00, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3300, $0000
-   ASSERT_VRAM_U16_EQUALS_IMM $3301, $0101
-   ASSERT_VRAM_U16_EQUALS_IMM $3302, $0202
+   ASSERT_VRAM_U16_EQUALS_IMM $3500, $0000
+   ASSERT_VRAM_U16_EQUALS_IMM $3501, $0101
+   ASSERT_VRAM_U16_EQUALS_IMM $3502, $0202
    SET_VERA_ADDR24_IMM $00, $1FB00, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3303, $8080
-   ASSERT_VRAM_U16_EQUALS_IMM $3304, $8181
-   ASSERT_VRAM_U16_EQUALS_IMM $3305, $8282
+   ASSERT_VRAM_U16_EQUALS_IMM $3503, $8080
+   ASSERT_VRAM_U16_EQUALS_IMM $3504, $8181
+   ASSERT_VRAM_U16_EQUALS_IMM $3505, $8282
    SET_VERA_ADDR24_IMM $00, $1FBFA, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3306, $FDFD
-   ASSERT_VRAM_U16_EQUALS_IMM $3307, $FEFE
-   ASSERT_VRAM_U16_EQUALS_IMM $3308, $FFFF
+   ASSERT_VRAM_U16_EQUALS_IMM $3506, $FDFD
+   ASSERT_VRAM_U16_EQUALS_IMM $3507, $FEFE
+   ASSERT_VRAM_U16_EQUALS_IMM $3508, $FFFF
 
    ;---------------------------------------------------------------------------
-   ; TEST 34 - handle_color_64
+   ; TEST 36 - handle_color_64
    ;           handle_color_256
    ;
    ; COLOR0.BIN is tested once with 64 color parsing, and once with 256.
@@ -170,63 +190,63 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; COLOR2.BIN tests that 256 packets of copy  count 1 works fine. This is a
    ; ridiculous edge case that probably no encoder would use, but it's legal.
    ;---------------------------------------------------------------------------
-   OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
+   OPEN_INPUTSTREAM_R $3600, fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
 
    SET_VERA_ADDR24_IMM $00, $1F400, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3401, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3402, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3403, $0EA7 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3404, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3405, $0666 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3406, $0BBB ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3407, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3601, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3602, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3603, $0EA7 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3604, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3605, $0666 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3606, $0BBB ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3607, $0606 ; color 6 untouched
 
-   OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
+   OPEN_INPUTSTREAM_R $3610, fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    SET_VERA_ADDR24_IMM $00, $1F400, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3411, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3412, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3413, $0321 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3414, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3415, $0111 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3416, $0222 ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3417, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3611, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3612, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3613, $0321 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3614, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3615, $0111 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3616, $0222 ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3617, $0606 ; color 6 untouched
 
-   OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
+   OPEN_INPUTSTREAM_R $3620, fn_color_x, 5, '1'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    SET_VERA_ADDR24_IMM $00, $1F400, $10
 
    ldy #0
-@test32_copy_packet_count_loop:
-   ASSERT_VRAM_U16_EQUALS_IMM $3421, $0111  ; color 0,2,4,etc
-   ASSERT_VRAM_U16_EQUALS_IMM $3422, $0222  ; color 1,3,5,etc
+@test36_copy_packet_count_loop:
+   ASSERT_VRAM_U16_EQUALS_IMM $3621, $0111  ; color 0,2,4,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3622, $0222  ; color 1,3,5,etc
    iny
    cpy #128
-   bne @test32_copy_packet_count_loop
+   bne @test36_copy_packet_count_loop
 
 
-   OPEN_INPUTSTREAM_R fn_color_x, 5, '2'
+   OPEN_INPUTSTREAM_R $3630, fn_color_x, 5, '2'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    ldy #0
-@test32_verify_packet_count_loop:
-   ASSERT_VRAM_U16_EQUALS_IMM $3431, $0111  ; color 0,2,4,etc
-   ASSERT_VRAM_U16_EQUALS_IMM $3432, $0222  ; color 1,3,5,etc
+@test36_verify_packet_count_loop:
+   ASSERT_VRAM_U16_EQUALS_IMM $3631, $0111  ; color 0,2,4,etc
+   ASSERT_VRAM_U16_EQUALS_IMM $3632, $0222  ; color 1,3,5,etc
    iny
    cpy #128
-   bne @test32_verify_packet_count_loop
+   bne @test36_verify_packet_count_loop
 
    ;---------------------------------------------------------------------------
-   ; TEST 35 - handle_byte_run
+   ; TEST 37 - handle_byte_run
    ;
    ; This test zeros out the first 6 bytes of both the stage 0 and stage 1
    ; bitmaps, then establishes stage 0 as active (so we expect updates to
@@ -238,30 +258,30 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; Expect Stage 0 to be untouched, Stage 1 to have the byte run, and the
    ; stage switched from 0 to 1.
    ;---------------------------------------------------------------------------
-   jsr sub_zero_bitmaps
-   OPEN_INPUTSTREAM fn_byterun
+   jsr handle_black
+   OPEN_INPUTSTREAM_R $3700, fn_byterun, 7, '.'
    jsr handle_byte_run
    CLOSE_INPUTSTREAM
 
    SET_VERA_ADDR24_IMM $00, $00000, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $3510, $00 ; packet 0 start (line 0)
+   ASSERT_VRAM_U8_EQUALS_IMM $3710, $00 ; packet 0 start (line 0)
    SET_VERA_ADDR24_IMM $00, $0007E, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $3511, $00 ; packet 0 end
-   ASSERT_VRAM_U8_EQUALS_IMM $3512, $01 ; packet 1 start
-   ASSERT_VRAM_U8_EQUALS_IMM $3513, $02
-   ASSERT_VRAM_U8_EQUALS_IMM $3514, $03
-   ASSERT_VRAM_U8_EQUALS_IMM $3515, $04
-   ASSERT_VRAM_U8_EQUALS_IMM $3516, $05 ; packet 1 end
-   ASSERT_VRAM_U8_EQUALS_IMM $3517, $06 ; packet 2 start
+   ASSERT_VRAM_U8_EQUALS_IMM $3711, $00 ; packet 0 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3712, $01 ; packet 1 start
+   ASSERT_VRAM_U8_EQUALS_IMM $3713, $02
+   ASSERT_VRAM_U8_EQUALS_IMM $3714, $03
+   ASSERT_VRAM_U8_EQUALS_IMM $3715, $04
+   ASSERT_VRAM_U8_EQUALS_IMM $3716, $05 ; packet 1 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3717, $06 ; packet 2 start
    SET_VERA_ADDR24_IMM $00, $000F3, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $3518, $06 ; packet 2 end
-   ASSERT_VRAM_U8_EQUALS_IMM $3519, $07 ; packet 3 start
+   ASSERT_VRAM_U8_EQUALS_IMM $3718, $06 ; packet 2 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3719, $07 ; packet 3 start
    SET_VERA_ADDR24_IMM $00, $0013F, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $3520, $07 ; packet 3 end
-   ASSERT_VRAM_U8_EQUALS_IMM $3521, $01 ; packet 4 start (line 1)
+   ASSERT_VRAM_U8_EQUALS_IMM $3720, $07 ; packet 3 end
+   ASSERT_VRAM_U8_EQUALS_IMM $3721, $01 ; packet 4 start (line 1)
 
    ;---------------------------------------------------------------------------
-   ; TEST 36 - handle_delta_fli
+   ; TEST 38 - handle_delta_fli
    ;
    ; The test data establishes the initial line number as line 4, with line
    ; count 2.
@@ -273,52 +293,54 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; line 4 -> 0500 + F800 = 0FD00   <--- enter delta
    ; line 5 -> 0640 + F800 = 0FE40   <--- leave delta
    ;---------------------------------------------------------------------------
-   jsr sub_zero_bitmaps
+   jsr handle_black
 
-   OPEN_INPUTSTREAM fn_deltafli
+   OPEN_INPUTSTREAM_R $3800, fn_deltafli, 8, '.'
    jsr handle_delta_fli
    CLOSE_INPUTSTREAM
 
    SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
-   ASSERT_VRAM_U8_EQUALS_IMM $3610, $00 ; pixel 0
-   ASSERT_VRAM_U8_EQUALS_IMM $3611, $00 ; pixel 1
-   ASSERT_VRAM_U8_EQUALS_IMM $3612, $00 ; pixel 2
+   ASSERT_VRAM_U8_EQUALS_IMM $3810, $00 ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3811, $00 ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3812, $00 ; pixel 2
 
    SET_VERA_ADDR24_IMM $00, $00500, $10 ; line 5
-   ASSERT_VRAM_U8_EQUALS_IMM $3613, $00 ; pixel 0 (skipped)
-   ASSERT_VRAM_U8_EQUALS_IMM $3614, $00 ; pixel 1 (skipped)
-   ASSERT_VRAM_U8_EQUALS_IMM $3615, $00 ; pixel 2 (skipped)
-   ASSERT_VRAM_U8_EQUALS_IMM $3616, $00 ; pixel 3 (skipped)
-   ASSERT_VRAM_U8_EQUALS_IMM $3617, $AA ; pixel 4
-   ASSERT_VRAM_U8_EQUALS_IMM $3618, $AA ; pixel 5
-   ASSERT_VRAM_U8_EQUALS_IMM $3619, $AA ; pixel 6
-   ASSERT_VRAM_U8_EQUALS_IMM $3620, $00 ; pixel 7 (skipped)
-   ASSERT_VRAM_U8_EQUALS_IMM $3621, $BB ; pixel 8
-   ASSERT_VRAM_U8_EQUALS_IMM $3622, $CC ; pixel 9
-   ASSERT_VRAM_U8_EQUALS_IMM $3623, $DD ; pixel 10
-   ASSERT_VRAM_U8_EQUALS_IMM $3624, $00 ; pixel 11 (skipped)
-   ASSERT_VRAM_U8_EQUALS_IMM $3625, $EE ; pixel 12
-   ASSERT_VRAM_U8_EQUALS_IMM $3626, $EE ; pixel 13
-   ASSERT_VRAM_U8_EQUALS_IMM $3627, $00 ; pixel 14 (untouched)
+   ASSERT_VRAM_U8_EQUALS_IMM $3813, $00 ; pixel 0 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3814, $00 ; pixel 1 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3815, $00 ; pixel 2 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3816, $00 ; pixel 3 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3817, $AA ; pixel 4
+   ASSERT_VRAM_U8_EQUALS_IMM $3818, $AA ; pixel 5
+   ASSERT_VRAM_U8_EQUALS_IMM $3819, $AA ; pixel 6
+   ASSERT_VRAM_U8_EQUALS_IMM $3820, $00 ; pixel 7 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3821, $BB ; pixel 8
+   ASSERT_VRAM_U8_EQUALS_IMM $3822, $CC ; pixel 9
+   ASSERT_VRAM_U8_EQUALS_IMM $3823, $DD ; pixel 10
+   ASSERT_VRAM_U8_EQUALS_IMM $3824, $00 ; pixel 11 (skipped)
+   ASSERT_VRAM_U8_EQUALS_IMM $3825, $EE ; pixel 12
+   ASSERT_VRAM_U8_EQUALS_IMM $3826, $EE ; pixel 13
+   ASSERT_VRAM_U8_EQUALS_IMM $3827, $00 ; pixel 14 (untouched)
 
    SET_VERA_ADDR24_IMM $00, $00640, $10 ; line 6
-   ASSERT_VRAM_U8_EQUALS_IMM $3630, $55 ; pixel 0
-   ASSERT_VRAM_U8_EQUALS_IMM $3631, $55 ; pixel 1
-   ASSERT_VRAM_U8_EQUALS_IMM $3632, $55 ; pixel 2
+   ASSERT_VRAM_U8_EQUALS_IMM $3830, $55 ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3831, $55 ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3832, $55 ; pixel 2
 
    SET_VERA_ADDR24_IMM $00, $00780, $10 ; line 7
-   ASSERT_VRAM_U8_EQUALS_IMM $3640, $00 ; pixel 0
-   ASSERT_VRAM_U8_EQUALS_IMM $3641, $00 ; pixel 1
-   ASSERT_VRAM_U8_EQUALS_IMM $3642, $00 ; pixel 2
+   ASSERT_VRAM_U8_EQUALS_IMM $3840, $00 ; pixel 0
+   ASSERT_VRAM_U8_EQUALS_IMM $3841, $00 ; pixel 1
+   ASSERT_VRAM_U8_EQUALS_IMM $3842, $00 ; pixel 2
 
    ;---------------------------------------------------------------------------
-   ; TEST 36 -
+   ; TEST 39 - handle_fli_copy
    ;---------------------------------------------------------------------------
+
+
 
 
    PASS
-
 .endproc
+
 
 
 .proc sub_strlen: near
@@ -326,13 +348,24 @@ VRAM_IMAGE_LINE_3  := $003C0
    sty ZP_VOLATILE_PTR+1
    phy
       ldy #0
-   @loop:
+@loop:
       lda (ZP_VOLATILE_PTR),y
       beq @loop_done
       iny
       bra @loop
-   @loop_done:
+@loop_done:
       tya
    ply
+   rts
+.endproc
+
+.proc sub_init_palette_buffer: near
+   SET_VERA_ADDR24_IMM $00, $1F400, $10
+   ldy #0
+@loop:
+   sty VERA_DATA0
+   sty VERA_DATA0
+   iny
+   bne @loop
    rts
 .endproc

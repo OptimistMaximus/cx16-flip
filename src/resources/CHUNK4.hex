@@ -1,0 +1,6 @@
+# Frame Type, valid
+
+00       ;      (padding)
+01234567 ; DWORD size
+FAF1     ;  WORD type
+88888888 ;      (data)

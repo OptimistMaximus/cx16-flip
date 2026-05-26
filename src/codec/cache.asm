@@ -17,18 +17,6 @@ varPointer   := ZP16_cachePointer
 varRemaining := ZP8_cacheRemaining
 varScratch   := ZP8_cacheScratch
 
-.macro BUMP
-   pha
-      U24_INC ZP24_chunkReads
-   pla
-.endmacro
-
-.macro BUMP_A
-   pha
-      U24_ADD_A ZP24_chunkReads
-   pla
-.endmacro
-
 ;==============================================================================
 ; func_cache_init
 ;
@@ -76,7 +64,6 @@ varScratch   := ZP8_cacheScratch
 ; cost 47500 cycles, but 1 MACPTR call and 100 cache hits would be 3700 cycles.
 ;==============================================================================
 .proc func_cache_read_into_a: near
-   BUMP
    lda varRemaining
    bne :+
    jsr sub_load_page
@@ -142,7 +129,6 @@ varScratch   := ZP8_cacheScratch
 ;------------------------------------------------------------------------------
 .proc handle_lte_read: near
    pha                         ; squirrel away .A ($20) for later
-      BUMP_A
       clc                      ;
       adc varPointer           ; .A is now $20 + $88 = $A8
       sta varScratch           ; store it in scratch to use as loop max
@@ -179,8 +165,6 @@ varScratch   := ZP8_cacheScratch
       sta varScratch           ; over the drain loop. Regardless, we need
       beq @remaining_drained   ; to know the remaining count later to adjust
                                ; the follow-up read, so store in scratch.
-
-      BUMP_A
       phy
          ldy #0                ; reading to the end is a special case that
       :  lda (varPointer),y    ; can be done more efficiently than the

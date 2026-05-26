@@ -1,0 +1,5 @@
+# Frame Type, invalid high byte
+
+10000000 ; DWORD size
+FACE     ;  WORD type
+88888888 ;      (data)

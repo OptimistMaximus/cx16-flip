@@ -1,7 +1,8 @@
-.export func_slurp_frame
 .export func_slurp_chunk
+.export sub_resolve_chunk_type ; exported for unit test purpose only
 
 .import handle_invalid
+.import handle_frame_type
 .import handle_color_256
 .import handle_color_64
 .import handle_delta_fli
@@ -31,6 +32,7 @@
 
 chunk_type_jump_table:     ; listed in order of most to least frequent
 .word handle_invalid       ; $00              (not a real type, i.e. invalid)
+.word handle_frame_type    ; $F1FA FRAME_TYPE frame with subchunks
 .word handle_delta_fli     ; $0C   DELTA_FLI  delta image, byte oriented RLE
 .word handle_color_64      ; $0B   COLOR_64   64-level color palette
 .word handle_color_256     ; $04   COLOR_256  256-level color palette
@@ -48,74 +50,37 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .include "../include/slurp.inc"
 
 ;==============================================================================
-; func_slurp_frame
-;
-; Reads the next 16 bytes assuming it MUST be a FRAME_TYPE chunk.  Since only
-; FLI is supported, this is a reasonable assumption.  The chunk type will be
-; sanity-checked, and the chunks field is used to iterate over the sub-chunks.
-; After each subchunk, the read tracker is compared against the expected
-; chunk size, and the stream is advanced beyond any inferred padding.
-;==============================================================================
-.proc func_slurp_frame: near
-   SLURP_INTO_U32 GR32_chunkSize
-   SLURP_INTO_U16 GR16_chunkType
-   U16_CMP_IMM GR16_chunkType, $F1FA
-   beq @assumption_met
-   BSOD RC_UNEXPECTED_CHUNK_TYPE, GR16_chunkType
-
-   lda GR32_chunkSize
-   beq @assumption_met
-   BSOD RC_UNSUPPORTED_CHUNK_SIZE, GR16_chunkType
-
-@assumption_met:
-
-   U16_STZ        GR16_chunkIndex
-   SLURP_INTO_U16 GR16_chunkCount
-   SLURP_INTO_OBLIVION 8
-
-@subchunk_loop:
-   U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount  ; check first in case zero
-   beq @subchunk_loop_done
-   U24_STZ ZP24_chunkReads
-   jsr func_slurp_chunk
-   jsr sub_mitigate_padding
-   U16_INC     GR16_chunkIndex
-   bra @subchunk_loop
-@subchunk_loop_done:
-   rts
-.endproc
-
-.proc sub_mitigate_padding: near
-   U24_CMP_VAR ZP24_chunkReads, GR32_chunkSize
-   bcc @handle_padding
-   rts
-@handle_padding:
-   jsr func_cache_read_into_a
-   U24_CMP_VAR ZP24_chunkReads, GR32_chunkSize
-   bne @handle_padding
-   rts
-.endproc
-
-;==============================================================================
 ; func_slurp_chunk
 ;
 ; Reads the chunk size and chunk type, then looks up the appropriate handler
 ; for the chunk type and invokes it.
 ;==============================================================================
 .proc func_slurp_chunk: near
-
-   stz ZP8_imageVSyncsElapsed
-   U24_STZ ZP24_chunkReads
    SLURP_INTO_U32 GR32_chunkSize
    SLURP_INTO_U16 GR16_chunkType
-   jsr func_resolve_chunk_type
+@resolve_loop:
+   jsr sub_resolve_chunk_type       ; resolve
+   cpx #0                           ; compare to 0 (invalid)
+   bne @resolution_done             ; if not invalid, we're done!
+   jsr KERNAL_READST                ; else it was zero, and we should see if
+   bne @resolution_done             ; read error occurred, if not, try again
+                                    ; but if so, give up and process invalid
+
+   U8_COPY_VAR GR32_chunkSize+0, GR32_chunkSize+1 ; otherwise, shift all bytes
+   U8_COPY_VAR GR32_chunkSize+1, GR32_chunkSize+2 ; over by one and slurp in
+   U8_COPY_VAR GR32_chunkSize+2, GR32_chunkSize+3 ; the next byte, then try
+   U8_COPY_VAR GR32_chunkSize+3, GR16_chunkType+0 ; again
+   U8_COPY_VAR GR16_chunkType+0, GR16_chunkType+1
+   bra @resolve_loop
+
+@resolution_done:
    jmp (chunk_type_jump_table,x)
 .endproc
 
 .macro SET_OFFSET_AND_RETURN_IF_MATCH chunkTypeLowerByte, jumpTableOffset
-   cmp #chunkTypeLowerByte
-   bne :+
-   ldx #jumpTableOffset
+   cmp #chunkTypeLowerByte       ; compare .A with the lower byte
+   bne :+                        ; if it's not equal, skip ahead
+   ldx #jumpTableOffset          ; if we fall through to here then it's legit
    rts
 :
 .endmacro
@@ -125,19 +90,36 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    rts
 .endmacro
 
+;------------------------------------------------------------------------------
+; sub_resolve_chunk_type
+; @param GR32_chunkSize holds the chunk size
 ; @param GR16_chunkType holds the chunk type
-; @effect .X holds the jump table offset to the handler
-.proc func_resolve_chunk_type: near
-   lda GR16_chunkType+1
-   bne @invalid_chunk_type
+; @effect .X holds the jump table offset to the handler (zero means invalid)
+;------------------------------------------------------------------------------
+.proc sub_resolve_chunk_type: near
+   U32_CMP_IMM GR32_chunkSize, 6   ; if chunk size is less than 5,
+   bcc @neither_byte_is_cool       ; the type can't possibly be legit
 
+   lda GR16_chunkType+1
+   beq @high_byte_is_cool
+   cmp #$F1
+   beq @high_byte_is_cool
+   bra @neither_byte_is_cool
+
+@high_byte_is_cool:
    lda GR16_chunkType+0
-   SET_OFFSET_AND_RETURN_IF_MATCH $0C, $02 ; DELTA_FLI
-   SET_OFFSET_AND_RETURN_IF_MATCH $0B, $04 ; COLOR_64
-   SET_OFFSET_AND_RETURN_IF_MATCH $04, $06 ; COLOR_256
-   SET_OFFSET_AND_RETURN_IF_MATCH $0F, $08 ; BYTE_RUN
-   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0A ; FLI_COPY
-   SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0C ; BLACK
-@invalid_chunk_type:
+   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
+   SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
+   SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
+   SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
+   SET_OFFSET_AND_RETURN_IF_MATCH $0F, $0A ; BYTE_RUN
+   SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
+   SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0E ; BLACK
+
+@neither_byte_is_cool:
    SET_OFFSET_TO_ZERO_AND_RETURN
 .endproc
+
+
+
+

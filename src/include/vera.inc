@@ -209,4 +209,15 @@ VERA_ADDR_SPRITE_ATTRS_2 = $1FC10 ; [IMMOBILE] Sprite Attrs for Sprite 2, etc
    sta VERA_ADDRx_H
 .endmacro
 
+.macro VPEEK addr
+   SET_VERA_ADDR24_IMM $01, addr, $10
+   lda VERA_DATA1
+.endmacro
+
+.macro VPOKE addr, value
+   SET_VERA_ADDR24_IMM $01, addr, $10
+   lda #value
+   sta VERA_DATA1
+.endmacro
+
 .endif
