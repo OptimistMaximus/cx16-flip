@@ -14,12 +14,16 @@
    U16_STZ GR16_speedVsyncs
    SLURP_INTO_U16 GR16_chunkCount
    SLURP_INTO_OBLIVION 8
-@subchunk_loop:
-   U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount  ; check first in case zero
+   
+   U16_CMP_VAR GR16_chunkCount, 0
    beq @subchunk_loop_done
+   
+   U16_STZ GR16_chunkIndex
+@subchunk_loop:
    jsr func_slurp_chunk
    U16_INC GR16_chunkIndex
-   bra @subchunk_loop
+   U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount
+   bne @subchunk_loop
 @subchunk_loop_done:
    jmp func_snooze_if_necessary
 .endproc

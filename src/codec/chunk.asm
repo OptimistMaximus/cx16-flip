@@ -58,14 +58,14 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .proc func_slurp_chunk: near
    SLURP_INTO_U32 GR32_chunkSize
    SLURP_INTO_U16 GR16_chunkType
-   U8_COPY_IMM GR8_paddingRetries, 2
+   U8_COPY_IMM GR8_paddingTries, 120
 @resolve_loop:
    jsr sub_resolve_chunk_type       ; resolve
    cpx #0                           ; compare to 0 (invalid) ...
    bne @resolution_done             ; ... if not invalid, we're done!
 
-   dec GR8_paddingRetries           ; only tolerate max padding
-   beq @resolution_done             ; NARF!
+   dec GR8_paddingTries             ; only tolerate max padding
+   beq @resolution_done
 
    U8_COPY_VAR GR32_chunkSize+0, GR32_chunkSize+1 ; otherwise, shift all bytes
    U8_COPY_VAR GR32_chunkSize+1, GR32_chunkSize+2 ; over by one and slurp in

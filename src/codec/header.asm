@@ -33,7 +33,6 @@ FILE_TYPE_FLI := $AF11
    BSOD RC_UNSUPPORTED_FILE_TYPE, varFileType
 @fileType_is_fli:
 
-   U16_STZ        GR16_frameIndex
    SLURP_INTO_U16 GR16_frameCount
    SLURP_INTO_OBLIVION 8  ; width, height, depth, flags
 
