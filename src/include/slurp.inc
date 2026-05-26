@@ -10,15 +10,6 @@
 .import func_cache_read_into_vram
 .import func_cache_dupe_into_vram
 
-.macro RTS_IF_NO_MORE_BYTES        ; NARF! TODO do we need this?
-   lda ZP8_cacheRemaining
-   bne :+
-   jsr KERNAL_READST
-   beq :+
-   rts
-:
-.endmacro
-
 ;==============================================================================
 ; SLURP_INTO_U8
 ;

@@ -11,10 +11,10 @@
 .include "../include/video.inc"
 
 .proc handle_frame_type: near
+   U16_STZ GR16_speedVsyncs
    SLURP_INTO_U16 GR16_chunkCount
    SLURP_INTO_OBLIVION 8
 @subchunk_loop:
-   RTS_IF_NO_MORE_BYTES
    U16_CMP_VAR GR16_chunkIndex, GR16_chunkCount  ; check first in case zero
    beq @subchunk_loop_done
    jsr func_slurp_chunk
