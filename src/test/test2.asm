@@ -5,6 +5,7 @@
 .import func_close_inputstream
 .import func_slurp_header
 .import func_slurp_chunk
+.import func_slurp_frame
 .import handle_invalid
 .import handle_color_256
 .import handle_color_64
@@ -108,6 +109,7 @@ VRAM_IMAGE_LINE_3  := $003C0
 
    ;---------------------------------------------------------------------------
    ; TEST 33 - sub_resolve_chunk_type
+   ;           sub_resolve_frame_type
    ;
    ; Note that this implementation doesn't handle padding, so we should expect
    ; what is resolved on the first pass.

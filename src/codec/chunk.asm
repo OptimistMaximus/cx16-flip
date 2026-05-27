@@ -1,4 +1,5 @@
 .export func_slurp_chunk
+.export func_slurp_frame
 .export sub_resolve_chunk_type ; exported for unit test purpose only
 
 .import handle_invalid
@@ -58,21 +59,25 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .proc func_slurp_chunk: near
    SLURP_INTO_U32 GR32_chunkSize
    SLURP_INTO_U16 GR16_chunkType
-
 @resolve_loop:
    jsr sub_resolve_chunk_type       ; resolve
    cpx #0                           ; compare to 0 (invalid) ...
    bne @resolution_done             ; ... if not invalid, we're done!
-
-   U8_COPY_VAR GR32_chunkSize+0, GR32_chunkSize+1 ; otherwise, shift all bytes
-   U8_COPY_VAR GR32_chunkSize+1, GR32_chunkSize+2 ; over by one and slurp in
-   U8_COPY_VAR GR32_chunkSize+2, GR32_chunkSize+3 ; the next byte, then try
-   U8_COPY_VAR GR32_chunkSize+3, GR16_chunkType+0 ; again
-   U8_COPY_VAR GR16_chunkType+0, GR16_chunkType+1
-   SLURP_INTO_U8 GR16_chunkType+1
-
+   jsr sub_shuffle_preamble
    bra @resolve_loop
+@resolution_done:
+   jmp (chunk_type_jump_table,x)
+.endproc
 
+.proc func_slurp_frame: near
+   SLURP_INTO_U32 GR32_chunkSize
+   SLURP_INTO_U16 GR16_chunkType
+@resolve_loop:
+   jsr sub_resolve_frame_type       ; resolve
+   cpx #0                           ; compare to 0 (invalid) ...
+   bne @resolution_done             ; ... if not invalid, we're done!
+   jsr sub_shuffle_preamble
+   bra @resolve_loop
 @resolution_done:
    jmp (chunk_type_jump_table,x)
 .endproc
@@ -97,25 +102,36 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; @effect .X holds the jump table offset to the handler (zero means invalid)
 ;------------------------------------------------------------------------------
 .proc sub_resolve_chunk_type: near
-   U32_CMP_IMM GR32_chunkSize, 6   ; if chunk size is less than 5,
-   bcc @neither_byte_is_cool       ; the type can't possibly be legit
-
    lda GR16_chunkType+1
-   beq @high_byte_is_cool
-   cmp #$F1
-   beq @high_byte_is_cool
-   bra @neither_byte_is_cool
-
-@high_byte_is_cool:
+   bne @mismatch
    lda GR16_chunkType+0
-   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
    SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
    SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
    SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
    SET_OFFSET_AND_RETURN_IF_MATCH $0F, $0A ; BYTE_RUN
    SET_OFFSET_AND_RETURN_IF_MATCH $10, $0C ; FLI_COPY
    SET_OFFSET_AND_RETURN_IF_MATCH $0D, $0E ; BLACK
-
-@neither_byte_is_cool:
+@mismatch:
    SET_OFFSET_TO_ZERO_AND_RETURN
 .endproc
+
+.proc sub_resolve_frame_type: near
+   lda GR16_chunkType+1
+   cmp #$F1
+   bne @mismatch
+   lda GR16_chunkType+0
+   SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
+@mismatch:
+   SET_OFFSET_TO_ZERO_AND_RETURN
+.endproc
+
+.proc sub_shuffle_preamble: near
+   U8_COPY_VAR GR32_chunkSize+0, GR32_chunkSize+1 ; otherwise, shift all bytes
+   U8_COPY_VAR GR32_chunkSize+1, GR32_chunkSize+2 ; over by one and slurp in
+   U8_COPY_VAR GR32_chunkSize+2, GR32_chunkSize+3 ; the next byte, then try
+   U8_COPY_VAR GR32_chunkSize+3, GR16_chunkType+0 ; again
+   U8_COPY_VAR GR16_chunkType+0, GR16_chunkType+1
+   SLURP_INTO_U8 GR16_chunkType+1
+   rts
+.endproc
+

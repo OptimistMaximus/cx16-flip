@@ -2,8 +2,10 @@
 
 top=`pwd`
 program=$top/zzz/MAIN.PRG
+dirs="smooth slow"
+dirs="smooth"
 
-for dir in smooth slow ; do
+for dir in $dirs ; do
   cd $top/images/$dir
   for file in *.FLI ; do
     if [ $file = "IMAGE.FLI" ] ; then continue ; fi

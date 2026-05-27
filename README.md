@@ -77,14 +77,14 @@ enough that it happened within the allowed speed.
 For apples-to-apples comparisons across releases, the file "STARTREK.FLI"
 will be used.  The results are tracked here, for each released version:
 
-| Version | VSyncs | Overruns | PRG Bytes |
-|---------|--------|----------|-----------|
-| 0.1.0   | $0183  | $0033    | 1825      |
-| 0.1.1   | $0176  | $0032    | 1705      |
-| 0.2.1   | $0163  | $0032    | 1747      |
-| 0.3.0   | $00F9  | $0031    | 2114      |
-| 0.4.0   | $00A7  | $0024    | 1998      |
-| 0.5.0   |    |   |   |
+| Version | VSyncs | FPS | Overruns | PRG Bytes |
+|---------|--------|-----|----------|-----------|
+| 0.1.0   | $0183  |   9 | $0033    | 1825      |
+| 0.1.1   | $0176  |   9 | $0032    | 1705      |
+| 0.2.1   | $0163  |  10 | $0032    | 1747      |
+| 0.3.0   | $00F9  |  15 | $0031    | 2114      |
+| 0.4.0   | $00A7  |  21 | $0024    | 1998      |
+| 0.5.0   | $009A  |  23 | $003C    | 1951      |
 
 ### Version History
 
