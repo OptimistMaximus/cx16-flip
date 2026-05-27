@@ -11,7 +11,7 @@
 .include "../include/video.inc"
 
 .proc handle_frame_type: near
-   U16_STZ GR16_speedVsyncs
+   stz ZP8_imageVSyncsElapsed
    SLURP_INTO_U16 GR16_chunkCount
    SLURP_INTO_OBLIVION 8
 

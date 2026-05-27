@@ -84,7 +84,7 @@ will be used.  The results are tracked here, for each released version:
 | 0.2.1   | $0163  |  10 | $0032    | 1747      |
 | 0.3.0   | $00F9  |  15 | $0031    | 2114      |
 | 0.4.0   | $00A7  |  21 | $0024    | 1998      |
-| 0.5.0   | $009A  |  23 | $003C    | 1951      |
+| 0.5.0   | $009E  |  22 | $0029    | 1948      |
 
 ### Version History
 

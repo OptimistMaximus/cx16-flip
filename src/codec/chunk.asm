@@ -64,7 +64,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    cpx #0                           ; compare to 0 (invalid) ...
    bne @resolution_done             ; ... if not invalid, we're done!
    jsr sub_shuffle_preamble
-   bra @resolve_loop
+   jsr sub_resolve_chunk_type       ; resolve
 @resolution_done:
    jmp (chunk_type_jump_table,x)
 .endproc
