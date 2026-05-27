@@ -73,8 +73,8 @@ GR8_returnCode        := GLOBAL_VAR_BASE + $71
 GR16_returnDetail     := GLOBAL_VAR_BASE + $72
 GR16_origIrqHandler   := GLOBAL_VAR_BASE + $74
 GR16_debugTimerVSyncs := GLOBAL_VAR_BASE + $76
-GR16_debugSpeedSkips  := GLOBAL_VAR_BASE + $78
-GR8_paddingTries      := GLOBAL_VAR_BASE + $7A
+GR16_debugSpeedOverrun := GLOBAL_VAR_BASE + $78
+GR16_debugSpeedUnderrun := GLOBAL_VAR_BASE + $7A
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

@@ -15,7 +15,7 @@
    SLURP_INTO_U16 GR16_chunkCount
    SLURP_INTO_OBLIVION 8
    
-   U16_CMP_VAR GR16_chunkCount, 0
+   U16_CMP_IMM GR16_chunkCount, 0
    beq @subchunk_loop_done
    
    U16_STZ GR16_chunkIndex
