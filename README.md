@@ -213,6 +213,13 @@ Bad FLI files:
   So any skip of 7 or more is faster to do by moving the VRAM address.  But doing
   the ADC to keep that value fresh is also expensive, as is doing a U24_INC with
   every byte written.  Is there a way to ask VERA what its offset currently is?
+- low byte of cache offset can be used for .X or .Y when reading AND ALSO can be
+  used for lda (zp)  on single bytes
+- should I be rendering all subchunks before flipping screen?  If so will need
+  to postpone palette swap until last moment ... with a flag maybe.
+- chunk index and count can be 8 bit, it would be silly to nave more than 201
+  chunks anyway.  1 color change and 200 single lines is already silly enough
+- have an array of the skips and counts then iterate over them when flipping
 
 
 

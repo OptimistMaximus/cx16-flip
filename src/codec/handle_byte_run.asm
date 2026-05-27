@@ -1,6 +1,5 @@
 .export handle_byte_run
 
-.import func_vera_flip_stage
 .import func_prep_for_active_buffering
 
 .segment "CODE"
@@ -19,9 +18,7 @@
    dex
    bne @line_loop
 
-   ldx #200
-   ldy #0
-   jmp func_vera_flip_stage
+   rts
 .endproc
 
 .proc sub_render_line: near

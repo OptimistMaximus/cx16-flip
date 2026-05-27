@@ -1,6 +1,5 @@
 .export handle_black
 .import func_prep_for_active_buffering
-.import func_vera_flip_stage
 
 .segment "CODE"
 
@@ -30,7 +29,5 @@
    dey
    bne @outer_loop
 
-   ldx #200
-   ldy #0
-   jmp func_vera_flip_stage
+   rts
 .endproc

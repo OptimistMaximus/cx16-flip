@@ -21,7 +21,5 @@
    dey
    bne @outer_loop
 
-   ldx #200
-   ldy #0
-   jmp func_vera_flip_stage
+   rts
 .endproc
