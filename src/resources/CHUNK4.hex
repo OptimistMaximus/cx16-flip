@@ -1,0 +1,5 @@
+# Frame Type, valid
+
+01234567 ; DWORD size
+FAF1     ;  WORD type
+88888888 ;      (data)

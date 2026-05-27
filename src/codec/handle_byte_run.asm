@@ -2,7 +2,6 @@
 
 .import func_vera_flip_stage
 .import func_prep_for_active_buffering
-.import func_snooze_if_necessary
 
 .segment "CODE"
 
@@ -22,8 +21,7 @@
 
    ldx #200
    ldy #0
-   jsr func_vera_flip_stage
-   jmp func_snooze_if_necessary
+   jmp func_vera_flip_stage
 .endproc
 
 .proc sub_render_line: near

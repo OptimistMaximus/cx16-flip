@@ -45,7 +45,7 @@
 ; A crude division implementation based on a subtraction loop.  Only use this
 ; in situations where performance is not an issue.  This is seriously slow.
 ;
-; @param  quotientAddr the address where the 16-bit quotient goes
+; @param  quotientAddr the address where the 16-bit result goes
 ; @param  dividendAddr the address holding the 16-bit dividend
 ; @param  divisorAddr  the address holding the 16-bit divisor
 ; @effect dividendAddr holds the 16-bit remainder

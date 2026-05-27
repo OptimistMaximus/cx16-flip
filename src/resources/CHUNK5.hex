@@ -1,0 +1,5 @@
+# Frame Type, invalid low byte
+
+10000000 ; DWORD size
+F1BB     ;  WORD type
+88888888 ;      (data)

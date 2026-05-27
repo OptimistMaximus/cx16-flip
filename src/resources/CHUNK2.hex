@@ -1,0 +1,7 @@
+# Chunk Type 3 bytes padding, size happens to be valid type
+
+00000000 ;      (padding)
+0D000000 ; DWORD size
+0D00     ;  WORD type
+88888888 ;      (data)
+

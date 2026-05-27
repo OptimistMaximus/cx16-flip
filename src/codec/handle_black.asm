@@ -1,7 +1,6 @@
 .export handle_black
 .import func_prep_for_active_buffering
 .import func_vera_flip_stage
-.import func_snooze_if_necessary
 
 .segment "CODE"
 
@@ -30,9 +29,8 @@
    bne @inner_loop
    dey
    bne @outer_loop
-   
+
    ldx #200
    ldy #0
-   jsr func_vera_flip_stage
-   jmp func_snooze_if_necessary
+   jmp func_vera_flip_stage
 .endproc

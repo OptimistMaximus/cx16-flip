@@ -27,6 +27,12 @@ will return to BASIC, with the program still loaded.
   the wild, none of them had speeds more than 255, so this shouldn't be
   an issue. This limit keeps the player's implementation much simpler.
 
+- The parser will fail if any chunk has a size of more than 2^24 - 1. The
+  file format has chunk size as a 32-bit value, but even the most
+  inefficiently encoded chunk possible still wouldn't be larger than 128k.
+  So there's no need for the parser to waste time on 32-bit math when it
+  can be doing 24-bit math instead.
+
 - The render time is measured at runtime and is subtracted from the "speed"
   after each image is rendered. This means the overall overall frame rate
   should be consistent, but images themselves might not be on-screen for
@@ -51,10 +57,8 @@ resets to BASIC (effectively unloading the program).
 | Code | Meaning                   | Detail                                |
 |------|---------------------------|---------------------------------------|
 | 1    | unsupported file type     | the file type                         |
-| 2    | unsupported chunk type    | the chunk type                        |
-| 3    | invalid chunk type        | the chunk type                        |
-| 4    | unexpected chunk type     | the chunk type                        |
-| 5    | read error                | low byte is READST value              |
+| 2    | invalid chunk type        | the chunk type                        |
+| 3    | read error                | low byte is READST value              |
 
 ### Performance Timing Info
 
@@ -73,15 +77,29 @@ enough that it happened within the allowed speed.
 For apples-to-apples comparisons across releases, the file "STARTREK.FLI"
 will be used.  The results are tracked here, for each released version:
 
-| Version | VSyncs | Overruns | PRG Bytes |
-|---------|--------|----------|-----------|
-| 0.1.0   | $0183  | $0033    | 1825      |
-| 0.1.1   | $0176  | $0032    | 1705      |
-| 0.2.1   | $0163  | $0032    | 1747      |
-| 0.3.0   | $00F9  | $0031    | 2114      |
-| 0.4.0   | $00A7  | $0024    | 1998      |
+| Version | VSyncs | FPS | Overruns | PRG Bytes |
+|---------|--------|-----|----------|-----------|
+| 0.1.0   | $0183  |   9 | $0033    | 1825      |
+| 0.1.1   | $0176  |   9 | $0032    | 1705      |
+| 0.2.1   | $0163  |  10 | $0032    | 1747      |
+| 0.3.0   | $00F9  |  15 | $0031    | 2114      |
+| 0.4.0   | $00A7  |  21 | $0024    | 1998      |
+| 0.5.0   | $009E  |  22 | $0029    | 1948      |
 
 ### Version History
+
+- 2026/05/?? Version 0.5.0
+  - now detects the next chunk with a sliding window instead of trusting
+    the encoded chunk sizes (which are surprisingly wrong in a lot of FLI
+    files found in the wild).  The sliding window algorithm works very
+    fast for most files that are only off by 1 byte.  But it is much less
+    efficient for files with excessive padding.  It also only works when
+    the padding is all zeroes (which all files found in the wild seem to
+    be so far). It has a chance to not work if encodings pad with random
+    bytes and the random bytes happen to look like valid data. So far this
+    situation has never been encountered in real life.  It would be much
+    nicer if we could trust that all encodings put the correct size values
+    in their headers, but alas that is not the case.
 
 - 2026/05/24 Version 0.4.0
   - more performance enhancements
@@ -150,6 +168,30 @@ Good FLI files for regression test:
 - SAUCER04 (FLI_COPY)
 - MOONWALK (BLACK)
 - BADAPPLE (excessive padding, well beyond what the spec suggests)
+
+Good FLI files but currently have problems rendering
+
+- 04 F101
+  - APPLE
+  - ASLAMP
+  - BIRDSHOW
+  - CARBOARD
+  - CHOPCITY
+  - CHUBBY03
+  - GALLERY2
+  - MEMBRANE
+  - PUZMORF
+  - SNEEZE
+  - SOCKET
+  - STHELENS
+  - WEIRD01
+- 04 F100
+  - BOOKSPIN
+  - VPHORSE
+- 04 0000
+  - MOONWALK
+
+
 
 Bad FLI files:
 

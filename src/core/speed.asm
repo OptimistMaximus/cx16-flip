@@ -83,13 +83,16 @@ sub_irq_handler_for_delay:
 ; @effect .A .X .Y
 ;==============================================================================
 .proc func_snooze_if_necessary: near
+   lda ZP8_imageVSyncsElapsed
+   cmp GR8_speedLimitVSyncs
+   bcs @too_slow
+   DEBUG_TIMER_REGISTER_SPEED_UNDERRUN
    sec
-   lda GR8_speedLimitVSyncs
-   sbc ZP8_imageVSyncsElapsed
-   bmi @handle_negative
+   sbc GR8_speedLimitVSyncs
+   TWOS_COMPLIMENT_A
    jmp func_snooze
-@handle_negative:
-   DEBUG_TIMER_REGISTER_SPEED_VIOLATION
+@too_slow:
+   DEBUG_TIMER_REGISTER_SPEED_OVERRUN
    rts
 .endproc
 
@@ -108,7 +111,7 @@ JIFFY_CYCLES := $AD9C
 ; func_snooze
 ;
 ; @param  .A holds the number of sixtieths of a second to sleep
-;            a value of zero is effectively a no-op
+;            a value of zero means wait 256 sixtieths
 ; @effect .A .X .Y
 ;
 ; At 8 MHz, 1/60 of a second is 133333 cycles. That's roughly $AD9C times 3.

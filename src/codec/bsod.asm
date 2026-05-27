@@ -17,16 +17,31 @@
    jsr KERNAL_CHROUT
 .endmacro
 
+.macro PRINT_U16_HEX addr
+   lda addr+1
+   jsr func_print_hex
+   lda addr+0
+   jsr func_print_hex
+.endmacro
+
+.macro PRINT_U8_HEX addr
+   lda addr
+   jsr func_print_hex
+.endmacro
+
 bsod:
    jsr func_vera_restore ; restore vera to text mode
    PRINT PETSCII_RETURN
-   lda GR8_returnCode
-   jsr func_print_hex
+   PRINT_U8_HEX GR8_returnCode
+
    PRINT PETSCII_SPACE
-   lda GR16_returnDetail+0
-   jsr func_print_hex
-   lda GR16_returnDetail+1
-   jsr func_print_hex
+   PRINT_U16_HEX GR16_returnDetail
+
+   PRINT PETSCII_SPACE
+   PRINT_U16_HEX GR16_frameIndex
+
+   PRINT PETSCII_SPACE
+   PRINT_U16_HEX GR16_chunkIndex
 
    ;---------------------------------------------------------------------------
    ; This label serves two purposes. In production, it is used to wait for the

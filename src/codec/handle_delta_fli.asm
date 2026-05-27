@@ -2,7 +2,6 @@
 
 .import func_vera_flip_stage
 .import func_prep_for_active_buffering
-.import func_snooze_if_necessary
 .import fnc_slurp_into_a
 
 .segment "CODE"
@@ -20,7 +19,7 @@
    jsr func_cache_read_into_a   ; slurp low byte of line count
    tax                          ; and store it in .X
    jsr func_cache_read_into_a   ; burn high byte of line count (always zero)
-   
+
    phx                          ; squirrel .X for later
       phy                       ; squirrel .Y for later
          phx
@@ -28,13 +27,12 @@
             jsr func_prep_for_active_buffering
          plx
       @line_loop:
-         jsr sub_render_line 
+         jsr sub_render_line
          dex
          bne @line_loop
       ply                       ; pull .Y so it has the line skip again
    plx                          ; pull .X so it has the line count again
-   jsr func_vera_flip_stage
-   jmp func_snooze_if_necessary
+   jmp func_vera_flip_stage
 .endproc
 
 .proc sub_render_line: near

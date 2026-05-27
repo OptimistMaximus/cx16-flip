@@ -177,7 +177,7 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ldx #3                         ; flip 3 lines
    ldy #1                         ; skipping 1 line (i.e. lines 1-3)
    jsr func_vera_flip_stage       ; flip buffer to image
-   
+
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10 ; verify 0 untouched
    ASSERT_VRAM_U8_EQUALS_IMM $1220, $00
    ASSERT_VRAM_U8_EQUALS_IMM $1221, $00
@@ -268,7 +268,6 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    jsr sub_init_stages_line0
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-   U24_STZ ZP24_chunkReads         ; initialize cache reads stat
 
    lda #16
    sta smc_anchor_for_cache_size+1 ; force cache size for test convenience
@@ -284,14 +283,12 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    jsr func_cache_read_into_a
    jsr func_cache_read_into_a
    sta VERA_DATA0
-   ASSERT_VAR_U24_EQUALS_IMM $1500, 2, ZP24_chunkReads
 
    ;
    ; single read/dupe, cache hit scenario with bytes remaining
    ;
    lda #3
    jsr func_cache_dupe_into_vram
-   ASSERT_VAR_U24_EQUALS_IMM $1501, 3, ZP24_chunkReads
 
    ;
    ; multi read, cache hit scenario with bytes remaining
@@ -299,28 +296,24 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;
    lda #12
    jsr func_cache_read_into_vram
-   ASSERT_VAR_U24_EQUALS_IMM $1502, 15, ZP24_chunkReads
 
    ;
    ; single read, cache hit but it's an edge-case: the last byte
    ;
    jsr func_cache_read_into_a
    sta VERA_DATA0
-   ASSERT_VAR_U24_EQUALS_IMM $1503, 16, ZP24_chunkReads
 
    ;
    ; single read, cache miss, should load 16 fresh, leaving 15 remaining
    ;
    jsr func_cache_read_into_a
    sta VERA_DATA0
-   ASSERT_VAR_U24_EQUALS_IMM $1504, 17, ZP24_chunkReads
 
    ;
    ; now another edge case case: multi-read equal to remaining
    ;
    lda #15
    jsr func_cache_read_into_vram
-   ASSERT_VAR_U24_EQUALS_IMM $1505, 32, ZP24_chunkReads
 
    ;
    ; edge case, handling a multi-read while cache is exhausted, also
@@ -328,8 +321,6 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;
    lda #8
    jsr func_cache_read_into_vram
-   ASSERT_VAR_U24_EQUALS_IMM $1506, 40, ZP24_chunkReads
-
 
    ;
    ; test split read scenario where we ask for more than is remaining.
@@ -337,7 +328,6 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ; cause 2 page loads behind the scenes.
    lda #32
    jsr func_cache_read_into_vram
-   ASSERT_VAR_U24_EQUALS_IMM $1507, 72, ZP24_chunkReads
 
    jsr func_close_inputstream
 

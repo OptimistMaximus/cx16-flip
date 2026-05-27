@@ -286,5 +286,14 @@
    ASSERT_A_EQUALS_IMM testId, >expectValue
 .endmacro
 
+;=============================================================================
+; ASSERT_VPEEK_EQUALS_IMM
+;=============================================================================
+.macro ASSERT_VPEEK_EQUALS_IMM testId, expectValue, actualAddr
+   VPEEK actualAddr
+   ASSERT_A_EQUALS_IMM testId, expectValue
+.endmacro
+
+
 .endif
 

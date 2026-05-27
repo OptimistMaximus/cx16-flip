@@ -4,6 +4,9 @@
 .import func_print_hex
 .import debug_print_istring
 
+.include "./math.inc"
+.include "./math2.inc"
+
 ; The debug timer assumes your IRQ Handler is incrementing a 16-bit
 ; value ZP16_vsyncs_total on every VERA interrupt for VSync
 ; DEBUG_TIMER_ENABLED = 1
@@ -136,7 +139,8 @@
 .ifdef DEBUG_TIMER_ENABLED
    sei
    U16_STZ GR16_debugTimerVSyncs
-   U16_STZ GR16_debugSpeedSkips
+   U16_STZ GR16_debugSpeedOverrun
+   U16_STZ GR16_debugSpeedUnderrun
    cli
 .endif
 .endmacro
@@ -151,23 +155,42 @@
 
 .macro DEBUG_TIMER_DUMP
 .ifdef DEBUG_TIMER_ENABLED
+
+   ; FPS calculation is 60 frames per 60th of a second
+   U8_COPY_IMM GR8_scratch1, 60
+   U16_SLOW_MULTIPLY GR16_scratch1, GR16_frameCount, GR8_scratch1
+   U16_SLOW_DIVIDE GR16_scratch2, GR16_scratch1, GR16_debugTimerValue
+
    DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_STRING "elapsed vsyncs: $"
+   DEBUG_PRINT_STRING "elapsed vsyncs:  $"
    DEBUG_PRINT_U16_VAR GR16_debugTimerValue
    DEBUG_PRINT_CHAR PETSCII_RETURN
+   DEBUG_PRINT_STRING "total frames:    $"
+   DEBUG_PRINT_U16_VAR GR16_frameCount
    DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_STRING "speed overruns: $"
-   DEBUG_PRINT_U16_VAR GR16_debugSpeedSkips
+   DEBUG_PRINT_STRING "average fps:     $"
+   DEBUG_PRINT_U16_VAR GR16_scratch2
+   DEBUG_PRINT_CHAR PETSCII_RETURN
+   DEBUG_PRINT_CHAR PETSCII_RETURN
+   DEBUG_PRINT_STRING "speed overruns:  $"
+   DEBUG_PRINT_U16_VAR GR16_debugSpeedOverrun
+   DEBUG_PRINT_CHAR PETSCII_RETURN
+   DEBUG_PRINT_STRING "speed underruns: $"
+   DEBUG_PRINT_U16_VAR GR16_debugSpeedUnderrun
    DEBUG_PRINT_CHAR PETSCII_RETURN
 .endif
 .endmacro
 
-.macro DEBUG_TIMER_REGISTER_SPEED_VIOLATION
+.macro DEBUG_TIMER_REGISTER_SPEED_OVERRUN
 .ifdef DEBUG_TIMER_ENABLED
-   U16_INC GR16_debugSpeedSkips
+   U16_INC GR16_debugSpeedOverrun
 .endif
 .endmacro
 
-
+.macro DEBUG_TIMER_REGISTER_SPEED_UNDERRUN
+.ifdef DEBUG_TIMER_ENABLED
+   U16_INC GR16_debugSpeedUnderrun
+.endif
+.endmacro
 
 .endif
