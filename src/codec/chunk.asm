@@ -63,11 +63,6 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    jsr sub_resolve_chunk_type       ; resolve
    cpx #0                           ; compare to 0 (invalid) ...
    bne @resolution_done             ; ... if not invalid, we're done!
-   
-   stp
-   nop
-   nop
-   nop
 
    U8_COPY_VAR GR32_chunkSize+0, GR32_chunkSize+1 ; otherwise, shift all bytes
    U8_COPY_VAR GR32_chunkSize+1, GR32_chunkSize+2 ; over by one and slurp in
