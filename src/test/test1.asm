@@ -175,7 +175,7 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ASSERT_VRAM_U8_EQUALS_IMM $1214, $00
 
    ldx #3                         ; flip 3 lines
-   ldy #1                         ; skipping 1 line (i.e. lines 1-3)
+   lda #1                         ; skipping 1 line (i.e. lines 1-3)
    jsr func_vera_flip_stage       ; flip buffer to image
 
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10 ; verify 0 untouched

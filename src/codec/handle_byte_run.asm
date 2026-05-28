@@ -1,6 +1,5 @@
 .export handle_byte_run
 
-.import func_vera_flip_stage
 .import func_prep_for_active_buffering
 
 .segment "CODE"
@@ -10,18 +9,18 @@
 .include "../include/video.inc"
 
 .proc handle_byte_run: near
-   lda #0                             ; full starts at line 0 always
-   jsr func_prep_for_active_buffering
-
-   ldx #200                           ; .X is the line countdown
-@line_loop:
-   jsr sub_render_line
-   dex
-   bne @line_loop
-
-   ldx #200
-   ldy #0
-   jmp func_vera_flip_stage
+   phy
+      lda #0                             ; full starts at line 0 always
+      jsr func_prep_for_active_buffering
+      ldx #200                           ; .X is the line countdown
+   @line_loop:
+      jsr sub_render_line
+      dex
+      bne @line_loop
+   ply
+   lda #0    ; return value line skip
+   ldx #200  ; return value line count
+   rts
 .endproc
 
 .proc sub_render_line: near

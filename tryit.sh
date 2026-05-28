@@ -4,7 +4,7 @@
 # This builds a zip file that works with the "Try it Now" feature
 # of the Commander X16 forums.
 
-ver=030
+ver=060
 
 dir=flip${ver}
 prg=FLIP${ver}.PRG

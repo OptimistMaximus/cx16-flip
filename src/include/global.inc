@@ -36,9 +36,11 @@ ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
 ;------------------------------------------------------------------------------
 CONST_cacheAddr       := $400
 CONST_cacheSize       := $FF  ; (this is a constant, not a variable)
+CONST_skipArray       := $500
+CONST_countArray      := $600
 
 .ifdef MINIMIZE_ZEROPAGE_USAGE
-   GLOBAL_VAR_BASE    := $500
+   GLOBAL_VAR_BASE    := $700
 .else
    GLOBAL_VAR_BASE    := $0
 .endif
@@ -60,12 +62,12 @@ GR8_scratch3          := GLOBAL_VAR_BASE + $58
 GR8_scratch4          := GLOBAL_VAR_BASE + $59
 GR16_debugTimerValue  := GLOBAL_VAR_BASE + $5A
 
-GR32_chunkSize        := GLOBAL_VAR_BASE + $60
+GR32_chunkSize        := GLOBAL_VAR_BASE + $60 ; needed for padding logic
 GR16_chunkType        := GLOBAL_VAR_BASE + $64
 GR16_frameIndex       := GLOBAL_VAR_BASE + $66
 GR16_frameCount       := GLOBAL_VAR_BASE + $68
-GR16_chunkIndex       := GLOBAL_VAR_BASE + $6A
-GR16_chunkCount       := GLOBAL_VAR_BASE + $6C
+GR8_chunkIndex        := GLOBAL_VAR_BASE + $6A
+GR8_chunkCount        := GLOBAL_VAR_BASE + $6B
 
 GR8_speedLimitVSyncs  := GLOBAL_VAR_BASE + $70  ; speed limit as VSyncs
 GR8_returnCode        := GLOBAL_VAR_BASE + $71

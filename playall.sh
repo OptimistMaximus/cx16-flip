@@ -3,7 +3,6 @@
 top=`pwd`
 program=$top/zzz/MAIN.PRG
 dirs="smooth slow"
-dirs="slow"
 
 for dir in $dirs ; do
   cd $top/images/$dir
