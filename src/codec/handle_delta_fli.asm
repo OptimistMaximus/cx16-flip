@@ -30,7 +30,7 @@
          jsr sub_render_line
          dex
          bne @line_loop
-      ply                       ; pull .Y so it has the line skip again
+      pla                       ; pull .Y into .A so it has the line skip
    plx                          ; pull .X so it has the line count again
    rts
 .endproc

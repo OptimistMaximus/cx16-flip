@@ -14,6 +14,32 @@ After the FLI animation is done playing, the program will silently await
 the user to hit "any key" to continue. After a key is hit, the program
 will return to BASIC, with the program still loaded.
 
+## Assumptions
+
+This parser gets some of its performance gains by making certain
+reasonable assumptions about the file content. An evil hacker could
+exploit this to cause all sorts of buffer overruns and what-not, but
+this parser is assumed to be used by hobbyists who give it files that
+are legitimately sensibly encoded files.
+
+The parser's assumptions are as follows:
+
+- color chunks never have a packet count of zero, since it would be
+  silly to have a color chunk with zero packets. A sensible encoder
+  would simply not have created a color chunk.
+- color chunks never have a packet count more than 256, since there
+  are only 256 colors and it would already be completely silly to
+  encode them as 256 packets each having 1 color. A sensible encoder
+  would put runs of colors into each packet, resulting in less than
+  256 of them overall.
+- delta chunks never have a line count of zero, since it would be
+  silly to have a delta that does nothing. A sensible encoder would
+  simply not have created the delta chunk.
+- frames never have more than 255 sub-chunks, since even the most
+  inefficiently encoded frame imaginable would be 1 color chunk
+  and 200 delta packets each representing 1 line.  No sensible
+  encoder would ever do such a thing.
+  
 ## Caveats
 
 - This implementation only supports the FLI format. It does not
@@ -85,6 +111,7 @@ will be used.  The results are tracked here, for each released version:
 | 0.3.0   | $00F9  |  15 | $0031    | 2114      |
 | 0.4.0   | $00A7  |  21 | $0024    | 1998      |
 | 0.5.0   | $009E  |  22 | $0029    | 1948      |
+| 0.6.0   | $009A  |  23 | $0029    |           |
 
 ### Version History
 
@@ -215,12 +242,5 @@ Bad FLI files:
   every byte written.  Is there a way to ask VERA what its offset currently is?
 - low byte of cache offset can be used for .X or .Y when reading AND ALSO can be
   used for lda (zp)  on single bytes
-- should I be rendering all subchunks before flipping screen?  If so will need
-  to postpone palette swap until last moment ... with a flag maybe.
-- chunk index and count can be 8 bit, it would be silly to nave more than 201
-  chunks anyway.  1 color change and 200 single lines is already silly enough
-- have an array of the skips and counts then iterate over them when flipping
-
-
 
 

@@ -40,9 +40,6 @@ bsod:
    PRINT PETSCII_SPACE
    PRINT_U16_HEX GR16_frameIndex
 
-   PRINT PETSCII_SPACE
-   PRINT_U16_HEX GR16_chunkIndex
-
    ;---------------------------------------------------------------------------
    ; This label serves two purposes. In production, it is used to wait for the
    ; user to hit a key (since the screen will be wiped as soon as we jump back

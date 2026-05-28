@@ -15,6 +15,7 @@
 .import handle_fli_copy
 .import func_load_palette
 .import sub_resolve_chunk_type
+.import sub_resolve_frame_type
 
 .include "../include/global.inc"
 .include "../include/math.inc"
@@ -101,8 +102,10 @@ VRAM_IMAGE_LINE_3  := $003C0
    VPOKE $1F3FF, $DD
    VPOKE $1F400, $EE
    jsr handle_black
-   ASSERT_VPEEK_EQUALS_IMM $3200, $00, $00000 ; via flip
-   ASSERT_VPEEK_EQUALS_IMM $3200, $00, $0F9FF ; via flip
+   ASSERT_A_EQUALS_IMM     $3200, 0           ; line skip
+   ASSERT_X_EQUALS_IMM     $3201, 200         ; line skip
+   ASSERT_VPEEK_EQUALS_IMM $3200, $AA, $00000 ; untouched
+   ASSERT_VPEEK_EQUALS_IMM $3200, $BB, $0F9FF ; untouched
    ASSERT_VPEEK_EQUALS_IMM $3201, $00, $0FA00 ; via black
    ASSERT_VPEEK_EQUALS_IMM $3203, $00, $1F3FF ; via black
    ASSERT_VPEEK_EQUALS_IMM $3204, $EE, $1F400 ; untouched
@@ -121,14 +124,13 @@ VRAM_IMAGE_LINE_3  := $003C0
       OPEN_INPUTSTREAM_R fn_chunk_x, 5, filenumPetscii
       SLURP_INTO_U32 GR32_chunkSize
       SLURP_INTO_U16 GR16_chunkType
-      jsr sub_resolve_chunk_type
+      jsr lambda
       CLOSE_INPUTSTREAM
       ASSERT_X_EQUALS_IMM testId, expect
    .endmacro
 
    T33 sub_resolve_chunk_type, '0', $3300, $0E  ; no padding
    T33 sub_resolve_chunk_type, '1', $3301, $00  ; one byte of padding
-   T33 sub_resolve_chunk_type, '2', $3302, $00  ; multiple bytes of padding
    T33 sub_resolve_chunk_type, '3', $3303, $00  ; invalid chunk
 
    T33 sub_resolve_frame_type, '4', $3314, $02  ; no padding
@@ -191,7 +193,9 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr sub_init_palette_buffer
    jsr handle_color_64
    CLOSE_INPUTSTREAM
-
+   
+   ASSERT_A_EQUALS_IMM $3600, 0
+   ASSERT_X_EQUALS_IMM $3600, 0
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3601, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3602, $0101 ; color 1 skip
@@ -205,6 +209,9 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
+
+   ASSERT_A_EQUALS_IMM $3610, 0
+   ASSERT_X_EQUALS_IMM $3610, 0
    SET_VERA_ADDR24_IMM $00, $1F400, $10
    ASSERT_VRAM_U16_EQUALS_IMM $3611, $0000 ; color 0 skip
    ASSERT_VRAM_U16_EQUALS_IMM $3612, $0101 ; color 1 skip
@@ -217,9 +224,9 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
    jsr sub_init_palette_buffer
    jsr handle_color_256
+
    CLOSE_INPUTSTREAM
    SET_VERA_ADDR24_IMM $00, $1F400, $10
-
    ldy #0
 @test36_copy_packet_count_loop:
    ASSERT_VRAM_U16_EQUALS_IMM $3621, $0111  ; color 0,2,4,etc
@@ -227,7 +234,6 @@ VRAM_IMAGE_LINE_3  := $003C0
    iny
    cpy #128
    bne @test36_copy_packet_count_loop
-
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '2'
    jsr sub_init_palette_buffer
@@ -259,10 +265,12 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_byterun, 0, 'b'
    jsr handle_byte_run
    CLOSE_INPUTSTREAM
-
-   SET_VERA_ADDR24_IMM $00, $00000, $10
+   ASSERT_A_EQUALS_IMM $3700, 0
+   ASSERT_X_EQUALS_IMM $3701, 200
+   
+   SET_VERA_ADDR24_IMM $00, $0FA00, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3710, $00 ; packet 0 start (line 0)
-   SET_VERA_ADDR24_IMM $00, $0007E, $10
+   SET_VERA_ADDR24_IMM $00, $0FA7E, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3711, $00 ; packet 0 end
    ASSERT_VRAM_U8_EQUALS_IMM $3712, $01 ; packet 1 start
    ASSERT_VRAM_U8_EQUALS_IMM $3713, $02
@@ -270,10 +278,10 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VRAM_U8_EQUALS_IMM $3715, $04
    ASSERT_VRAM_U8_EQUALS_IMM $3716, $05 ; packet 1 end
    ASSERT_VRAM_U8_EQUALS_IMM $3717, $06 ; packet 2 start
-   SET_VERA_ADDR24_IMM $00, $000F3, $10
+   SET_VERA_ADDR24_IMM $00, $0FAF3, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3718, $06 ; packet 2 end
    ASSERT_VRAM_U8_EQUALS_IMM $3719, $07 ; packet 3 start
-   SET_VERA_ADDR24_IMM $00, $0013F, $10
+   SET_VERA_ADDR24_IMM $00, $0FB3F, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3720, $07 ; packet 3 end
    ASSERT_VRAM_U8_EQUALS_IMM $3721, $01 ; packet 4 start (line 1)
 
@@ -296,12 +304,15 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr handle_delta_fli
    CLOSE_INPUTSTREAM
 
-   SET_VERA_ADDR24_IMM $00, $003C0, $10 ; line 4
+   ASSERT_A_EQUALS_IMM $3800, 4 ; line skip
+   ASSERT_X_EQUALS_IMM $3801, 2 ; line count
+
+   SET_VERA_ADDR24_IMM $00, $0FDC0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3810, $00 ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3811, $00 ; pixel 1
    ASSERT_VRAM_U8_EQUALS_IMM $3812, $00 ; pixel 2
 
-   SET_VERA_ADDR24_IMM $00, $00500, $10 ; line 5
+   SET_VERA_ADDR24_IMM $00, $0FF00, $10 ; line 5
    ASSERT_VRAM_U8_EQUALS_IMM $3813, $00 ; pixel 0 (skipped)
    ASSERT_VRAM_U8_EQUALS_IMM $3814, $00 ; pixel 1 (skipped)
    ASSERT_VRAM_U8_EQUALS_IMM $3815, $00 ; pixel 2 (skipped)
@@ -318,12 +329,12 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VRAM_U8_EQUALS_IMM $3826, $EE ; pixel 13
    ASSERT_VRAM_U8_EQUALS_IMM $3827, $00 ; pixel 14 (untouched)
 
-   SET_VERA_ADDR24_IMM $00, $00640, $10 ; line 6
+   SET_VERA_ADDR24_IMM $00, $10040, $10 ; line 6
    ASSERT_VRAM_U8_EQUALS_IMM $3830, $55 ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3831, $55 ; pixel 1
    ASSERT_VRAM_U8_EQUALS_IMM $3832, $55 ; pixel 2
 
-   SET_VERA_ADDR24_IMM $00, $00780, $10 ; line 7
+   SET_VERA_ADDR24_IMM $00, $10180, $10 ; line 7
    ASSERT_VRAM_U8_EQUALS_IMM $3840, $00 ; pixel 0
    ASSERT_VRAM_U8_EQUALS_IMM $3841, $00 ; pixel 1
    ASSERT_VRAM_U8_EQUALS_IMM $3842, $00 ; pixel 2

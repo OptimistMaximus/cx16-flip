@@ -75,54 +75,55 @@ sub_handle_color:
    ; zero (don't skip) but a copy count of zero means 256 (i.e. a full palette
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
-   SLURP_INTO_U16 numPackets
+   phy
+      SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
+      SLURP_INTO_U16 numPackets
 
+      ldx #0
+   packet_loop:
+      jsr sub_skip_colors
+      SLURP_INTO_U8 copyCount
+      ldy #0
+   copy_loop:
+      SLURP_INTO_U24 tempColor ; slurp RGB
+      lda tempColor+0          ; load R
+   smc_anchor_r_shift:
+      lsr                      ; nop if 6-bit
+      lsr                      ; nop if 6-bit
+      lsr
+      lsr
+      sta tempVeraRed
+
+      lda tempColor+1          ; load G
+   smc_anchor_g_shift:
+      nop                      ; asl if 6-bit
+      nop                      ; asl if 6-bit
+      and #$F0
+      sta tempVeraGreen
+
+      lda tempColor+2          ; load B
+   smc_anchor_b_shift:
+      lsr                      ; nop if 6-bit
+      lsr                      ; nop if 6-bit
+      lsr
+      lsr
+      ora tempVeraGreen
+      sta VERA_DATA0           ; store VERA color (GB)
+      lda tempVeraRed          ; store VERA color (R)
+      sta VERA_DATA0
+
+      iny
+      cpy copyCount
+      bne copy_loop
+
+      inx
+      cpx numPackets                       ; just the low byte
+      bne packet_loop
+
+   ply
+   lda #0
    ldx #0
-packet_loop:
-
-   jsr sub_skip_colors
-
-   SLURP_INTO_U8 copyCount
-   ldy #0
-copy_loop:
-   SLURP_INTO_U24 tempColor ; slurp RGB
-   lda tempColor+0          ; load R
-smc_anchor_r_shift:
-   lsr                      ; nop if 6-bit
-   lsr                      ; nop if 6-bit
-   lsr
-   lsr
-   sta tempVeraRed
-
-   lda tempColor+1          ; load G
-smc_anchor_g_shift:
-   nop                      ; asl if 6-bit
-   nop                      ; asl if 6-bit
-   and #$F0
-   sta tempVeraGreen
-
-   lda tempColor+2          ; load B
-smc_anchor_b_shift:
-   lsr                      ; nop if 6-bit
-   lsr                      ; nop if 6-bit
-   lsr
-   lsr
-   ora tempVeraGreen
-   sta VERA_DATA0           ; store VERA color (GB)
-   lda tempVeraRed          ; store VERA color (R)
-   sta VERA_DATA0
-
-   iny
-   cpy copyCount
-   bne copy_loop
-
-   inx
-   cpx numPackets                       ; just the low byte
-   bne packet_loop
-
-   jmp func_load_palette                ; jsr/rts optimization
-
+   rts
 
 .proc sub_skip_colors: near
    jsr func_cache_read_into_a           ; skip count

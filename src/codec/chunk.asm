@@ -1,6 +1,7 @@
 .export func_slurp_chunk
 .export func_slurp_frame
 .export sub_resolve_chunk_type ; exported for unit test purpose only
+.export sub_resolve_frame_type ; exported for unit test purpose only
 
 .import handle_invalid
 .import handle_frame_type
@@ -54,7 +55,15 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; func_slurp_chunk
 ;
 ; Reads the chunk size and chunk type, then looks up the appropriate handler
-; for the chunk type and invokes it.
+; for the chunk type and jumps to it. Each such handler is obligated to render
+; that frame into the image buffer or palette buffer (as appropriate) and 
+; update .A and .X as follows (while preserving .Y)
+;
+; @effect .A line skip
+; @effect .X line count, where 0 means it was a color chunk
+;
+; This works fine because FLI format has a maximum count of 200, so anything
+; over 200 can be used to signify other stuff
 ;==============================================================================
 .proc func_slurp_chunk: near
    SLURP_INTO_U32 GR32_chunkSize
