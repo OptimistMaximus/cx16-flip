@@ -20,7 +20,7 @@ This parser gets some of its performance gains by making certain
 reasonable assumptions about the file content. An evil hacker could
 exploit this to cause all sorts of buffer overruns and what-not, but
 this parser is assumed to be used by hobbyists who give it files that
-are legitimately sensibly encoded files.
+are legitimately and sensibly encoded files.
 
 The parser's assumptions are as follows:
 
@@ -45,24 +45,10 @@ The parser's assumptions are as follows:
 - This implementation only supports the FLI format. It does not
   support FLC files.
 
-- Performance is terrible at the moment, especially for files that have
-  huge deltas.  Performance issues will be addressed in future releases.
-
 - If the FLI header's speed is over 297, it will be forced to 297. This
   equates to just over 4 seconds. From dozens of samples of FLI files in
   the wild, none of them had speeds more than 255, so this shouldn't be
   an issue. This limit keeps the player's implementation much simpler.
-
-- The parser will fail if any chunk has a size of more than 2^24 - 1. The
-  file format has chunk size as a 32-bit value, but even the most
-  inefficiently encoded chunk possible still wouldn't be larger than 128k.
-  So there's no need for the parser to waste time on 32-bit math when it
-  can be doing 24-bit math instead.
-
-- The render time is measured at runtime and is subtracted from the "speed"
-  after each image is rendered. This means the overall overall frame rate
-  should be consistent, but images themselves might not be on-screen for
-  for the proper amount of time.
 
 - This implementation optimistically assumes the file is properly encoded.
   If the file is not properly encoded, the player can easily get into
@@ -111,11 +97,20 @@ will be used.  The results are tracked here, for each released version:
 | 0.3.0   | $00F9  |  15 | $0031    | 2114      |
 | 0.4.0   | $00A7  |  21 | $0024    | 1998      |
 | 0.5.0   | $009E  |  22 | $0029    | 1948      |
-| 0.6.0   | $009A  |  23 | $0029    |           |
+| 0.6.0   | $009A  |  23 | $0029    | 1951      |
 
 ### Version History
 
-- 2026/05/?? Version 0.5.0
+- 2026/05/27 Version 0.6.0
+  - speed is now correctly applied per frame (not per chunk, as incorrectly
+    done in prior versions)
+  - palette transitions look much better now, since they are postponed 
+    until the entire new frame has been rendered, and swapped just before
+    that new frame is shuffled into VRAM
+  - files whose frames have multiple chunks (e.g. a small delta for the
+    top of the screen and a small delta for the bottom of the screen) now
+    play much smoother.
+- 2026/05/26 Version 0.5.0
   - now detects the next chunk with a sliding window instead of trusting
     the encoded chunk sizes (which are surprisingly wrong in a lot of FLI
     files found in the wild).  The sliding window algorithm works very
@@ -182,7 +177,10 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
 ## KNOWN BUGS
 
 - crashes or wonky colors on subsequent runs
-- sometimes screen goes wonky, probably due to time lag between loading the next color palette and showing the next image.  The spec says that encoders should assume color palettes take effect immediately, so in theory there should be no problem (they'd only modify parts of the palette needed by the next frame that aren't used on the current frame) but encoders don't seem to consider that, as they likely assumed the next frame would be rendered immediately after.  This problem should lessen or go away after I start optimizing the implementation. Right now the focus is on functionality, not performance.
+- screen goes white just before first frame loads
+- screen tearing and goes a bit wonky on palette changes, because screen updates are not  yet
+  synchronized with VSyncs
+
 
 ### TEST RESULTS
 
@@ -194,31 +192,7 @@ Good FLI files for regression test:
 - CHOPCITY (very long)
 - SAUCER04 (FLI_COPY)
 - MOONWALK (BLACK)
-- BADAPPLE (excessive padding, well beyond what the spec suggests)
-
-Good FLI files but currently have problems rendering
-
-- 04 F101
-  - APPLE
-  - ASLAMP
-  - BIRDSHOW
-  - CARBOARD
-  - CHOPCITY
-  - CHUBBY03
-  - GALLERY2
-  - MEMBRANE
-  - PUZMORF
-  - SNEEZE
-  - SOCKET
-  - STHELENS
-  - WEIRD01
-- 04 F100
-  - BOOKSPIN
-  - VPHORSE
-- 04 0000
-  - MOONWALK
-
-
+- BA1 (excessive padding, well beyond what the spec suggests)
 
 Bad FLI files:
 

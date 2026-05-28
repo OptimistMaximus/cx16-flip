@@ -84,7 +84,6 @@ RC_SUCCESS                    := 0
 RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
 RC_INVALID_CHUNK_TYPE         := 2  ; type
 RC_READ_ERROR                 := 3  ; lower byte is READST value
-RC_CHUNK_COUNT_TOO_HIGH       := 4  ; count
 
 .macro BSOD returnCode, detailAddr
    lda #returnCode
