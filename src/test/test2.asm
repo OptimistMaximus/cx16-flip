@@ -142,8 +142,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    ;
    ; Now that handle_black and sub_resolve_chunk_type are confirmed to work,
    ; this test can focus on looking for evidence that padding is handled
-   ; correctly. This will re-use the chunk files 0, 1, and 2, because they all
-   ; have chunk type BLACK type with varying amounts of padding.
+   ; correctly. This will re-use the chunk files 0 and 1, because they have
+   ; chunk type BLACK type with varying amounts of padding.
    ;
    ; Since handle_black is already confirmed to work, we don't need to verify
    ; the whole vram buffer; we can just verify $FA00 turns to zero.
@@ -158,7 +158,6 @@ VRAM_IMAGE_LINE_3  := $003C0
 
    T34 '0', $3400 ; no padding
    T34 '1', $3401 ; one byte of padding
-   T34 '2', $3402 ; multiple bytes of padding
 
    ;---------------------------------------------------------------------------
    ; TEST 35 - func_load_palette

@@ -3,14 +3,6 @@
 
 .include "./kernal.inc"
 
-; IDEAS:
-;
-; 114,286 CPU cycles occur during 1/70  of a second at 8 MHz.
-; 133,333 CPU cycles occur during 1/60  of a second at 8 MHz.
-;  44,444 CPU cycles occur during 1/180 of a second at 8 MHz.
-;
-; 297 seventieths = 255 sixtieths
-
 ; MINIMIZE_ZEROPAGE_USAGE = 1
 
 ;------------------------------------------------------------------------------
@@ -23,7 +15,7 @@ ZP_VOLATILE_PTR         := $22
 ZP24_vramOffset         := $24
 ZP16_cachePointer       := $2A
 ZP8_cacheRemaining      := $2C
-ZP8_cacheScratch        := $2D
+ZP8_cacheLoadCount      := $2D
 ZP8_timerTrigger        := $2E ; state variable needed by speed timer
 ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
 
