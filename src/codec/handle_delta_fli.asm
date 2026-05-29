@@ -14,15 +14,15 @@
 
 .proc handle_delta_fli: near
    NARF_READ_INTO_A   ; slurp low byte of line skip
-   tay                          ; and store it in .Y
+   tay                ; and store it in .Y
    NARF_READ_INTO_A   ; burn high byte of line skip (always zero)
 
    NARF_READ_INTO_A   ; slurp low byte of line count
-   tax                          ; and store it in .X
+   tax                ; and store it in .X
    NARF_READ_INTO_A   ; burn high byte of line count (always zero)
 
-   phx                          ; squirrel .X for later
-      phy                       ; squirrel .Y for later
+   phx                ; squirrel .X for later
+      phy             ; squirrel .Y for later
          phx
             tya
             jsr func_prep_for_active_buffering
@@ -31,8 +31,8 @@
          jsr sub_render_line
          dex
          bne @line_loop
-      pla                       ; pull .Y into .A so it has the line skip
-   plx                          ; pull .X so it has the line count again
+      pla             ; pull .Y into .A so it has the line skip
+   plx                ; pull .X so it has the line count again
    rts
 .endproc
 

@@ -2,7 +2,7 @@
         NARF_INC = $1
 
 .import func_cache_load_page
-        
+
 ;==============================================================================
 ; NARF_READ_INTO_A
 ;
@@ -28,9 +28,9 @@ data_is_available:
 
 
 
-        
 
-        
-        
-        
+
+
+
+
 .endif

@@ -39,7 +39,7 @@ The parser's assumptions are as follows:
   inefficiently encoded frame imaginable would be 1 color chunk
   and 200 delta packets each representing 1 line.  No sensible
   encoder would ever do such a thing.
-  
+
 ## Caveats
 
 - This implementation only supports the FLI format. It does not
@@ -104,7 +104,7 @@ will be used.  The results are tracked here, for each released version:
 - 2026/05/27 Version 0.6.0
   - speed is now correctly applied per frame (not per chunk, as incorrectly
     done in prior versions)
-  - palette transitions look much better now, since they are postponed 
+  - palette transitions look much better now, since they are postponed
     until the entire new frame has been rendered, and swapped just before
     that new frame is shuffled into VRAM
   - files whose frames have multiple chunks (e.g. a small delta for the
@@ -214,7 +214,8 @@ Bad FLI files:
   So any skip of 7 or more is faster to do by moving the VRAM address.  But doing
   the ADC to keep that value fresh is also expensive, as is doing a U24_INC with
   every byte written.  Is there a way to ask VERA what its offset currently is?
-- low byte of cache offset can be used for .X or .Y when reading AND ALSO can be
-  used for lda (zp)  on single bytes
+- read delta line's column skip BEFORE advancing to the current line, so we
+  just do a quick bit of math instead of a lot of burnt pixels
+
 
 

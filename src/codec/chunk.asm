@@ -56,7 +56,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;
 ; Reads the chunk size and chunk type, then looks up the appropriate handler
 ; for the chunk type and jumps to it. Each such handler is obligated to render
-; that frame into the image buffer or palette buffer (as appropriate) and 
+; that frame into the image buffer or palette buffer (as appropriate) and
 ; update .A and .X as follows (while preserving .Y)
 ;
 ; @effect .A line skip

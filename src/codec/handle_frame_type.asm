@@ -17,10 +17,10 @@
 ; handle_frame_type
 .proc handle_frame_type: near
    stz ZP8_imageVSyncsElapsed     ; i.e. start the frame timer
-   SLURP_INTO_U8 GR8_chunkCount   ; low byte of chunk count       
+   SLURP_INTO_U8 GR8_chunkCount   ; low byte of chunk count
    SLURP_INTO_OBLIVION 9          ; high byte of chunk count & remaining 8
 
-   lda #0                               
+   lda #0
    cmp GR8_chunkCount             ; zero-chunk frames are a common way to
    beq @rendering_complete        ; make the current image linger as is
 
@@ -65,6 +65,6 @@
 @flipped:
    iny
    cpy GR8_chunkCount
-   bne @flip_loop 
+   bne @flip_loop
    rts
 .endproc

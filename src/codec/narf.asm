@@ -36,7 +36,7 @@
 func_cache_load_page:
    phx
       phy
-      
+
          ldx #<CONST_cacheAddr
          ldy #>CONST_cacheAddr
 smc_anchor_for_cache_size:

@@ -268,7 +268,7 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    lda #16
    sta smc_anchor_for_cache_size+1 ; force cache size for test convenience
-   
+
    jsr sub_init_stages_line0
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
 
@@ -276,7 +276,7 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ldy #>test_filename
    jsr func_open_inputstream
    jsr func_cache_init
-   
+
    ;
    ; single read, cache hit scenario with bytes remaining
    ;

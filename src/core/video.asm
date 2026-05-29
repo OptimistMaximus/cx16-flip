@@ -120,14 +120,14 @@
 .endproc
 
 ;==============================================================================
-; PREP_VERA_FOR_ACTIVE_BUFFERING
+; func_prep_for_active_buffering
 ;
 ; This is a special optimization to calculate a VRAM offset in 320x240 mode
 ; where the line number is less than 204. This means the calculated result will
 ; be within the 16-bit range, so we can save a few cycles due to not worrying
 ; about the most significant byte (it can be unconditionally forced to zero)
 ;
-; @param  .A the line number (having value 0-197)
+; @param  .A the line number (having value 0-199)
 ;
 ; The optimization here is to store the line number into the 24-bit result,
 ; then multiply by 320 by adding the result of the line number multiplied by

@@ -74,7 +74,7 @@
 .proc handle_lte_read: near
    tmpLoopMax = GR8_scratch1
    tmpRequest = GR8_scratch2
-   
+
    sta tmpRequest           ; squirrel away .A for later
    clc
    adc ZP16_cachePointer    ; add pointer's low byte, $20 + $88 = $A8
@@ -113,7 +113,7 @@
 
    lda ZP8_cacheRemaining        ; handle rare edge case of nothing remaining
    beq @none_remaining
-   
+
    phy
       ldy ZP16_cachePointer
    :  lda CONST_cacheAddr,y
@@ -122,7 +122,7 @@
       cpy ZP8_cacheLoadCount
       bne :-
    ply
-   
+
 @none_remaining:
    phx
       phy
