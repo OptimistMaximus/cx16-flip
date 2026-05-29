@@ -4,12 +4,11 @@
 .import func_close_inputstream
 .import func_prep_for_active_buffering
 .import func_vera_flip_stage
-.import func_cache_init
-.import func_cache_read_into_a
 .import func_cache_read_into_vram
 .import func_cache_dupe_into_vram
-.import smc_anchor_for_cache_size
 .import func_print_hex
+.import func_cache_init
+.import smc_anchor_for_cache_size
 
 .segment "RODATA"
 
@@ -47,6 +46,7 @@ u64data: .res 8, $00
 
 .segment "CODE"
 
+.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
@@ -210,9 +210,9 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    ; TEST 14 (slurp 'n skip)
    ;
-   ; jsr func_cache_read_into_a
-   ; jsr func_cache_read_into_vram
-   ; jsr func_cache_dupe_into_vram
+   ; NARF_READ_INTO_A
+   ; func_cache_read_into_vram
+   ; func_cache_dupe_into_vram
    ; SLURP_INTO_U8
    ; SLURP_INTO_U16
    ; SLURP_INTO_U24
@@ -227,8 +227,8 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    jsr func_open_inputstream
    jsr func_cache_init
 
-   jsr func_cache_read_into_a ; burn first byte 00
-   jsr func_cache_read_into_a ; VRAM gains 11
+   NARF_READ_INTO_A ; burn first byte 00
+   NARF_READ_INTO_A ; VRAM gains 11
    sta VERA_DATA0
    lda #2                    ; VRAM skips ahead 2 bytes
    SKIP_PIXELS
@@ -266,22 +266,22 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ; hardware it will just be generally exercising cache, covering a
    ; non-deterministic subset of scenarios and edge cases.
    ;---------------------------------------------------------------------------
-   jsr sub_init_stages_line0
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-
    lda #16
    sta smc_anchor_for_cache_size+1 ; force cache size for test convenience
+   
+   jsr sub_init_stages_line0
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
 
    ldx #<test_filename
    ldy #>test_filename
    jsr func_open_inputstream
-   jsr func_cache_init           ; should load 16 bytes into cache
-
+   jsr func_cache_init
+   
    ;
    ; single read, cache hit scenario with bytes remaining
    ;
-   jsr func_cache_read_into_a
-   jsr func_cache_read_into_a
+   NARF_READ_INTO_A
+   NARF_READ_INTO_A
    sta VERA_DATA0
 
    ;
@@ -300,13 +300,13 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;
    ; single read, cache hit but it's an edge-case: the last byte
    ;
-   jsr func_cache_read_into_a
+   NARF_READ_INTO_A
    sta VERA_DATA0
 
    ;
    ; single read, cache miss, should load 16 fresh, leaving 15 remaining
    ;
-   jsr func_cache_read_into_a
+   NARF_READ_INTO_A
    sta VERA_DATA0
 
    ;
@@ -333,10 +333,6 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
 
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
    ASSERT_VRAM_EQUALS_ARRAY $1508, $48, test14_expect
-
-   lda #$FF
-   sta smc_anchor_for_cache_size+1 ; restore cache size
-
 
 
    PASS

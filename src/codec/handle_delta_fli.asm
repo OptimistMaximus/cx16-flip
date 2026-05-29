@@ -6,19 +6,20 @@
 
 .segment "CODE"
 
+.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/slurp.inc"
 .include "../include/video.inc"
 
 .proc handle_delta_fli: near
-   jsr func_cache_read_into_a   ; slurp low byte of line skip
+   NARF_READ_INTO_A   ; slurp low byte of line skip
    tay                          ; and store it in .Y
-   jsr func_cache_read_into_a   ; burn high byte of line skip (always zero)
+   NARF_READ_INTO_A   ; burn high byte of line skip (always zero)
 
-   jsr func_cache_read_into_a   ; slurp low byte of line count
+   NARF_READ_INTO_A   ; slurp low byte of line count
    tax                          ; and store it in .X
-   jsr func_cache_read_into_a   ; burn high byte of line count (always zero)
+   NARF_READ_INTO_A   ; burn high byte of line count (always zero)
 
    phx                          ; squirrel .X for later
       phy                       ; squirrel .Y for later
@@ -38,13 +39,13 @@
 .proc sub_render_line: near
    scratchVar = GR8_scratch1
 
-   jsr func_cache_read_into_a       ; packet count
+   NARF_READ_INTO_A       ; packet count
    cmp #0
-   beq @packet_loop_done            ; (packet count can legit be zero)
+   beq packet_loop_done            ; (packet count can legit be zero)
    tay                              ; .Y is the packet countdown
-@packet_loop:
+packet_loop:
    jsr sub_skip_columns
-   jsr func_cache_read_into_a       ; byte count
+   NARF_READ_INTO_A       ; byte count
    bit #%10000000
    beq @process_positive_count   ; i.e. bit 7 was clear
 
@@ -59,8 +60,8 @@
    @process_count_done:
 
    dey
-   bne @packet_loop
-@packet_loop_done:
+   bne packet_loop
+packet_loop_done:
 
    ADVANCE_LINE_FOR_ACTIVE_BUFFERING
 
@@ -68,7 +69,7 @@
 .endproc
 
 .proc sub_skip_columns: near
-   jsr func_cache_read_into_a ; (.A holds skip count, where 0 means 0)
+   NARF_READ_INTO_A ; (.A holds skip count, where 0 means 0)
    cmp #0
    beq @done
    SKIP_PIXELS

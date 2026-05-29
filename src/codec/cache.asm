@@ -1,67 +1,16 @@
-.export func_cache_init
-.export func_cache_read_into_a
 .export func_cache_read_into_vram
 .export func_cache_dupe_into_vram
-.export smc_anchor_for_cache_size ; for unit test purpose only
 
 .import bsod
+.import func_cache_load_page
 
 .segment "CODE"
 
+.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
 .include "../include/vera.inc"
-
-;==============================================================================
-; func_cache_init
-;
-; Call this once after opening the input stream, and before calling any other
-; cache routines. This initializes the current entry pointer's high byte to
-; the page boundary of where cache is located, and from there the low byte is
-; manipulated, such that it can be used either as a 16-bit pointer or just the
-; low byte can be used as an absolute address offset relative to the cache page
-;==============================================================================
-.proc func_cache_init: near
-   lda #>CONST_cacheAddr   ; high byte of actual cache address
-   sta ZP16_cachePointer+1 ; stored as high byte of our pointer
-   jmp sub_load_page       ; loads page and zeros low byte of pointer
-.endproc
-
-;==============================================================================
-; func_cache_read_into_a
-;
-; @effect .A holds the next available byte as read from cache
-; @cycles 30 (on cache hit)
-;
-; Note that unlike the LDA instruction, the status flags do not reflect what
-; byte was just read into the .A buffer.  To get the the same effect, calling
-; code can use BIT or CMP.
-;
-; For example, getting the cached equivalent of
-;
-;   LDA foo
-;   BEQ @label
-;
-; would be
-;
-;   JSR func_cache_read_into_a
-;   CMP #0
-;   BEQ @label
-;
-; which costs an extra 2 cycles, but that's faster overall than having the
-; implementation of this subroutine waste 7 cycles on a stack push/pull.  It
-; is assumed that calling code would want to save 5 cycles by default.
-;==============================================================================
-.proc func_cache_read_into_a: near
-   lda ZP8_cacheRemaining
-   bne :+
-   jsr sub_load_page
-:  lda (ZP16_cachePointer)
-   dec ZP8_cacheRemaining
-   inc ZP16_cachePointer
-   rts
-.endproc
 
 ;==============================================================================
 ; func_cache_dupe_into_vram
@@ -71,7 +20,7 @@
 .proc func_cache_dupe_into_vram: near
    phx
       pha
-         jsr func_cache_read_into_a
+         NARF_READ_INTO_A
       plx
    :  sta VERA_DATA0
       dex
@@ -175,36 +124,14 @@
    ply
    
 @none_remaining:
-   jsr sub_load_page             ; definitely exhausted, so load a fresh page,
+   phx
+      phy
+         jsr func_cache_load_page ; definitely exhausted, so load a fresh page,
+      ply
+   plx
 
    lda varRequest                ; follow-up with a read request for the
    jmp func_cache_read_into_vram ; original request less what we drained
 .endproc
 
-; @cycles 26 + whatever MACPTR costs
-; note this does NOT use varScratch, so calling logic is safe to call
-; this without risk of losing whatever value it might've put into scratch
-sub_load_page:
-   phx
-      phy
-         ldx #<CONST_cacheAddr
-         ldy #>CONST_cacheAddr
-smc_anchor_for_cache_size:    ; (for unit test convenience)
-         lda #CONST_cacheSize ; how many bytes we want
-         clc                  ; (advance, since going to RAM)
-         jsr KERNAL_MACPTR    ; (actually acquire bytes)
-         cpx #0               ; if KERNAL gave us zero, something
-         bne @read_success    ; something may have gone wrong
-
-         jsr KERNAL_READST    ; ERROR! BSOD, but make sure we don't
-         ply                  ; have a stack imbalance upon exist, so in
-         plx                  ; this conditional block, pull .Y and .X
-         BSOD_A RC_READ_ERROR
-      @read_success:
-         stx ZP8_cacheRemaining ; also how many bytes remaining
-         stx ZP8_cacheLoadCount ; and for convenience the load count
-         stz ZP16_cachePointer  ; reset the pointer
-      ply
-   plx
-   rts
 

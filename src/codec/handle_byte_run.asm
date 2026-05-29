@@ -4,6 +4,7 @@
 
 .segment "CODE"
 
+.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/slurp.inc"
 .include "../include/video.inc"
@@ -24,10 +25,10 @@
 .endproc
 
 .proc sub_render_line: near
-   jsr func_cache_read_into_a      ; packet count
+   NARF_READ_INTO_A      ; packet count
    tay                             ; .Y is the packet countdown
-@packet_loop:
-   jsr func_cache_read_into_a      ; byte count
+packet_loop:
+   NARF_READ_INTO_A      ; byte count
    bit #%10000000
    beq @process_positive_count  ; i.e. bit 7 was clear
 
@@ -42,6 +43,6 @@
    @process_count_done:
 
    dey
-   bne @packet_loop
+   bne packet_loop
    rts
 .endproc

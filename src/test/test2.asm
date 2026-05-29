@@ -3,6 +3,7 @@
 .import func_detect_filename
 .import func_open_inputstream
 .import func_close_inputstream
+.import func_cache_init
 .import func_slurp_header
 .import func_slurp_chunk
 .import func_slurp_frame
@@ -17,6 +18,7 @@
 .import sub_resolve_chunk_type
 .import sub_resolve_frame_type
 
+.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"

@@ -5,6 +5,7 @@
 
 .segment "CODE"
 
+.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/opcodes.inc"
@@ -126,7 +127,7 @@ sub_handle_color:
    rts
 
 .proc sub_skip_colors: near
-   jsr func_cache_read_into_a           ; skip count
+   NARF_READ_INTO_A           ; skip count
    cmp #0
    beq @done
    SKIP_COLORS

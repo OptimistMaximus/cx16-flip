@@ -5,6 +5,7 @@
 .import func_detect_filename
 .import func_open_inputstream
 .import func_close_inputstream
+.import func_cache_init
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore
@@ -16,6 +17,7 @@
 .segment "ONCE"
 .segment "CODE"
 
+.include "include/narf.inc"
 .include "include/debug.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"

@@ -60,6 +60,7 @@ GR16_frameIndex       := GLOBAL_VAR_BASE + $66
 GR16_frameCount       := GLOBAL_VAR_BASE + $68
 GR8_chunkIndex        := GLOBAL_VAR_BASE + $6A
 GR8_chunkCount        := GLOBAL_VAR_BASE + $6B
+GR8_cacheSize         := GLOBAL_VAR_BASE + $6C
 
 GR8_speedLimitVSyncs  := GLOBAL_VAR_BASE + $70  ; speed limit as VSyncs
 GR8_returnCode        := GLOBAL_VAR_BASE + $71
