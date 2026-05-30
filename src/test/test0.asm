@@ -56,7 +56,6 @@ test_bb_expect_default: .asciiz "image.fli,r"
    ;
    ; U16_STZ
    ; U24_STZ
-   ; U32_STZ
    ;---------------------------------------------------------------------------
    lda #$55
    sta GR16_scratch1+0
@@ -71,21 +70,12 @@ test_bb_expect_default: .asciiz "image.fli,r"
    U24_STZ GR24_scratch1
    ASSERT_VAR_U24_EQUALS_IMM $0001, $000000, GR24_scratch1
 
-   lda #$55
-   sta GR32_scratch1+0
-   sta GR32_scratch1+1
-   sta GR32_scratch1+2
-   sta GR32_scratch1+3
-   U32_STZ GR32_scratch1
-   ASSERT_VAR_U32_EQUALS_IMM $0002, $00,$000000, GR32_scratch1
-
    ;---------------------------------------------------------------------------
    ; TEST 00 (simple macros that everything else depends upon)
    ;
    ; U8_COPY_IMM
    ; U16_COPY_IMM
    ; U24_COPY_IMM
-   ; U32_COPY_IMM
    ;---------------------------------------------------------------------------
    stz GR8_scratch1
    U8_COPY_IMM GR8_scratch1, $AA
@@ -99,17 +89,12 @@ test_bb_expect_default: .asciiz "image.fli,r"
    U24_COPY_IMM GR24_scratch1, $AABBCC
    ASSERT_VAR_U24_EQUALS_IMM $0012, $AABBCC, GR24_scratch1
 
-   U32_STZ GR32_scratch1
-   U32_COPY_IMM GR32_scratch1, $AA,$BBCCDD
-   ASSERT_VAR_U32_EQUALS_IMM $0013, $AA,$BBCCDD, GR32_scratch1
-
    ;---------------------------------------------------------------------------
    ; TEST 00 (simple macros that everything else depends upon)
    ;
    ; U8_COPY_VAR
    ; U16_COPY_VAR
    ; U24_COPY_VAR
-   ; U32_COPY_VAR
    ;---------------------------------------------------------------------------
    stz         GR8_scratch1
    U8_COPY_IMM GR8_scratch2, $AA
@@ -126,53 +111,92 @@ test_bb_expect_default: .asciiz "image.fli,r"
    U24_COPY_VAR GR24_scratch1, GR24_scratch2
    ASSERT_VAR_U24_EQUALS_IMM $0022, $AABB, GR24_scratch1
 
-   U32_STZ      GR32_scratch1
-   U32_COPY_IMM GR32_scratch2, $AA,$BBCCDD
-   U32_COPY_VAR GR32_scratch1, GR32_scratch2
-   ASSERT_VAR_U32_EQUALS_IMM $0023, $AA,$BBCCDD, GR32_scratch1
-
    ;---------------------------------------------------------------------------
    ; TEST 01 (add, subtract)
    ;
-   ; U16_ADD_IMM   U16_ADD_VAR   U16_SUB_IMM   U16_SUB_VAR
-   ;                                           U32_SUB_VAR   U32_ADD_A
+   ; U16_ADD_A
+   ;                  U24_ADD_IMM
+   ; U16_ADD_VAR
+   ; U16_SUB_VAR
    ;---------------------------------------------------------------------------
    U16_COPY_IMM GR16_scratch1, $00FE
    U16_COPY_IMM GR16_scratch2, $0004
 
-   U16_ADD_IMM GR16_scratch1, $0004
-   ASSERT_VAR_U16_EQUALS_IMM $0100, $0102, GR16_scratch1
-
-   U16_SUB_IMM GR16_scratch1, $0004
-   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FE, GR16_scratch1
-
-   U16_ADD_VAR GR16_scratch1, GR16_scratch2
-   ASSERT_VAR_U16_EQUALS_IMM $0102, $0102, GR16_scratch1
+   lda #3
+   U16_ADD_A GR16_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0100, $0101, GR16_scratch1
 
    U16_SUB_VAR GR16_scratch1, GR16_scratch2
-   ASSERT_VAR_U16_EQUALS_IMM $0103, $00FE, GR16_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FD, GR16_scratch1
 
-   U32_COPY_IMM GR32_scratch1, $44,$332211 ; value
-   U32_COPY_IMM GR32_scratch2, $33,$445566 ; other value
-   U32_SUB_VAR GR32_scratch1, GR32_scratch2
-   ASSERT_VAR_U32_EQUALS_IMM $0104, $10,$EECCAB, GR32_scratch1
+   U16_ADD_VAR GR16_scratch1, GR16_scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0102, $0101, GR16_scratch1
 
-   lda #$80
-   U32_ADD_A GR32_scratch1
-   ASSERT_VAR_U32_EQUALS_IMM $0105, $10,$EECD2B, GR32_scratch1
+   U24_COPY_IMM GR24_scratch1, $00EEEE
+   U24_ADD_IMM  GR24_scratch1, $222222
+   ASSERT_VAR_U24_EQUALS_IMM $0110, $231110, GR24_scratch1
+
 
    ;---------------------------------------------------------------------------
    ; TEST 02 (inc)
    ;
    ; U16_INC
-   ; U32_INC
    ;---------------------------------------------------------------------------
-   U32_COPY_IMM GR32_scratch1, $01,$FFFFFE
-   U32_INC      GR32_scratch1
-   ASSERT_VAR_U32_EQUALS_IMM $0106, $01,$FFFFFF, GR32_scratch1
+   U16_COPY_IMM GR16_scratch1, $00FE
+   U16_INC      GR16_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0106, $00FF, GR16_scratch1
 
-   U32_INC      GR32_scratch1
-   ASSERT_VAR_U32_EQUALS_IMM $0107, $02,$000000, GR32_scratch1
+   U16_INC      GR16_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0107, $0100, GR16_scratch1
+
+   ;---------------------------------------------------------------------------
+   ; TEST 03 (cmp)
+   ;
+   ; U16_CMP_IMM    U16_CMP_VAR
+   ;---------------------------------------------------------------------------
+   U16_COPY_IMM GR16_scratch1, $5555
+
+   U16_CMP_IMM  GR16_scratch1, $5555
+   ASSERT_BCS $0300 ; >=
+   ASSERT_BEQ $0301 ; ==
+
+   U16_CMP_IMM  GR16_scratch1, $4466
+   ASSERT_BCS $0302 ; >=
+   ASSERT_BNE $0303 ; !=
+
+   U16_CMP_IMM  GR16_scratch1, $6644
+   ASSERT_BCC $0304 ; <
+
+   U16_COPY_IMM GR16_scratch2, $5555
+   U16_CMP_VAR  GR16_scratch1, GR16_scratch2
+   ASSERT_BCS $0310 ; >=
+   ASSERT_BEQ $0311 ; ==
+
+   U16_COPY_IMM GR16_scratch2, $4466
+   U16_CMP_VAR  GR16_scratch1, GR16_scratch2
+   ASSERT_BCS $0312 ; >=
+   ASSERT_BNE $0313 ; !=
+
+   U16_COPY_IMM GR16_scratch2, $6644
+   U16_CMP_VAR  GR16_scratch1, GR16_scratch2
+   ASSERT_BCC $0314 ; <
+
+   ;---------------------------------------------------------------------------
+   ; TEST 04 (misc)
+   ;
+   ; TWOS_COMPLIMENT_A
+   ;---------------------------------------------------------------------------
+   lda #2
+   TWOS_COMPLIMENT_A
+   ASSERT_A_EQUALS_IMM $0400, $FE
+
+   TWOS_COMPLIMENT_A
+   ASSERT_A_EQUALS_IMM $0401, $02
+
+
+
+
+
 
    ;---------------------------------------------------------------------------
    ; TEST 9 - func_detect_filename

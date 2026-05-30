@@ -44,7 +44,7 @@ start:
    U16_STZ GR16_frameIndex
 @frame_loop:
    jsr func_slurp_frame
-   U16_INC GR16_frameIndex
+   U16_INC     GR16_frameIndex
    U16_CMP_VAR GR16_frameIndex, GR16_frameCount
    bne @frame_loop
 

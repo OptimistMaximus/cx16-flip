@@ -11,7 +11,7 @@
 ;#############################################################################
 
 ;==============================================================================
-; U16_SLOW_MULTIPLY
+; U16_SLOW_MULTIPLY                                                   [TEST 10]
 ;
 ; A crude multiply implementation based on an addition loop.  Only use this
 ; in situations where performance is not an issue.  This is seriously slow.
@@ -40,7 +40,7 @@
 
 
 ;==============================================================================
-; U16_SLOW_DIVIDE
+; U16_SLOW_DIVIDE                                                     [TEST 10]
 ;
 ; A crude division implementation based on a subtraction loop.  Only use this
 ; in situations where performance is not an issue.  This is seriously slow.

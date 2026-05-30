@@ -49,7 +49,7 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
 .endmacro
 
 ;==============================================================================
-; SET_VRAM_ADDR_FOR_STAGE_TARGET_LINE
+; SET_VRAM_ADDR_FOR_SCREEN_LINE
 ;
 ; Use lookup table to set VERA address to a specific line offset in the target
 ; area (where the image is drawn to screen), for access via DATA1 and using
@@ -60,9 +60,9 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
 ; since we only call this once per frame (whereas the delta line calc gets
 ; called once per line in a delta chunk).
 ;==============================================================================
-.macro SET_VRAM_ADDR_FOR_STAGE_TARGET_LINE
+.macro SET_VRAM_ADDR_FOR_SCREEN_LINE
    SWITCH_RAM_BANK_IMM FLI_PLAYER_RAM_BANK
-   lda #$10                  ; establish DATA1
+   lda #1                    ; establish DATA1
    sta VERA_CTRL
 
    lda VRAM_ADDR_TABLE_L,x   ; load low byte and effectively subtract $00

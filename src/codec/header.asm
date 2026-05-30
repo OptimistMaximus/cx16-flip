@@ -51,8 +51,10 @@ FILE_TYPE_FLI := $AF11
    ; of the speed value)
    ;---------------------------------------------------------------------------
    varSpeed = GR32_scratch1
-   SLURP_INTO_U32 varSpeed ; dword speed
-   U32_CMP_IMM varSpeed, 297
+   SLURP_INTO_U32 varSpeed     ; dword speed
+   U16_CMP_IMM varSpeed+2, 0   ; verify upper 2 bytes are zero
+   beq @speed_is_cool
+   U16_CMP_IMM varSpeed+0, 297 ; verify lower 2 bytes less than 297
    bcc @speed_is_cool
    U16_COPY_IMM varSpeed, 297
 @speed_is_cool:

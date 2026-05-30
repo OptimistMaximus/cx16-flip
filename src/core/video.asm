@@ -136,11 +136,9 @@
 .proc func_load_image: near
 
    pha                                 ; squirrel .A line count for later
-
-   SET_VRAM_ADDR_FOR_DELTA_LINE        ; effectively set source (stage)
-   SET_VRAM_ADDR_FOR_STAGE_TARGET_LINE ; set target with auto-inc 4
-   BATCH_COPY_ENABLE
-
+      SET_VRAM_ADDR_FOR_DELTA_LINE     ; effectively set source (stage)
+      SET_VRAM_ADDR_FOR_SCREEN_LINE    ; set target with auto-inc 4
+      BATCH_COPY_ENABLE
    plx                                 ; pull line count into .X
 @bulk_vram_copy_outer_loop:
    ldy #(320 / 16)                     ; .Y is for columns, batched
@@ -155,7 +153,6 @@
    bne @bulk_vram_copy_outer_loop
 
    BATCH_COPY_DISABLE
-
    rts
 .endproc
 

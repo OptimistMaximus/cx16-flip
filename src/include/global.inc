@@ -28,11 +28,6 @@ ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
 ; if they exist in Zero Page.  As long as the total usage here is under $40
 ; bytes, it can easily fit in either ZP or GOLDEN RAM.
 ;------------------------------------------------------------------------------
-CONST_cacheAddr       := $400
-CONST_cacheSize       := $FF  ; (this is a constant, not a variable)
-CONST_skipArray       := $500
-CONST_countArray      := $600
-
 .ifdef MINIMIZE_ZEROPAGE_USAGE
    GLOBAL_VAR_BASE    := $700
 .else
@@ -79,6 +74,11 @@ FLI_PLAYER_RAM_BANK := 1
 VRAM_ADDR_TABLE_L := $B000
 VRAM_ADDR_TABLE_M := $B100
 VRAM_ADDR_TABLE_H := $B200
+
+CONST_cacheAddr   := $B300
+CONST_cacheSize   := $FF  ; (this is a constant, not a variable)
+CONST_skipArray   := $B400
+CONST_countArray  := $B500
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

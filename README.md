@@ -208,5 +208,8 @@ Bad FLI files:
   subroutines and put them in the higher level functions that drive them ... we
   are probably needlessly pushing and pulling in some cases that might be in
   big 320x200 pixel loops, so saving 7 cycles per push/pull will really add up.
+- optimize for frames with a single chunk (no need to keep a render/shuffle list)
+- see if we can get away with setting the RAM bank once at startup rather than
+  every time. is it safe to assume any kernal calls that need bank 0 will set it back?
 
 
