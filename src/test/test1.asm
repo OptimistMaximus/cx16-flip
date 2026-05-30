@@ -2,8 +2,9 @@
 
 .import func_open_inputstream
 .import func_close_inputstream
-.import func_prep_for_active_buffering
-.import func_vera_flip_stage
+.import func_calc_delta_line_addr
+.import func_load_image
+.import func_load_palette
 .import func_cache_read_into_vram
 .import func_cache_dupe_into_vram
 .import func_print_hex
@@ -46,7 +47,6 @@ u64data: .res 8, $00
 
 .segment "CODE"
 
-.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
@@ -115,93 +115,88 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
    ;
-   ; func_prep_for_active_buffering
-   ; ADVANCE_LINE_FOR_ACTIVE_BUFFERING
-   ; func_vera_flip_stage
+   ; CALCULATE_VRAM_LINE_ADDR
+   ; ESTABLISH_LINE_FOR_FULL
+   ; ESTABLISH_LINE_FOR_DELTA
+   ; ADVANCE_LINE_FOR_DELTA
+   ;
+   ; func_load_stage
+   ; func_load_palette
    ;---------------------------------------------------------------------------
    jsr sub_init_stages
-   lda #0                                       ; line 0 has $AA
-   jsr func_prep_for_active_buffering
-   lda VERA_DATA0
-   lda #$AA
-   sta VERA_DATA0
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 1 has $BB
-   lda VERA_DATA0
-   lda #$BB
-   sta VERA_DATA0
+   ldx #0 ; line skip
+   jsr CALCULATE_VRAM_LINE_ADDR GR16_scratch1
+   ASSERT_VAR_U24_EQUALS_IMM $1200, $00000, ZP24_vramOffset
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 2 is skipped
+   ldx #4 ; line skip
+   jsr CALCULATE_VRAM_LINE_ADDR GR16_scratch1
+   ASSERT_VAR_U24_EQUALS_IMM $1201, $05000, ZP24_vramOffset
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 3 has $CC
-   lda VERA_DATA0
-   lda #$CC
-   sta VERA_DATA0
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 4 has $DD
-   lda VERA_DATA0
-   lda #$DD
-   sta VERA_DATA0
 
-   lda #2                                       ; go back to line 2
-   jsr func_prep_for_active_buffering           ; and put $EE into it
-   lda VERA_DATA0
-   lda #$EE
-   sta VERA_DATA0
+   ESTABLISH_LINE_FOR_FULL
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_0, $10 ; verify 0 has $AA
-   ASSERT_VRAM_U8_EQUALS_IMM $1200, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1201, $AA
-   ASSERT_VRAM_U8_EQUALS_IMM $1202, $00
+   .scope test12_write_to_stage_line_0
+      ldx #0 ; line skip
+      jsr CALCULATE_VRAM_LINE_ADDR GR16_scratch1
+      ASSERT_VAR_U24_EQUALS_IMM $1200, $0FA00, ZP24_vramOffset
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_1, $10 ; verify 1 has $EE
-   ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1204, $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1205, $00
+      lda #$AA
+      sta VERA_DATA0
+      SET_VERA_ADDR24_IMM $00, $0FA00, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1201, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1202, $00
+   .endscope
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_2, $10 ; verify 2 has $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1206, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1207, $EE
-   ASSERT_VRAM_U8_EQUALS_IMM $1208, $00
+   .scope test12_write_to_stage_line_4
+      ldx #4 ; line skip
+      jsr func_calc_delta_line_addr
+      ASSERT_VAR_U24_EQUALS_IMM $1210, $0FF00, ZP24_vramOffset
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_3, $10 ; verify 3 has $CC
-   ASSERT_VRAM_U8_EQUALS_IMM $1209, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1210, $CC
-   ASSERT_VRAM_U8_EQUALS_IMM $1211, $00
+      lda #$BB
+      sta VERA_DATA0
+      SET_VERA_ADDR24_IMM $00, $0FEFF, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1211, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1212, $BB
+      ASSERT_VRAM_U8_EQUALS_IMM $1213, $00
+   .endscope
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_4, $10 ; verify 4 has $DD
-   ASSERT_VRAM_U8_EQUALS_IMM $1212, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1213, $DD
-   ASSERT_VRAM_U8_EQUALS_IMM $1214, $00
+   .scope test12_load_staged_lines_3_to_5
+      ldx #3 ; line skip
+      lda #4 ; line count
+      jsr func_load_image
 
-   ldx #3                         ; flip 3 lines
-   lda #1                         ; skipping 1 line (i.e. lines 1-3)
-   jsr func_vera_flip_stage       ; flip buffer to image
+      SET_VERA_ADDR24_IMM $00, $00000, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1220, $00 ; verify untouched
+      ASSERT_VRAM_U8_EQUALS_IMM $1221, $00
 
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10 ; verify 0 untouched
-   ASSERT_VRAM_U8_EQUALS_IMM $1220, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1221, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
+      SET_VERA_ADDR24_IMM $00, $004FF, $10 ; verify line 4 copied
+      ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
+      ASSERT_VRAM_U8_EQUALS_IMM $1223, $BB
+      ASSERT_VRAM_U8_EQUALS_IMM $1224, $00
+   .endscope
 
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_1, $10 ; verify 1 copied
-   ASSERT_VRAM_U8_EQUALS_IMM $1223, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1224, $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1225, $00
+   .scope test12_load_palette
+      SET_VERA_ADDR24_IMM $00, $1FA00, $10 ; source
+      SET_VERA_ADDR24_IMM $01, $1F400, $10 ; target
+      ldx #0                               ; copy sys palette to staging area
+   :  lda VERA_DATA0
+      sta VERA_DATA1
+      lda VERA_DATA0
+      sta VERA_DATA1
+      dex
+      bne :-
 
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_2, $10 ; verify 2 copied
-   ASSERT_VRAM_U8_EQUALS_IMM $1226, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1227, $EE
-   ASSERT_VRAM_U8_EQUALS_IMM $1228, $00
+      SET_VERA_ADDR24_IMM $00, $1F500, $10 ; now zero out a non-zero color
+      stz VERA_DATA0
+      stz VERA_DATA0
 
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_3, $10 ; verify 3 copied
-   ASSERT_VRAM_U8_EQUALS_IMM $1229, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1230, $CC
-   ASSERT_VRAM_U8_EQUALS_IMM $1231, $00
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_4, $10 ; verify 4 untouched
-   ASSERT_VRAM_U8_EQUALS_IMM $1232, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1233, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1234, $00
+      jsr func_load_palette                ; then copy it back
+      SET_VERA_ADDR24_IMM $00, $1FB00, $10 ; and verify sys palette now has
+      ASSERT_VRAM_U8_EQUALS_IMM $1231, $00 ; that corresponding color zeroed
+      ASSERT_VRAM_U8_EQUALS_IMM $1232, $00
+   .endscope
 
    ;---------------------------------------------------------------------------
    ; TEST 13
@@ -210,7 +205,7 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    ; TEST 14 (slurp 'n skip)
    ;
-   ; NARF_READ_INTO_A
+   ; SLURP_INTO_A
    ; func_cache_read_into_vram
    ; func_cache_dupe_into_vram
    ; SLURP_INTO_U8
@@ -227,8 +222,8 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    jsr func_open_inputstream
    jsr func_cache_init
 
-   NARF_READ_INTO_A ; burn first byte 00
-   NARF_READ_INTO_A ; VRAM gains 11
+   SLURP_INTO_A ; burn first byte 00
+   SLURP_INTO_A ; VRAM gains 11
    sta VERA_DATA0
    lda #2                    ; VRAM skips ahead 2 bytes
    SKIP_PIXELS
@@ -280,8 +275,8 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;
    ; single read, cache hit scenario with bytes remaining
    ;
-   NARF_READ_INTO_A
-   NARF_READ_INTO_A
+   SLURP_INTO_A
+   SLURP_INTO_A
    sta VERA_DATA0
 
    ;
@@ -300,13 +295,13 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;
    ; single read, cache hit but it's an edge-case: the last byte
    ;
-   NARF_READ_INTO_A
+   SLURP_INTO_A
    sta VERA_DATA0
 
    ;
    ; single read, cache miss, should load 16 fresh, leaving 15 remaining
    ;
-   NARF_READ_INTO_A
+   SLURP_INTO_A
    sta VERA_DATA0
 
    ;

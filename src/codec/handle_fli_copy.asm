@@ -1,6 +1,6 @@
 .export handle_fli_copy
-.import func_prep_for_active_buffering
-.import func_vera_flip_stage
+
+.import func_cache_read_into_vram
 
 .segment "CODE"
 
@@ -11,8 +11,7 @@
 
 .proc handle_fli_copy: near
    phy
-      lda #0 ; full screen
-      jsr func_prep_for_active_buffering
+      ESTABLISH_LINE_FOR_FULL
       ldy #200
    @outer_loop:
       lda #160
@@ -22,7 +21,7 @@
       dey
       bne @outer_loop
    ply
-   lda #0    ; return value line skip
-   ldx #200  ; return value line count
+   U8_COPY_IMM ZP8_lineSkip, 0
+   U8_COPY_IMM ZP8_lineCount, 200
    rts
 .endproc

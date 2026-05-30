@@ -2,10 +2,10 @@
 .export handle_color_256
 
 .import func_load_palette
+.import func_cache_load_page
 
 .segment "CODE"
 
-.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/opcodes.inc"
@@ -122,12 +122,12 @@ sub_handle_color:
       bne packet_loop
 
    ply
-   lda #0
-   ldx #0
+   U8_COPY_IMM ZP8_lineSkip, $FF
+   U8_COPY_IMM ZP8_lineCount, $FF
    rts
 
 .proc sub_skip_colors: near
-   NARF_READ_INTO_A           ; skip count
+   SLURP_INTO_A           ; skip count
    cmp #0
    beq @done
    SKIP_COLORS

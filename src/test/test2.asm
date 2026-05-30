@@ -18,7 +18,6 @@
 .import sub_resolve_chunk_type
 .import sub_resolve_frame_type
 
-.include "../include/narf.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
@@ -104,13 +103,13 @@ VRAM_IMAGE_LINE_3  := $003C0
    VPOKE $1F3FF, $DD
    VPOKE $1F400, $EE
    jsr handle_black
-   ASSERT_A_EQUALS_IMM     $3200, 0           ; line skip
-   ASSERT_X_EQUALS_IMM     $3201, 200         ; line skip
-   ASSERT_VPEEK_EQUALS_IMM $3200, $AA, $00000 ; untouched
-   ASSERT_VPEEK_EQUALS_IMM $3200, $BB, $0F9FF ; untouched
-   ASSERT_VPEEK_EQUALS_IMM $3201, $00, $0FA00 ; via black
-   ASSERT_VPEEK_EQUALS_IMM $3203, $00, $1F3FF ; via black
-   ASSERT_VPEEK_EQUALS_IMM $3204, $EE, $1F400 ; untouched
+   ASSERT_VAR_U8_EQUALS_IMM $3200, 0, ZP8_lineSkip
+   ASSERT_VAR_U8_EQUALS_IMM $3201, 200, ZP8_lineCount
+   ASSERT_VPEEK_EQUALS_IMM  $3202, $AA, $00000 ; untouched
+   ASSERT_VPEEK_EQUALS_IMM  $3203, $BB, $0F9FF ; untouched
+   ASSERT_VPEEK_EQUALS_IMM  $3204, $00, $0FA00 ; via black
+   ASSERT_VPEEK_EQUALS_IMM  $3205, $00, $1F3FF ; via black
+   ASSERT_VPEEK_EQUALS_IMM  $3206, $EE, $1F400 ; untouched
 
    ;---------------------------------------------------------------------------
    ; TEST 33 - sub_resolve_chunk_type
@@ -195,32 +194,32 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr handle_color_64
    CLOSE_INPUTSTREAM
 
-   ASSERT_A_EQUALS_IMM $3600, 0
-   ASSERT_X_EQUALS_IMM $3600, 0
+   ASSERT_VAR_U8_EQUALS_IMM $3600, $FF, ZP8_lineSkip
+   ASSERT_VAR_U8_EQUALS_IMM $3601, $FF, ZP8_lineCount
    SET_VERA_ADDR24_IMM $00, $1F400, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3601, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3602, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3603, $0EA7 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3604, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3605, $0666 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3606, $0BBB ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3607, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3602, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3603, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3604, $0EA7 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3605, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3606, $0666 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3607, $0BBB ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3608, $0606 ; color 6 untouched
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '0'
    jsr sub_init_palette_buffer
    jsr handle_color_256
    CLOSE_INPUTSTREAM
 
-   ASSERT_A_EQUALS_IMM $3610, 0
-   ASSERT_X_EQUALS_IMM $3610, 0
+   ASSERT_VAR_U8_EQUALS_IMM $3610, $FF, ZP8_lineSkip
+   ASSERT_VAR_U8_EQUALS_IMM $3611, $FF, ZP8_lineCount
    SET_VERA_ADDR24_IMM $00, $1F400, $10
-   ASSERT_VRAM_U16_EQUALS_IMM $3611, $0000 ; color 0 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3612, $0101 ; color 1 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3613, $0321 ; color 2
-   ASSERT_VRAM_U16_EQUALS_IMM $3614, $0303 ; color 3 skip
-   ASSERT_VRAM_U16_EQUALS_IMM $3615, $0111 ; color 4
-   ASSERT_VRAM_U16_EQUALS_IMM $3616, $0222 ; color 5
-   ASSERT_VRAM_U16_EQUALS_IMM $3617, $0606 ; color 6 untouched
+   ASSERT_VRAM_U16_EQUALS_IMM $3612, $0000 ; color 0 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3613, $0101 ; color 1 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3614, $0321 ; color 2
+   ASSERT_VRAM_U16_EQUALS_IMM $3615, $0303 ; color 3 skip
+   ASSERT_VRAM_U16_EQUALS_IMM $3616, $0111 ; color 4
+   ASSERT_VRAM_U16_EQUALS_IMM $3617, $0222 ; color 5
+   ASSERT_VRAM_U16_EQUALS_IMM $3618, $0606 ; color 6 untouched
 
    OPEN_INPUTSTREAM_R fn_color_x, 5, '1'
    jsr sub_init_palette_buffer
@@ -266,8 +265,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_byterun, 0, 'b'
    jsr handle_byte_run
    CLOSE_INPUTSTREAM
-   ASSERT_A_EQUALS_IMM $3700, 0
-   ASSERT_X_EQUALS_IMM $3701, 200
+   ASSERT_VAR_U8_EQUALS_IMM $3700,   0, ZP8_lineSkip
+   ASSERT_VAR_U8_EQUALS_IMM $3701, 200, ZP8_lineCount
 
    SET_VERA_ADDR24_IMM $00, $0FA00, $10
    ASSERT_VRAM_U8_EQUALS_IMM $3710, $00 ; packet 0 start (line 0)
@@ -305,8 +304,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    jsr handle_delta_fli
    CLOSE_INPUTSTREAM
 
-   ASSERT_A_EQUALS_IMM $3800, 4 ; line skip
-   ASSERT_X_EQUALS_IMM $3801, 2 ; line count
+   ASSERT_VAR_U8_EQUALS_IMM $3800, 4, ZP8_lineSkip
+   ASSERT_VAR_U8_EQUALS_IMM $3801, 2, ZP8_lineCount
 
    SET_VERA_ADDR24_IMM $00, $0FDC0, $10 ; line 4
    ASSERT_VRAM_U8_EQUALS_IMM $3810, $00 ; pixel 0

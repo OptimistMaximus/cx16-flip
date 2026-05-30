@@ -13,6 +13,9 @@
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
 ZP24_vramOffset         := $24
+ZP8_lineSkip            := $27
+ZP8_lineCount           := $28
+ZP8_lineStop            := $29
 ZP16_cachePointer       := $2A
 ZP8_cacheRemaining      := $2C
 ZP8_cacheLoadCount      := $2D

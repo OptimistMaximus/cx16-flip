@@ -1,5 +1,6 @@
 .export func_slurp_header
 
+.import func_cache_load_page
 .import bsod
 
 .include "../include/global.inc"

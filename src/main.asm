@@ -17,7 +17,6 @@
 .segment "ONCE"
 .segment "CODE"
 
-.include "include/narf.inc"
 .include "include/debug.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"

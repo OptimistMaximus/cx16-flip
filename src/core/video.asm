@@ -1,9 +1,8 @@
 .export func_vera_setup
 .export func_vera_restore
-.export func_vera_flip_stage
 .export func_print_hex
 .export func_load_palette
-.export func_prep_for_active_buffering
+.export func_load_image
 
 .segment "CODE"
 
@@ -120,100 +119,39 @@
 .endproc
 
 ;==============================================================================
-; func_prep_for_active_buffering
+; func_load_image
 ;
-; This is a special optimization to calculate a VRAM offset in 320x240 mode
-; where the line number is less than 204. This means the calculated result will
-; be within the 16-bit range, so we can save a few cycles due to not worrying
-; about the most significant byte (it can be unconditionally forced to zero)
-;
-; @param  .A the line number (having value 0-199)
-;
-; The optimization here is to store the line number into the 24-bit result,
-; then multiply by 320 by adding the result of the line number multiplied by
-; 64 plus the line number multiplied by 256. Multiplying by 64 is just six
-; left-shifts, so we'll do that and squirrel away the result into our scratch
-; area. Then do two more shifts so that the result now represents the value
-; multiplied by 256. Then add in the squirreled away 64x value.
-;
-; It is tempting to do a quick check for line 0, in which case we can skip all
-; the boring shifts and adds, but it is assumed this macro will get called in
-; situations where line 0 is as likely to be passed in as any other line. So
-; we don't want to incur the 2 or 3 cycle penalty 100% of the time only to
-; save some cycles 1/204th of the time.
-;
-; Also, although it is VERY tempting to make a special optimization for full
-; frames (where the line is always zero), we do not have such a macro if only
-; because full frames are presumed to be exceedingly rare in a FLI, so from a
-; code maintenance standpoint, having a super-special optimization for an
-; extremely rare case isn't worth it.
+; @param .X holds line skip
+; @param .A holds line count
 ;==============================================================================
-.proc func_prep_for_active_buffering
-   scratchAddr = GR16_scratch1
+.proc func_load_image: near
 
-   sta ZP24_vramOffset+0                     ; .A is now in the 24-bit result
-   stz ZP24_vramOffset+1                     ; which is the basis for our
-   stz ZP24_vramOffset+2
-   U16_ASL ZP24_vramOffset                   ; multiplication optimization
-   U16_ASL ZP24_vramOffset
-   U16_ASL ZP24_vramOffset
-   U16_ASL ZP24_vramOffset
-   U16_ASL ZP24_vramOffset
-   U16_ASL ZP24_vramOffset
-   U16_COPY_VAR scratchAddr, ZP24_vramOffset ; squirrel 6x value
-   U16_ASL ZP24_vramOffset
-   U16_ASL ZP24_vramOffset
-   U16_ADD_VAR ZP24_vramOffset, scratchAddr  ; add in 6x value
-   U24_ADD_IMM ZP24_vramOffset, $0FA00       ; shift to after stage fold
+   pha                                 ; squirrel .A line count for later
+
+   CALCULATE_VRAM_LINE_ADDR GR16_scratch1
+   SET_VERA_ADDR24_VAR $01, ZP24_vramOffset, $30
+
+   U24_ADD_IMM ZP24_vramOffset, VRAM_BUFF_IMAGE ; establish VERA source
    SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
-   rts
-.endproc
 
-.macro INNER_BATCH_COPY
-   lda VERA_DATA0
-   lda VERA_DATA0
-   lda VERA_DATA0
-   lda VERA_DATA0
-   stz VERA_DATA1
-.endmacro
+   BATCH_COPY_ENABLE
 
-;==============================================================================
-; func_vera_flip_stage
-;
-; The original implementation used to "flip" between layer 0 and layer 1. Now
-; it just quickly copies data from the staging area to layer 0 always.
-;
-; @param  .A line skip
-; @param  .X line count
-; @effect .X clobbered
-; @effect .Y clobbered
-;==============================================================================
-.proc func_vera_flip_stage: near
-   phx
-      jsr func_prep_for_active_buffering           ; now ZP24_vramOffset is source
-      U24_COPY_VAR GR24_scratch1, ZP24_vramOffset  ; store it in scratch 1
-      U24_SUB_IMM ZP24_vramOffset, VRAM_BUFF_IMAGE ; subtract $FA00 to get target
-      lda #%00000100                   ; DCSEL=2
-      sta VERA_CTRL
-      lda #%01100000                   ; Enable Cache Fill & Cache Write
-      sta VERA_DC2_FX_CTRL
-      SET_VERA_ADDR24_VAR $00, GR24_scratch1, $10
-      SET_VERA_ADDR24_VAR $01, ZP24_vramOffset, $30
-   plx                              ; .X is the line count
+   plx                                 ; pull line count into .X
 @bulk_vram_copy_outer_loop:
-   ldy #(320 / 16)                  ; .Y is for columns, adjusted for batching
+   ldy #(320 / 16)                     ; .Y is for columns, batched
 @bulk_vram_copy_inner_loop:
-   INNER_BATCH_COPY
-   INNER_BATCH_COPY
-   INNER_BATCH_COPY
-   INNER_BATCH_COPY
+   BATCH_COPY
+   BATCH_COPY
+   BATCH_COPY
+   BATCH_COPY
    dey
    bne @bulk_vram_copy_inner_loop
    dex
    bne @bulk_vram_copy_outer_loop
 
-   lda #%00000100                   ; DCSEL=2
-   sta VERA_CTRL
-   stz VERA_DC2_FX_CTRL             ; Disable Cache Fill & Cache Write
+   BATCH_COPY_DISABLE
+
    rts
 .endproc
+
+
