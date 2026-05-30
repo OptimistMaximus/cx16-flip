@@ -4,6 +4,7 @@
 .import func_open_inputstream
 .import func_close_inputstream
 .import func_cache_init
+.import func_cache_load_page
 .import func_slurp_header
 .import func_slurp_chunk
 .import func_slurp_frame
