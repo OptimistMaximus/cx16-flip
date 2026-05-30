@@ -12,7 +12,6 @@
 ; or for performance reasons.
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
-ZP24_vramOffset         := $24
 ZP8_lineSkip            := $27
 ZP8_lineCount           := $28
 ZP8_lineStop            := $29
@@ -72,6 +71,14 @@ GR16_origIrqHandler   := GLOBAL_VAR_BASE + $74
 GR16_debugTimerVSyncs := GLOBAL_VAR_BASE + $76
 GR16_debugSpeedOverrun := GLOBAL_VAR_BASE + $78
 GR16_debugSpeedUnderrun := GLOBAL_VAR_BASE + $7A
+
+;------------------------------------------------------------------------------
+; BANKED VARIABLES
+;------------------------------------------------------------------------------
+FLI_PLAYER_RAM_BANK := 1
+VRAM_ADDR_TABLE_L := $B000
+VRAM_ADDR_TABLE_M := $B100
+VRAM_ADDR_TABLE_H := $B200
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

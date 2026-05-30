@@ -11,7 +11,7 @@
 
 .proc handle_fli_copy: near
    phy
-      ESTABLISH_LINE_FOR_FULL
+      SET_VRAM_ADDR_FOR_FULL_LINE
       ldy #200
    @outer_loop:
       lda #160

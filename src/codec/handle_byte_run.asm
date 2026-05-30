@@ -12,7 +12,7 @@
 
 .proc handle_byte_run: near
    phy
-      ESTABLISH_LINE_FOR_FULL
+      SET_VRAM_ADDR_FOR_FULL_LINE
 
       ldx #200                    ; .X is the line countdown
    @line_loop:

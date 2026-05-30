@@ -10,6 +10,7 @@
 .import func_print_hex
 .import func_cache_init
 .import smc_anchor_for_cache_size
+.import func_init_vram_addr_table
 
 .segment "RODATA"
 
@@ -75,7 +76,7 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
 .endmacro
 
 .proc test_suite_1: near
-  
+
    ;---------------------------------------------------------------------------
    ; TEST 10 (math2 stuff)
    ;
@@ -115,71 +116,40 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
    ;
-   ; CALCULATE_VRAM_LINE_ADDR
-   ; ESTABLISH_LINE_FOR_FULL
-   ; ESTABLISH_LINE_FOR_DELTA
-   ; ADVANCE_LINE_FOR_DELTA
-   ;
-   ; func_load_stage
-   ; func_load_palette
+   ; func_init_vram_addr_table
+   ; SET_VRAM_ADDR_FOR_STAGE_LINE
+   ; ADVANCE_VERA_ADDR_FOR_DELTA_PACKET
    ;---------------------------------------------------------------------------
-   jsr sub_init_stages
+   jsr func_init_vram_addr_table
+   lda #FLI_PLAYER_RAM_BANK
+   sta SYSTEM_RAM_SELECTOR_ADDR
 
-   ldx #0 ; line skip
-   CALCULATE_VRAM_LINE_ADDR GR16_scratch1
-   ASSERT_VAR_U24_EQUALS_IMM $1200, $00000, ZP24_vramOffset
+   ; Line 0 is (0 * 320) + $0FA00 with high byte OR'ed with $10
+   ASSERT_VAR_U8_EQUALS_IMM $1200, $00, VRAM_ADDR_TABLE_L+0
+   ASSERT_VAR_U8_EQUALS_IMM $1201, $FA, VRAM_ADDR_TABLE_M+0
+   ASSERT_VAR_U8_EQUALS_IMM $1202, $10, VRAM_ADDR_TABLE_H+0
 
-   ldx #4 ; line skip
-   CALCULATE_VRAM_LINE_ADDR GR16_scratch1
-   ASSERT_VAR_U24_EQUALS_IMM $1201, $00500, ZP24_vramOffset
+   ; Line 4 is (4 * 320) + $0FA00 with high byte OR'ed with $10
+   ASSERT_VAR_U8_EQUALS_IMM $1203, $00, VRAM_ADDR_TABLE_L+4
+   ASSERT_VAR_U8_EQUALS_IMM $1204, $FF, VRAM_ADDR_TABLE_M+4
+   ASSERT_VAR_U8_EQUALS_IMM $1205, $10, VRAM_ADDR_TABLE_H+4
 
+   ; Line 199 is (199 * 320) + $0FA00 with high byte OR'ed with $10
+   ASSERT_VAR_U8_EQUALS_IMM $1206, $C0, VRAM_ADDR_TABLE_L+199
+   ASSERT_VAR_U8_EQUALS_IMM $1207, $F2, VRAM_ADDR_TABLE_M+199
+   ASSERT_VAR_U8_EQUALS_IMM $1208, $11, VRAM_ADDR_TABLE_H+199
 
+   ldx #100 ; (100*320) + $FA00 with high byte OR'ed with $10
+   SET_VRAM_ADDR_FOR_DELTA_LINE
+   ASSERT_VAR_U24_EQUALS_IMM $1210, $117700, VERA_ADDRx_L
 
-   ESTABLISH_LINE_FOR_FULL GR16_scratch1
-   lda #$AA
-   sta VERA_DATA0
-   SET_VERA_ADDR24_IMM $00, $0FA00, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $1201, $AA
-   ASSERT_VRAM_U8_EQUALS_IMM $1202, $00
+   lda #$55 ; advance $55 beyond previous setting
+   ADVANCE_VERA_ADDR_FOR_DELTA_PACKET
+   ASSERT_VAR_U24_EQUALS_IMM $1220, $117755, VERA_ADDRx_L
 
-   ldx #4 ; line skip
-   ESTABLISH_LINE_FOR_DELTA GR16_scratch1
-   lda #$BB
-   sta VERA_DATA0
-   SET_VERA_ADDR24_IMM $00, $0FEFF, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $1211, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1212, $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1213, $00
-
-   ldx #3 ; line skip
-   lda #4 ; line count
-   jsr func_load_image
-   SET_VERA_ADDR24_IMM $00, $00000, $10
-   ASSERT_VRAM_U8_EQUALS_IMM $1220, $00 ; verify untouched
-   ASSERT_VRAM_U8_EQUALS_IMM $1221, $00
-   SET_VERA_ADDR24_IMM $00, $004FF, $10 ; verify line 4 copied
-   ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1223, $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1224, $00
-
-   SET_VERA_ADDR24_IMM $00, $1FA00, $10 ; source
-   SET_VERA_ADDR24_IMM $01, $1F400, $10 ; target
-   ldx #0                               ; copy sys palette to staging area
-:  lda VERA_DATA0
-   sta VERA_DATA1
-   lda VERA_DATA0
-   sta VERA_DATA1
-   dex
-   bne :-
-
-   SET_VERA_ADDR24_IMM $00, $1F500, $10 ; now zero out a non-zero color
-   stz VERA_DATA0
-   stz VERA_DATA0
-
-   jsr func_load_palette                ; then copy it back
-   SET_VERA_ADDR24_IMM $00, $1FB00, $10 ; and verify sys palette now has
-   ASSERT_VRAM_U8_EQUALS_IMM $1231, $00 ; that corresponding color zeroed
-   ASSERT_VRAM_U8_EQUALS_IMM $1232, $00
+   ldx #5
+   SET_VRAM_ADDR_FOR_STAGE_TARGET_LINE
+   ASSERT_VAR_U24_EQUALS_IMM $1230, $300640, VERA_ADDRx_L
 
    ;---------------------------------------------------------------------------
    ; TEST 13

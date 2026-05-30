@@ -13,7 +13,7 @@
 ;==============================================================================
 .proc handle_black: near
    phy
-      ESTABLISH_LINE_FOR_FULL
+      SET_VRAM_ADDR_FOR_FULL_LINE
       lda #0 ; color zero
       ldy #200
    @outer_loop:

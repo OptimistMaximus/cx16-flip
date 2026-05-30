@@ -3,6 +3,7 @@
 .export func_print_hex
 .export func_load_palette
 .export func_load_image
+.export func_init_vram_addr_table
 
 .segment "CODE"
 
@@ -123,17 +124,21 @@
 ;
 ; @param .X holds line skip
 ; @param .A holds line count
+;
+; Since loading an image uses staging as source, where we want to start at
+; a line offset, then auto-inc by 1, we can re-use the macro for calculating
+; a delta's initial VRAM address.  That macro forces the VERA data channel to
+; DATA0, so that's what we'll use as the "source".
+;
+; The "target" will then be $FA00 less than that, since that's our stage fold.
+; We'll do this with bespoke math that sw
 ;==============================================================================
 .proc func_load_image: near
 
    pha                                 ; squirrel .A line count for later
 
-   CALCULATE_VRAM_LINE_ADDR GR16_scratch1
-   SET_VERA_ADDR24_VAR $01, ZP24_vramOffset, $30
-
-   U24_ADD_IMM ZP24_vramOffset, VRAM_BUFF_IMAGE ; establish VERA source
-   SET_VERA_ADDR24_VAR $00, ZP24_vramOffset, $10
-
+   SET_VRAM_ADDR_FOR_DELTA_LINE        ; effectively set source (stage)
+   SET_VRAM_ADDR_FOR_STAGE_TARGET_LINE ; set target with auto-inc 4
    BATCH_COPY_ENABLE
 
    plx                                 ; pull line count into .X
@@ -153,5 +158,35 @@
 
    rts
 .endproc
+
+;==============================================================================
+; func_init_vram_addr_table
+;
+; This creates a table for 24-bit VRAM addresses where the table index is
+; the line in VRAM, and the resulting address is offset for our staging area
+; already, and whose high byte is already ORA'ed with auto-inc of 1.
+;
+; Invoke this once before any attempts to establish VRAM addresses while
+; rendering chunks.
+;==============================================================================
+.proc func_init_vram_addr_table: near
+   scratch = GR24_scratch1
+   U24_COPY_IMM scratch, (VRAM_BUFF_IMAGE | $100000)
+   SWITCH_RAM_BANK_IMM FLI_PLAYER_RAM_BANK
+   ldx #0
+@loop:
+   lda scratch+0
+   sta VRAM_ADDR_TABLE_L,x
+   lda scratch+1
+   sta VRAM_ADDR_TABLE_M,x
+   lda scratch+2
+   sta VRAM_ADDR_TABLE_H,x
+   U24_ADD_IMM scratch, 320
+   inx
+   cpx #200
+   bne @loop
+   rts
+.endproc
+
 
 

@@ -204,18 +204,9 @@ Bad FLI files:
 
 ## IDEAS / TODO
 
-- since we can't use 32-bit FX cache writes for palette, there might be no benefit
-  to storing it in VRAM. Consider storing in "golden" RAM instead.  This way we
-  can skip/burn palette entries by just doing inx or iny instead of LDA VERA_DATA0.
-  Though, palette updates don't happen as often as FLI_DELTA so optimization should
-  focus there first.
-- keep a running 24-bit value of our VRAM location, and evaluate each skip ...
-  setting VRAM addr takes 26 cycles, and doing 7 LDAs to VERA_DATA0 takes 28 bytes.
-  So any skip of 7 or more is faster to do by moving the VRAM address.  But doing
-  the ADC to keep that value fresh is also expensive, as is doing a U24_INC with
-  every byte written.  Is there a way to ask VERA what its offset currently is?
-- read delta line's column skip BEFORE advancing to the current line, so we
-  just do a quick bit of math instead of a lot of burnt pixels
-
+- consider saving time by taking phx/plx and phy/ply out of low level caching
+  subroutines and put them in the higher level functions that drive them ... we
+  are probably needlessly pushing and pulling in some cases that might be in
+  big 320x200 pixel loops, so saving 7 cycles per push/pull will really add up.
 
 
