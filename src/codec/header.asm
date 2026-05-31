@@ -1,5 +1,6 @@
 .export func_slurp_header
 
+.import func_cache_discard_bytes
 .import func_cache_load_page
 .import bsod
 
@@ -21,9 +22,10 @@ FILE_TYPE_FLI := $AF11
 ;==============================================================================
 .proc func_slurp_header: near
 
-   varFileType = GR16_scratch1 ; can be repurposed after file type validation
+   varFileType = GR16_scratch1  ; can be repurposed after file type validation
 
-   SLURP_INTO_OBLIVION 4       ; dword size (file size)
+   lda #4
+   jsr func_cache_discard_bytes ; dword size (file size)
    SLURP_INTO_U16 varFileType  ;  word type (file type)
 
    ;---------------------------------------------------------------------------
@@ -35,7 +37,8 @@ FILE_TYPE_FLI := $AF11
 @fileType_is_fli:
 
    SLURP_INTO_U16 GR16_frameCount
-   SLURP_INTO_OBLIVION 8  ; width, height, depth, flags
+   lda #8
+   jsr func_cache_discard_bytes ; width, height, depth, flags
 
    ;---------------------------------------------------------------------------
    ; validate speed
@@ -85,7 +88,8 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    ; burn remaining bytes of header
    ;---------------------------------------------------------------------------
-   SLURP_INTO_OBLIVION 108
+   lda #108
+   jsr func_cache_discard_bytes
 
    rts
 .endproc

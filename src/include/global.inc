@@ -12,14 +12,14 @@
 ; or for performance reasons.
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
-ZP8_lineSkip            := $27
-ZP8_lineCount           := $28
-ZP8_lineStop            := $29
-ZP16_cachePointer       := $2A
-ZP8_cacheRemaining      := $2C
-ZP8_cacheLoadCount      := $2D
-ZP8_timerTrigger        := $2E ; state variable needed by speed timer
-ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
+ZP16_cachePointer       := $24
+ZP8_cacheRemaining      := $26
+ZP8_cacheLoadCount      := $27
+ZP8_lineSkip            := $28
+ZP8_lineCount           := $29
+ZP8_lineStop            := $2A
+ZP8_timerTrigger        := $2B ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $2C ; VSyncs elapsed while rendering current image
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES
@@ -29,7 +29,7 @@ ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
 ; bytes, it can easily fit in either ZP or GOLDEN RAM.
 ;------------------------------------------------------------------------------
 .ifdef MINIMIZE_ZEROPAGE_USAGE
-   GLOBAL_VAR_BASE    := $700
+   GLOBAL_VAR_BASE    := $B600
 .else
    GLOBAL_VAR_BASE    := $0
 .endif

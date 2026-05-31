@@ -3,6 +3,7 @@
 .export func_cache_init
 .export func_cache_load_page
 .export smc_anchor_for_cache_size ; for unit test purpose only
+.export func_cache_discard_bytes
 
 .import bsod
 
@@ -25,6 +26,22 @@
    lda #>CONST_cacheAddr   ; high byte of actual cache address
    sta ZP16_cachePointer+1 ; stored as high byte of our pointer
    jmp func_cache_load_page
+.endproc
+
+;==============================================================================
+; func_cache_discard_bytes
+;
+; @param .A holds the number of bytes to discard
+;==============================================================================
+.proc func_cache_discard_bytes: near
+   phx
+      tax
+   @loop:
+      SLURP_INTO_A   ; this uses an anonymous label, so our :- must be a :--
+      dex
+      bne @loop
+   plx
+   rts
 .endproc
 
 ;==============================================================================

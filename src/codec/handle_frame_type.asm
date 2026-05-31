@@ -5,6 +5,7 @@
 .import func_load_image
 .import func_load_palette
 .import func_cache_load_page
+.import func_cache_discard_bytes
 .import bsod
 
 .segment "CODE"
@@ -19,7 +20,8 @@
 .proc handle_frame_type: near
    stz ZP8_imageVSyncsElapsed     ; i.e. start the frame timer
    SLURP_INTO_U8 GR8_chunkCount   ; low byte of chunk count
-   SLURP_INTO_OBLIVION 9          ; high byte of chunk count & remaining 8
+   lda #9
+   jsr func_cache_discard_bytes   ; high byte of chunk count & remaining 8
 
    lda GR8_chunkCount             ; zero-chunk frames are a common way to
    cmp #0                         ; make the current image linger as is

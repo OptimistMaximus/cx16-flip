@@ -75,19 +75,6 @@
 .endmacro
 
 ;==============================================================================
-; SLURP_INTO_OBLIVION
-;==============================================================================
-.macro SLURP_INTO_OBLIVION count
-   phx
-      ldx #count
-   :
-      SLURP_INTO_A
-      dex
-      bne :-
-   plx
-.endmacro
-
-;==============================================================================
 ; SKIP_PIXELS (using VERA_DATA0)
 ;
 ; @param .A holds the number of pixels to advance (skip over)

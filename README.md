@@ -98,8 +98,13 @@ will be used.  The results are tracked here, for each released version:
 | 0.4.0   | $00A7  |  21 | $0024    | 1998      |
 | 0.5.0   | $009E  |  22 | $0029    | 1948      |
 | 0.6.0   | $009A  |  23 | $0029    | 1951      |
+| 0.6.1   | $0072  |  31 | $0024    | 2340      |
 
 ### Version History
+
+- 2026/05/30 Version 0.6.1
+  - significant refactoring of how VERA addresses are manipulated
+  - significant performance optimizations for speed (at expense of PRG size)
 
 - 2026/05/27 Version 0.6.0
   - speed is now correctly applied per frame (not per chunk, as incorrectly
@@ -110,6 +115,7 @@ will be used.  The results are tracked here, for each released version:
   - files whose frames have multiple chunks (e.g. a small delta for the
     top of the screen and a small delta for the bottom of the screen) now
     play much smoother.
+
 - 2026/05/26 Version 0.5.0
   - now detects the next chunk with a sliding window instead of trusting
     the encoded chunk sizes (which are surprisingly wrong in a lot of FLI

@@ -194,7 +194,8 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    lda #3                    ; VRAM gains 444444
    jsr func_cache_dupe_into_vram
 
-   SLURP_INTO_OBLIVION 1     ; discard 55
+   lda #1
+   jsr func_cache_discard_bytes ; discard 55
 
    SLURP_INTO_U8  u8data2    ; var set to 66
    SLURP_INTO_U16 u16data    ; var set to 7788
