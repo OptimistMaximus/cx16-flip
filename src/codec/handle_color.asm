@@ -2,6 +2,7 @@
 .export handle_color_256
 
 .import func_load_palette
+.import func_cache_load_page
 
 .segment "CODE"
 
@@ -121,12 +122,12 @@ sub_handle_color:
       bne packet_loop
 
    ply
-   lda #0
-   ldx #0
+   U8_COPY_IMM ZP8_lineSkip, $FF
+   U8_COPY_IMM ZP8_lineCount, $FF
    rts
 
 .proc sub_skip_colors: near
-   jsr func_cache_read_into_a           ; skip count
+   SLURP_INTO_A           ; skip count
    cmp #0
    beq @done
    SKIP_COLORS

@@ -1,6 +1,8 @@
 .export handle_byte_run
 
-.import func_prep_for_active_buffering
+.import func_cache_load_page
+.import func_cache_read_into_vram
+.import func_cache_dupe_into_vram
 
 .segment "CODE"
 
@@ -10,24 +12,24 @@
 
 .proc handle_byte_run: near
    phy
-      lda #0                             ; full starts at line 0 always
-      jsr func_prep_for_active_buffering
-      ldx #200                           ; .X is the line countdown
+      SET_VRAM_ADDR_FOR_FULL_LINE
+
+      ldx #200                    ; .X is the line countdown
    @line_loop:
       jsr sub_render_line
       dex
       bne @line_loop
    ply
-   lda #0    ; return value line skip
-   ldx #200  ; return value line count
+   U8_COPY_IMM ZP8_lineSkip, 0
+   U8_COPY_IMM ZP8_lineCount, 200
    rts
 .endproc
 
 .proc sub_render_line: near
-   jsr func_cache_read_into_a      ; packet count
+   SLURP_INTO_A      ; packet count
    tay                             ; .Y is the packet countdown
-@packet_loop:
-   jsr func_cache_read_into_a      ; byte count
+packet_loop:
+   SLURP_INTO_A      ; byte count
    bit #%10000000
    beq @process_positive_count  ; i.e. bit 7 was clear
 
@@ -42,6 +44,6 @@
    @process_count_done:
 
    dey
-   bne @packet_loop
+   bne packet_loop
    rts
 .endproc

@@ -16,7 +16,6 @@ $(RESDIR)/HEADER1.hex \
 $(RESDIR)/HEADER2.hex \
 $(RESDIR)/CHUNK0.hex \
 $(RESDIR)/CHUNK1.hex \
-$(RESDIR)/CHUNK2.hex \
 $(RESDIR)/CHUNK3.hex \
 $(RESDIR)/CHUNK4.hex \
 $(RESDIR)/CHUNK5.hex \

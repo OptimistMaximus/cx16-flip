@@ -5,10 +5,22 @@
 .include "./math.inc"
 .include "./vera.inc"
 
-.import func_cache_init
-.import func_cache_read_into_a
-.import func_cache_read_into_vram
-.import func_cache_dupe_into_vram
+;==============================================================================
+; SLURP_INTO_A
+;
+; @effect .A holds the next available byte as read from cache
+;
+; Note that unlike the LDA instruction, the status flags do not reflect what
+; byte was just read into the .A buffer.
+;==============================================================================
+.macro SLURP_INTO_A
+   lda ZP8_cacheRemaining
+   bne :+
+   jsr func_cache_load_page
+:  lda (ZP16_cachePointer)
+   dec ZP8_cacheRemaining
+   inc ZP16_cachePointer
+.endmacro
 
 ;==============================================================================
 ; SLURP_INTO_U8
@@ -16,7 +28,7 @@
 ; This routine slurps one byte into a target address (little endian)
 ;==============================================================================
 .macro SLURP_INTO_U8 targetAddr
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr
 .endmacro
 
@@ -26,9 +38,9 @@
 ; This routine slurps two bytes into a target address (little endian)
 ;==============================================================================
 .macro SLURP_INTO_U16 targetAddr
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+0
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+1
 .endmacro
 
@@ -38,11 +50,11 @@
 ; This routine slurps three byte into a target address (little endian)
 ;==============================================================================
 .macro SLURP_INTO_U24 targetAddr
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+0
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+1
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+2
 .endmacro
 
@@ -52,26 +64,14 @@
 ; This routine slurps four byte into a target address (little endian)
 ;==============================================================================
 .macro SLURP_INTO_U32 targetAddr
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+0
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+1
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+2
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta targetAddr+3
-.endmacro
-
-;==============================================================================
-; SLURP_INTO_OBLIVION
-;==============================================================================
-.macro SLURP_INTO_OBLIVION count
-   phx
-      ldx #count
-   :  jsr func_cache_read_into_a
-      dex
-      bne :-
-   plx
 .endmacro
 
 ;==============================================================================

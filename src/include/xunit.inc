@@ -43,7 +43,7 @@
 .endmacro
 
 ;=============================================================================
-; ASSERT_BEQ - assert .P flag Z is set, such that a beq would branch
+; ASSERT_BEQ - assert .P flag Z is set, such that beq would branch
 ;=============================================================================
 .macro ASSERT_BEQ testId
     beq :+
@@ -52,7 +52,16 @@
 .endmacro
 
 ;=============================================================================
-; ASSERT_BCS - assert .P flag C is set, such that a bcs would branch
+; ASSERT_BNE - assert .P flag Z is clear, such that bne would branch
+;=============================================================================
+.macro ASSERT_BNE testId
+    bne :+
+    FAIL testId
+:
+.endmacro
+
+;=============================================================================
+; ASSERT_BCS - assert .P flag C is set, such that bcs would branch
 ;=============================================================================
 .macro ASSERT_BCS testId
     bcs :+
@@ -61,7 +70,7 @@
 .endmacro
 
 ;=============================================================================
-; ASSERT_BCC - assert .P flag C is clear, such that a bcc would branch
+; ASSERT_BCC - assert .P flag C is clear, such that bcc would branch
 ;=============================================================================
 .macro ASSERT_BCC testId
     bcc :+
@@ -159,37 +168,6 @@
 :
    lda actualAddr+2
    cmp #^expectValue
-   beq :+
-   FAIL testId
-:
-.endmacro
-
-;=============================================================================
-; ASSERT_VAR_U32_EQUALS_IMM - assert 32-bit value at addr
-;                             equals the specified immediate value
-;
-; Note, ca65 does not offers any syntax for extracting the most significant
-;       byte, so we'll specify 32-bit values as their MSB and the remaining
-;       24 bits as a 24-bit value (big endian)
-;=============================================================================
-.macro ASSERT_VAR_U32_EQUALS_IMM testId, msb, expectValue, actualAddr
-   lda actualAddr+0
-   cmp #<expectValue
-   beq :+
-   FAIL testId
-:
-   lda actualAddr+1
-   cmp #>expectValue
-   beq :+
-   FAIL testId
-:
-   lda actualAddr+2
-   cmp #^expectValue
-   beq :+
-   FAIL testId
-:
-   lda actualAddr+3
-   cmp #msb
    beq :+
    FAIL testId
 :

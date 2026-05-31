@@ -5,11 +5,13 @@
 .import func_detect_filename
 .import func_open_inputstream
 .import func_close_inputstream
+.import func_cache_init
 .import func_print_hex
 .import func_vera_setup
 .import func_vera_restore
 .import func_slurp_header
 .import func_slurp_frame
+.import func_init_vram_addr_table
 
 .segment "INIT"
 .segment "STARTUP"
@@ -29,6 +31,7 @@
 
 start:
 
+   jsr func_init_vram_addr_table
    jsr func_setup_irq_handler
 
    DEBUG_TIMER_START
@@ -41,7 +44,7 @@ start:
    U16_STZ GR16_frameIndex
 @frame_loop:
    jsr func_slurp_frame
-   U16_INC GR16_frameIndex
+   U16_INC     GR16_frameIndex
    U16_CMP_VAR GR16_frameIndex, GR16_frameCount
    bne @frame_loop
 

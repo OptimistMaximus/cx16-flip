@@ -11,6 +11,7 @@
 .import handle_black
 .import handle_byte_run
 .import handle_fli_copy
+.import func_cache_load_page
 .import bsod
 
 .segment "RODATA"
@@ -55,14 +56,14 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; func_slurp_chunk
 ;
 ; Reads the chunk size and chunk type, then looks up the appropriate handler
-; for the chunk type and jumps to it. Each such handler is obligated to render
-; that frame into the image buffer or palette buffer (as appropriate) and 
-; update .A and .X as follows (while preserving .Y)
+; for the chunk type and jumps to it. Each handler is obligated to render
+; that frame into the image buffer or palette buffer (as appropriate) and
+; update ZP8_lineSkip and ZP8_lineCount as follows (while preserving .Y)
 ;
-; @effect .A line skip
-; @effect .X line count, where 0 means it was a color chunk
+; @effect ZP8_lineSkip holds the line skip ($FF if color chunk)
+; @effect ZP8_lineCount holds line count ($FF if color chunk)
 ;
-; This works fine because FLI format has a maximum count of 200, so anything
+; This works fine because FLI format has a maximum height of 200, so anything
 ; over 200 can be used to signify other stuff
 ;==============================================================================
 .proc func_slurp_chunk: near

@@ -39,7 +39,7 @@ The parser's assumptions are as follows:
   inefficiently encoded frame imaginable would be 1 color chunk
   and 200 delta packets each representing 1 line.  No sensible
   encoder would ever do such a thing.
-  
+
 ## Caveats
 
 - This implementation only supports the FLI format. It does not
@@ -98,18 +98,24 @@ will be used.  The results are tracked here, for each released version:
 | 0.4.0   | $00A7  |  21 | $0024    | 1998      |
 | 0.5.0   | $009E  |  22 | $0029    | 1948      |
 | 0.6.0   | $009A  |  23 | $0029    | 1951      |
+| 0.6.1   | $0072  |  31 | $0024    | 2340      |
 
 ### Version History
+
+- 2026/05/30 Version 0.6.1
+  - significant refactoring of how VERA addresses are manipulated
+  - significant performance optimizations for speed (at expense of PRG size)
 
 - 2026/05/27 Version 0.6.0
   - speed is now correctly applied per frame (not per chunk, as incorrectly
     done in prior versions)
-  - palette transitions look much better now, since they are postponed 
+  - palette transitions look much better now, since they are postponed
     until the entire new frame has been rendered, and swapped just before
     that new frame is shuffled into VRAM
   - files whose frames have multiple chunks (e.g. a small delta for the
     top of the screen and a small delta for the bottom of the screen) now
     play much smoother.
+
 - 2026/05/26 Version 0.5.0
   - now detects the next chunk with a sliding window instead of trusting
     the encoded chunk sizes (which are surprisingly wrong in a lot of FLI
@@ -204,17 +210,12 @@ Bad FLI files:
 
 ## IDEAS / TODO
 
-- since we can't use 32-bit FX cache writes for palette, there might be no benefit
-  to storing it in VRAM. Consider storing in "golden" RAM instead.  This way we
-  can skip/burn palette entries by just doing inx or iny instead of LDA VERA_DATA0.
-  Though, palette updates don't happen as often as FLI_DELTA so optimization should
-  focus there first.
-- keep a running 24-bit value of our VRAM location, and evaluate each skip ...
-  setting VRAM addr takes 26 cycles, and doing 7 LDAs to VERA_DATA0 takes 28 bytes.
-  So any skip of 7 or more is faster to do by moving the VRAM address.  But doing
-  the ADC to keep that value fresh is also expensive, as is doing a U24_INC with
-  every byte written.  Is there a way to ask VERA what its offset currently is?
-- low byte of cache offset can be used for .X or .Y when reading AND ALSO can be
-  used for lda (zp)  on single bytes
+- consider saving time by taking phx/plx and phy/ply out of low level caching
+  subroutines and put them in the higher level functions that drive them ... we
+  are probably needlessly pushing and pulling in some cases that might be in
+  big 320x200 pixel loops, so saving 7 cycles per push/pull will really add up.
+- optimize for frames with a single chunk (no need to keep a render/shuffle list)
+- see if we can get away with setting the RAM bank once at startup rather than
+  every time. is it safe to assume any kernal calls that need bank 0 will set it back?
 
 

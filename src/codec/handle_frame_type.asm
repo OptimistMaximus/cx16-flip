@@ -2,8 +2,10 @@
 
 .import func_snooze_if_necessary
 .import func_slurp_chunk
-.import func_vera_flip_stage
+.import func_load_image
 .import func_load_palette
+.import func_cache_load_page
+.import func_cache_discard_bytes
 .import bsod
 
 .segment "CODE"
@@ -17,16 +19,15 @@
 ; handle_frame_type
 .proc handle_frame_type: near
    stz ZP8_imageVSyncsElapsed     ; i.e. start the frame timer
-   SLURP_INTO_U8 GR8_chunkCount   ; low byte of chunk count       
-   SLURP_INTO_OBLIVION 9          ; high byte of chunk count & remaining 8
+   SLURP_INTO_U8 GR8_chunkCount   ; low byte of chunk count
+   lda #9
+   jsr func_cache_discard_bytes   ; high byte of chunk count & remaining 8
 
-   lda #0                               
-   cmp GR8_chunkCount             ; zero-chunk frames are a common way to
-   beq @rendering_complete        ; make the current image linger as is
-
+   lda GR8_chunkCount             ; zero-chunk frames are a common way to
+   cmp #0                         ; make the current image linger as is
+   beq @rendering_complete
    jsr sub_render_chunks
    jsr sub_apply_chunks
-
 @rendering_complete:
    jmp func_snooze_if_necessary
 .endproc
@@ -37,8 +38,9 @@
    phy
       jsr func_slurp_chunk
    ply
+   lda ZP8_lineSkip
    sta CONST_skipArray,y       ; squirrel the line skip
-   txa
+   lda ZP8_lineCount
    sta CONST_countArray,y      ; squirrel the line count
    iny
    cpy GR8_chunkCount
@@ -50,21 +52,19 @@
 .proc sub_apply_chunks: near
    ldy #0
 @flip_loop:
-   lda CONST_countArray,y
-   beq @flip_palette_instead
-   tax
-   lda CONST_skipArray,y
    phy
-      jsr func_vera_flip_stage
-   ply
-   bra @flipped
-@flip_palette_instead:
-   phy
+      ldx CONST_skipArray,y
+      cpx #$FF
+      beq @flip_palette_instead
+      lda CONST_countArray,y
+      jsr func_load_image
+      bra @flipped
+   @flip_palette_instead:
       jsr func_load_palette
+   @flipped:
    ply
-@flipped:
    iny
    cpy GR8_chunkCount
-   bne @flip_loop 
+   bne @flip_loop
    rts
 .endproc

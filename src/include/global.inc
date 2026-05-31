@@ -3,14 +3,6 @@
 
 .include "./kernal.inc"
 
-; IDEAS:
-;
-; 114,286 CPU cycles occur during 1/70  of a second at 8 MHz.
-; 133,333 CPU cycles occur during 1/60  of a second at 8 MHz.
-;  44,444 CPU cycles occur during 1/180 of a second at 8 MHz.
-;
-; 297 seventieths = 255 sixtieths
-
 ; MINIMIZE_ZEROPAGE_USAGE = 1
 
 ;------------------------------------------------------------------------------
@@ -20,12 +12,14 @@
 ; or for performance reasons.
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
-ZP24_vramOffset         := $24
-ZP16_cachePointer       := $2A
-ZP8_cacheRemaining      := $2C
-ZP8_cacheScratch        := $2D
-ZP8_timerTrigger        := $2E ; state variable needed by speed timer
-ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
+ZP16_cachePointer       := $24
+ZP8_cacheRemaining      := $26
+ZP8_cacheLoadCount      := $27
+ZP8_lineSkip            := $28
+ZP8_lineCount           := $29
+ZP8_lineStop            := $2A
+ZP8_timerTrigger        := $2B ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $2C ; VSyncs elapsed while rendering current image
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES
@@ -34,13 +28,8 @@ ZP8_imageVSyncsElapsed  := $2F ; VSyncs elapsed while rendering current image
 ; if they exist in Zero Page.  As long as the total usage here is under $40
 ; bytes, it can easily fit in either ZP or GOLDEN RAM.
 ;------------------------------------------------------------------------------
-CONST_cacheAddr       := $400
-CONST_cacheSize       := $FF  ; (this is a constant, not a variable)
-CONST_skipArray       := $500
-CONST_countArray      := $600
-
 .ifdef MINIMIZE_ZEROPAGE_USAGE
-   GLOBAL_VAR_BASE    := $700
+   GLOBAL_VAR_BASE    := $B600
 .else
    GLOBAL_VAR_BASE    := $0
 .endif
@@ -68,6 +57,7 @@ GR16_frameIndex       := GLOBAL_VAR_BASE + $66
 GR16_frameCount       := GLOBAL_VAR_BASE + $68
 GR8_chunkIndex        := GLOBAL_VAR_BASE + $6A
 GR8_chunkCount        := GLOBAL_VAR_BASE + $6B
+GR8_cacheSize         := GLOBAL_VAR_BASE + $6C
 
 GR8_speedLimitVSyncs  := GLOBAL_VAR_BASE + $70  ; speed limit as VSyncs
 GR8_returnCode        := GLOBAL_VAR_BASE + $71
@@ -76,6 +66,19 @@ GR16_origIrqHandler   := GLOBAL_VAR_BASE + $74
 GR16_debugTimerVSyncs := GLOBAL_VAR_BASE + $76
 GR16_debugSpeedOverrun := GLOBAL_VAR_BASE + $78
 GR16_debugSpeedUnderrun := GLOBAL_VAR_BASE + $7A
+
+;------------------------------------------------------------------------------
+; BANKED VARIABLES
+;------------------------------------------------------------------------------
+FLI_PLAYER_RAM_BANK := 1
+VRAM_ADDR_TABLE_L := $B000
+VRAM_ADDR_TABLE_M := $B100
+VRAM_ADDR_TABLE_H := $B200
+
+CONST_cacheAddr   := $B300
+CONST_cacheSize   := $FF  ; (this is a constant, not a variable)
+CONST_skipArray   := $B400
+CONST_countArray  := $B500
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

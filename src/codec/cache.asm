@@ -1,8 +1,9 @@
-.export func_cache_init
-.export func_cache_read_into_a
 .export func_cache_read_into_vram
 .export func_cache_dupe_into_vram
+.export func_cache_init
+.export func_cache_load_page
 .export smc_anchor_for_cache_size ; for unit test purpose only
+.export func_cache_discard_bytes
 
 .import bsod
 
@@ -11,72 +12,85 @@
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
+.include "../include/slurp.inc"
 .include "../include/vera.inc"
-
-varPointer   := ZP16_cachePointer
-varRemaining := ZP8_cacheRemaining
-varScratch   := ZP8_cacheScratch
 
 ;==============================================================================
 ; func_cache_init
 ;
-; Call this once after opening the input stream, and before calling any other
-; cache routines.
+; Call this once just after opening a fresh input stream, and before accessing
+; any data in it. To keep consistent, only access the input stream through the
+; macros in this file, instead of accessing directly with KERNAL routines.
 ;==============================================================================
 .proc func_cache_init: near
-   lda #>CONST_cacheAddr  ; high byte of actual cache address
-   sta varPointer+1       ; stored as high byte of our pointer
-   jmp sub_load_page      ; loads page and zeros low byte of pointer
+   lda #>CONST_cacheAddr   ; high byte of actual cache address
+   sta ZP16_cachePointer+1 ; stored as high byte of our pointer
+   jmp func_cache_load_page
 .endproc
 
 ;==============================================================================
-; func_cache_read_into_a
+; func_cache_discard_bytes
 ;
-; @effect .A holds the next available byte as read from cache
-; @cycles 30 (on cache hit)
-;
-; Note that unlike the LDA instruction, the status flags do not reflect what
-; byte was just read into the .A buffer.  To get the the same effect, calling
-; code can use BIT or CMP.
-;
-; For example, getting the cached equivalent of
-;
-;   LDA foo
-;   BEQ @label
-;
-; would be
-;
-;   JSR func_cache_read_into_a
-;   CMP #0
-;   BEQ @label
-;
-; which costs an extra 2 cycles, but that's faster overall than having the
-; implementation of this subroutine waste 7 cycles on a stack push/pull.  It
-; is assumed that calling code knows best why it calls this subroutine and
-; would want to save 5 cycles by default.
-;
-; Note, crude timing tests in the emulator show that ACPTR takes 475 cycles.
-; The results are not consistent though, so it is unclear how accurate the
-; emulator is with its cycle count value in the lower right corner. Suffice
-; it to say, it's a lot slower than 30 cycles that we get on a cache hit
-; here.  Similar crude tests with MACPTR show it takes between 600 and 750
-; cycles depending on the requested byte count.  So, 100 ACPTR calls would
-; cost 47500 cycles, but 1 MACPTR call and 100 cache hits would be 3700 cycles.
+; @param .A holds the number of bytes to discard
 ;==============================================================================
-.proc func_cache_read_into_a: near
-   lda varRemaining
-   bne :+
-   jsr sub_load_page
-:  lda (varPointer)
-   dec varRemaining
-   inc varPointer
+.proc func_cache_discard_bytes: near
+   phx
+      tax
+   @loop:
+      SLURP_INTO_A   ; this uses an anonymous label, so our :- must be a :--
+      dex
+      bne @loop
+   plx
    rts
 .endproc
 
+;==============================================================================
+; func_cache_load_page
+;
+; Load data from input stream into the cache page.  This subroutine is
+; intended for use only by subroutines and macros involved in cache management.
+; Please don't call it directly.
+;
+; @effect .X clobbered
+; @effect .Y clobbered
+;==============================================================================
+func_cache_load_page:
+   phx
+      phy
+
+         ldx #<CONST_cacheAddr
+         ldy #>CONST_cacheAddr
+smc_anchor_for_cache_size:
+         lda #CONST_cacheSize   ; how many bytes we want
+         clc                    ; (advance, since going to RAM)
+         jsr KERNAL_MACPTR      ; (actually acquire bytes)
+
+         cpx #0                 ; .X is number of bytes actually read
+         bne @read_success      ; (non-zero means we read something)
+         jsr KERNAL_READST      ; if read status zero (i.e. no error) then
+         beq @read_success      ; it seems this was a transient issue.
+         ply                    ; else fall through and bail out
+         plx                    ; (making sure to balance the stack first)
+         BSOD_A RC_READ_ERROR
+
+@read_success:
+       stx ZP8_cacheRemaining ; .X (bytes read) is now bytes remaining
+       stx ZP8_cacheLoadCount ;    and for convenience the load count
+       stz ZP16_cachePointer  ; reset the pointer
+
+      ply
+   plx
+   rts
+
+;==============================================================================
+; func_cache_dupe_into_vram
+;
+; @param .A is the number of times to duplicate the input stream's next byte
+;==============================================================================
 .proc func_cache_dupe_into_vram: near
    phx
       pha
-         jsr func_cache_read_into_a
+         SLURP_INTO_A
       plx
    :  sta VERA_DATA0
       dex
@@ -103,7 +117,7 @@ varScratch   := ZP8_cacheScratch
 ;      from 600 to 750 cycles depending on the number of bytes requested.
 ;==============================================================================
 .proc func_cache_read_into_vram: near
-   cmp varRemaining
+   cmp ZP8_cacheRemaining
    bcs @requested_greater_than_or_equal_to_remaining
    jmp handle_lte_read
 
@@ -128,26 +142,28 @@ varScratch   := ZP8_cacheScratch
 ; should be $5A8 ($588+$20) and remaining should be $10 ($30-$20).
 ;------------------------------------------------------------------------------
 .proc handle_lte_read: near
-   pha                         ; squirrel away .A ($20) for later
-      clc                      ;
-      adc varPointer           ; .A is now $20 + $88 = $A8
-      sta varScratch           ; store it in scratch to use as loop max
+   tmpLoopMax = GR8_scratch1
+   tmpRequest = GR8_scratch2
 
-      phy
-         ldy varPointer        ; pointer low is where to start, e.g. $88
-      :  lda CONST_cacheAddr,y ; read at offset  e.g. $500 + $55
-         sta VERA_DATA0        ; write to VRAM
-         iny
-         cpy varScratch
-         bne :-
-         sty varPointer        ; .Y is $A8 at this point, so make pointer $5A8
-      ply
-   pla
-   sta varScratch              ; we're done using varScratch so it can be
-   lda varRemaining            ; repurposed to hold original request ($20)
-   sec                         ; and use it to subtract from var remaining
-   sbc varScratch              ; e.g. $30 - $20, now .A holds $10
-   sta varRemaining            ; and now varRemaining is updated
+   sta tmpRequest           ; squirrel away .A for later
+   clc
+   adc ZP16_cachePointer    ; add pointer's low byte, $20 + $88 = $A8
+   sta tmpLoopMax           ; which is now the loop max
+
+   phy
+      ldy ZP16_cachePointer ; pointer low is where to start, e.g. $88
+   :  lda CONST_cacheAddr,y ; read at offset  e.g. $500 + $55
+      sta VERA_DATA0        ; write to VRAM
+      iny
+      cpy tmpLoopMax
+      bne :-
+      sty ZP16_cachePointer ; .Y is $A8 at this point, so make pointer $5A8
+   ply
+
+   sec
+   lda ZP8_cacheRemaining   ; now subtract the request from remaining
+   sbc tmpRequest           ; to get the new remaining value
+   sta ZP8_cacheRemaining
    rts
 .endproc
 
@@ -159,53 +175,33 @@ varScratch   := ZP8_cacheScratch
 ; remaining number of bytes, and try again.
 ;
 .proc handle_gt_read: near
-   pha                         ; squirrel requested amount
+   varRequest = GR8_scratch1
 
-      lda varRemaining         ; Note, if nothing is remaining, then skip
-      sta varScratch           ; over the drain loop. Regardless, we need
-      beq @remaining_drained   ; to know the remaining count later to adjust
-                               ; the follow-up read, so store in scratch.
-      phy
-         ldy #0                ; reading to the end is a special case that
-      :  lda (varPointer),y    ; can be done more efficiently than the
-         sta VERA_DATA0        ; general purpose LTE implementation.
-         iny
-         cpy varRemaining
-         bne :-
-      ply
+   sec                           ; .A holds the request. After draining what
+   sbc ZP8_cacheRemaining        ; remains and loading the next page, we'll
+   sta varRequest                ; make a request for the difference
 
-      @remaining_drained:      ; by the time we reach here, the cache is
-      jsr sub_load_page        ; definitely exhausted, so load a fresh page,
-   pla                         ;
-   sec                         ;  .A now holds original request. Subtract
-   sbc varScratch              ; the previous remaining to get the new request
+   lda ZP8_cacheRemaining        ; handle rare edge case of nothing remaining
+   beq @none_remaining
 
-   jmp func_cache_read_into_vram ; i.e. try again
-.endproc
+   phy
+      ldy ZP16_cachePointer
+   :  lda CONST_cacheAddr,y
+      sta VERA_DATA0
+      iny
+      cpy ZP8_cacheLoadCount
+      bne :-
+   ply
 
-; @cycles 26 + whatever MACPTR costs
-; note this does NOT use varScratch, so calling logic is safe to call
-; this without risk of losing whatever value it might've put into scratch
-sub_load_page:
+@none_remaining:
    phx
       phy
-         ldx #<CONST_cacheAddr
-         ldy #>CONST_cacheAddr
-smc_anchor_for_cache_size:    ; (for unit test convenience)
-         lda #CONST_cacheSize ; how many bytes we want
-         clc                  ; (advance, since going to RAM)
-         jsr KERNAL_MACPTR    ; (actually acquire bytes)
-         cpx #0               ; if KERNAL gave us zero, something
-         bne @read_success    ; something may have gone wrong
-
-         jsr KERNAL_READST    ; ERROR! BSOD, but make sure we don't
-         ply                  ; have a stack imbalance upon exist, so in
-         plx                  ; this conditional block, pull .Y and .X
-         BSOD_A RC_READ_ERROR
-      @read_success:
-         stx varRemaining     ; also how many bytes remaining
-         stz varPointer       ; reset the pointer
+         jsr func_cache_load_page ; definitely exhausted, so load a fresh page,
       ply
    plx
-   rts
+
+   lda varRequest                ; follow-up with a read request for the
+   jmp func_cache_read_into_vram ; original request less what we drained
+.endproc
+
 

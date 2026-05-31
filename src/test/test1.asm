@@ -2,14 +2,15 @@
 
 .import func_open_inputstream
 .import func_close_inputstream
-.import func_prep_for_active_buffering
-.import func_vera_flip_stage
-.import func_cache_init
-.import func_cache_read_into_a
+.import func_load_image
+.import func_load_palette
+.import func_cache_load_page
 .import func_cache_read_into_vram
 .import func_cache_dupe_into_vram
-.import smc_anchor_for_cache_size
 .import func_print_hex
+.import func_cache_init
+.import smc_anchor_for_cache_size
+.import func_init_vram_addr_table
 
 .segment "RODATA"
 
@@ -115,93 +116,49 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
    ;
-   ; func_prep_for_active_buffering
-   ; ADVANCE_LINE_FOR_ACTIVE_BUFFERING
-   ; func_vera_flip_stage
+   ; func_init_vram_addr_table
+   ; SET_VRAM_ADDR_FOR_FULL_LINE
+   ; SET_VRAM_ADDR_FOR_DELTA_LINE
+   ; SET_VRAM_ADDR_FOR_SCREEN_LINE
+   ; ADVANCE_VERA_ADDR_FOR_DELTA_PACKET
    ;---------------------------------------------------------------------------
-   jsr sub_init_stages
-   lda #0                                       ; line 0 has $AA
-   jsr func_prep_for_active_buffering
-   lda VERA_DATA0
-   lda #$AA
-   sta VERA_DATA0
+   jsr func_init_vram_addr_table
+   lda #FLI_PLAYER_RAM_BANK
+   sta SYSTEM_RAM_SELECTOR_ADDR
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 1 has $BB
-   lda VERA_DATA0
-   lda #$BB
-   sta VERA_DATA0
+   ; Line 0 is (0 * 320) + $0FA00 with high byte OR'ed with $10
+   ASSERT_VAR_U8_EQUALS_IMM $1200, $00, VRAM_ADDR_TABLE_L+0
+   ASSERT_VAR_U8_EQUALS_IMM $1201, $FA, VRAM_ADDR_TABLE_M+0
+   ASSERT_VAR_U8_EQUALS_IMM $1202, $10, VRAM_ADDR_TABLE_H+0
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 2 is skipped
+   ; Line 4 is (4 * 320) + $0FA00 with high byte OR'ed with $10
+   ASSERT_VAR_U8_EQUALS_IMM $1203, $00, VRAM_ADDR_TABLE_L+4
+   ASSERT_VAR_U8_EQUALS_IMM $1204, $FF, VRAM_ADDR_TABLE_M+4
+   ASSERT_VAR_U8_EQUALS_IMM $1205, $10, VRAM_ADDR_TABLE_H+4
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 3 has $CC
-   lda VERA_DATA0
-   lda #$CC
-   sta VERA_DATA0
+   ; Line 199 is (199 * 320) + $0FA00 with high byte OR'ed with $10
+   ASSERT_VAR_U8_EQUALS_IMM $1206, $C0, VRAM_ADDR_TABLE_L+199
+   ASSERT_VAR_U8_EQUALS_IMM $1207, $F2, VRAM_ADDR_TABLE_M+199
+   ASSERT_VAR_U8_EQUALS_IMM $1208, $11, VRAM_ADDR_TABLE_H+199
 
-   ADVANCE_LINE_FOR_ACTIVE_BUFFERING            ; line 4 has $DD
-   lda VERA_DATA0
-   lda #$DD
-   sta VERA_DATA0
+   SET_VRAM_ADDR_FOR_FULL_LINE
+   ASSERT_VAR_U24_EQUALS_IMM $1210, $10FA00, VERA_ADDRx_L
 
-   lda #2                                       ; go back to line 2
-   jsr func_prep_for_active_buffering           ; and put $EE into it
-   lda VERA_DATA0
-   lda #$EE
-   sta VERA_DATA0
+   ldx #0
+   SET_VRAM_ADDR_FOR_DELTA_LINE
+   ASSERT_VAR_U24_EQUALS_IMM $1210, $10FA00, VERA_ADDRx_L
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_0, $10 ; verify 0 has $AA
-   ASSERT_VRAM_U8_EQUALS_IMM $1200, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1201, $AA
-   ASSERT_VRAM_U8_EQUALS_IMM $1202, $00
+   ldx #100 ; (100*320) + $FA00 with high byte OR'ed with $10
+   SET_VRAM_ADDR_FOR_DELTA_LINE
+   ASSERT_VAR_U24_EQUALS_IMM $1210, $117700, VERA_ADDRx_L
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_1, $10 ; verify 1 has $EE
-   ASSERT_VRAM_U8_EQUALS_IMM $1203, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1204, $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1205, $00
+   lda #$55 ; advance $55 beyond previous setting
+   ADVANCE_VERA_ADDR_FOR_DELTA_PACKET
+   ASSERT_VAR_U24_EQUALS_IMM $1220, $117755, VERA_ADDRx_L
 
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_2, $10 ; verify 2 has $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1206, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1207, $EE
-   ASSERT_VRAM_U8_EQUALS_IMM $1208, $00
-
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_3, $10 ; verify 3 has $CC
-   ASSERT_VRAM_U8_EQUALS_IMM $1209, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1210, $CC
-   ASSERT_VRAM_U8_EQUALS_IMM $1211, $00
-
-   SET_VERA_ADDR24_IMM $00, VRAM_BUFFER_LINE_4, $10 ; verify 4 has $DD
-   ASSERT_VRAM_U8_EQUALS_IMM $1212, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1213, $DD
-   ASSERT_VRAM_U8_EQUALS_IMM $1214, $00
-
-   ldx #3                         ; flip 3 lines
-   lda #1                         ; skipping 1 line (i.e. lines 1-3)
-   jsr func_vera_flip_stage       ; flip buffer to image
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10 ; verify 0 untouched
-   ASSERT_VRAM_U8_EQUALS_IMM $1220, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1221, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1222, $00
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_1, $10 ; verify 1 copied
-   ASSERT_VRAM_U8_EQUALS_IMM $1223, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1224, $BB
-   ASSERT_VRAM_U8_EQUALS_IMM $1225, $00
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_2, $10 ; verify 2 copied
-   ASSERT_VRAM_U8_EQUALS_IMM $1226, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1227, $EE
-   ASSERT_VRAM_U8_EQUALS_IMM $1228, $00
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_3, $10 ; verify 3 copied
-   ASSERT_VRAM_U8_EQUALS_IMM $1229, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1230, $CC
-   ASSERT_VRAM_U8_EQUALS_IMM $1231, $00
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_4, $10 ; verify 4 untouched
-   ASSERT_VRAM_U8_EQUALS_IMM $1232, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1233, $00
-   ASSERT_VRAM_U8_EQUALS_IMM $1234, $00
+   ldx #5
+   SET_VRAM_ADDR_FOR_SCREEN_LINE
+   ASSERT_VAR_U24_EQUALS_IMM $1230, $300640, VERA_ADDRx_L
 
    ;---------------------------------------------------------------------------
    ; TEST 13
@@ -210,9 +167,9 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    ; TEST 14 (slurp 'n skip)
    ;
-   ; jsr func_cache_read_into_a
-   ; jsr func_cache_read_into_vram
-   ; jsr func_cache_dupe_into_vram
+   ; SLURP_INTO_A
+   ; func_cache_read_into_vram
+   ; func_cache_dupe_into_vram
    ; SLURP_INTO_U8
    ; SLURP_INTO_U16
    ; SLURP_INTO_U24
@@ -227,8 +184,8 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    jsr func_open_inputstream
    jsr func_cache_init
 
-   jsr func_cache_read_into_a ; burn first byte 00
-   jsr func_cache_read_into_a ; VRAM gains 11
+   SLURP_INTO_A ; burn first byte 00
+   SLURP_INTO_A ; VRAM gains 11
    sta VERA_DATA0
    lda #2                    ; VRAM skips ahead 2 bytes
    SKIP_PIXELS
@@ -237,7 +194,8 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    lda #3                    ; VRAM gains 444444
    jsr func_cache_dupe_into_vram
 
-   SLURP_INTO_OBLIVION 1     ; discard 55
+   lda #1
+   jsr func_cache_discard_bytes ; discard 55
 
    SLURP_INTO_U8  u8data2    ; var set to 66
    SLURP_INTO_U16 u16data    ; var set to 7788
@@ -266,22 +224,22 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ; hardware it will just be generally exercising cache, covering a
    ; non-deterministic subset of scenarios and edge cases.
    ;---------------------------------------------------------------------------
-   jsr sub_init_stages_line0
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-
    lda #16
    sta smc_anchor_for_cache_size+1 ; force cache size for test convenience
+
+   jsr sub_init_stages_line0
+   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
 
    ldx #<test_filename
    ldy #>test_filename
    jsr func_open_inputstream
-   jsr func_cache_init           ; should load 16 bytes into cache
+   jsr func_cache_init
 
    ;
    ; single read, cache hit scenario with bytes remaining
    ;
-   jsr func_cache_read_into_a
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
+   SLURP_INTO_A
    sta VERA_DATA0
 
    ;
@@ -300,13 +258,13 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;
    ; single read, cache hit but it's an edge-case: the last byte
    ;
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta VERA_DATA0
 
    ;
    ; single read, cache miss, should load 16 fresh, leaving 15 remaining
    ;
-   jsr func_cache_read_into_a
+   SLURP_INTO_A
    sta VERA_DATA0
 
    ;
@@ -333,10 +291,6 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
 
    SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
    ASSERT_VRAM_EQUALS_ARRAY $1508, $48, test14_expect
-
-   lda #$FF
-   sta smc_anchor_for_cache_size+1 ; restore cache size
-
 
 
    PASS

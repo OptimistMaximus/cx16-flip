@@ -63,19 +63,6 @@
    pla
 .endmacro
 
-.macro DEBUG_PRINT_U32_VAR addr
-   pha
-      lda addr+3
-      jsr func_print_hex
-      lda addr+2
-      jsr func_print_hex
-      lda addr+1
-      jsr func_print_hex
-      lda addr+0
-      jsr func_print_hex
-   pla
-.endmacro
-
 .macro DEBUG_PRINT_STRING stringLiteral
    pha
       jsr debug_print_istring
