@@ -20,10 +20,9 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
 ; specific to preparing the address for a delta line.
 ;
 ; @param .X is line offset
-; @cycles 21
+; @cycles 16
 ;==============================================================================
 .macro SET_VRAM_ADDR_FOR_DELTA_LINE
-   SWITCH_RAM_BANK_IMM FLI_PLAYER_RAM_BANK
    stz VERA_CTRL
    lda VRAM_ADDR_TABLE_L,x
    sta VERA_ADDRx_L

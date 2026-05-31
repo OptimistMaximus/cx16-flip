@@ -24,10 +24,12 @@
    jsr func_cache_discard_bytes   ; high byte of chunk count & remaining 8
 
    lda GR8_chunkCount             ; zero-chunk frames are a common way to
-   cmp #0                         ; make the current image linger as is
-   beq @rendering_complete
+   cmp #0                         ; make the current image linger longer
+   beq @rendering_complete        ; 1-chunk frames are common but optimzing
+                                  ; for them has no perceivable benefit.
    jsr sub_render_chunks
    jsr sub_apply_chunks
+
 @rendering_complete:
    jmp func_snooze_if_necessary
 .endproc
