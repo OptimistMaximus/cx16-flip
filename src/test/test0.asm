@@ -182,16 +182,28 @@ test_bb_expect_default: .asciiz "image.fli,r"
    ASSERT_BCC $0314 ; <
 
    ;---------------------------------------------------------------------------
-   ; TEST 04 (misc)
+   ; TEST 04 (bitwise)
+   ;
+   ; U16_ASL
+   ;---------------------------------------------------------------------------
+   U16_COPY_IMM GR16_scratch1, $0040
+   sec       ; set clear to prove that it doesn't affect anything
+   U16_ASL GR16_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0400, $0080, GR16_scratch1
+   U16_ASL GR16_scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0401, $0100, GR16_scratch1
+
+   ;---------------------------------------------------------------------------
+   ; TEST 08 (misc)
    ;
    ; TWOS_COMPLIMENT_A
    ;---------------------------------------------------------------------------
    lda #2
    TWOS_COMPLIMENT_A
-   ASSERT_A_EQUALS_IMM $0400, $FE
+   ASSERT_A_EQUALS_IMM $0800, $FE
 
    TWOS_COMPLIMENT_A
-   ASSERT_A_EQUALS_IMM $0401, $02
+   ASSERT_A_EQUALS_IMM $0801, $02
 
 
 

@@ -52,7 +52,7 @@
 ;==============================================================================
 .proc func_vera_setup: near
 
-   jsr sub_init_palette                     ; set all colors to RBG black
+   jsr sub_init_palette
 
    stz VERA_CTRL                            ; DCSEL=0
    lda #64
@@ -199,6 +199,3 @@
    bne @loop
    rts
 .endproc
-
-
-

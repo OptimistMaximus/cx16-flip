@@ -127,11 +127,7 @@ JIFFY_CYCLES := $AD9C
 @outer_loop:
    ldy #JIFFY_COUNT
 @inner_loop:
-   phx
-      phy
-         jsr sub_snooze_jiffy
-      ply
-   plx
+   jsr sub_snooze_jiffy
    dey
    bne @inner_loop
    dex
