@@ -99,8 +99,12 @@ will be used.  The results are tracked here, for each released version:
 | 0.5.0   | $009E  |  22 | $0029    | 1948      |
 | 0.6.0   | $009A  |  23 | $0029    | 1951      |
 | 0.6.1   | $0072  |  31 | $0024    | 2340      |
+| 0.6.2   | $006B  |  33 | $0021    | 2322      |
 
 ### Version History
+
+- 2026/05/31 Version 0.6.2
+  - minor performance optimizations to column skip and caching
 
 - 2026/05/30 Version 0.6.1
   - significant refactoring of how VERA addresses are manipulated
@@ -214,8 +218,5 @@ Bad FLI files:
   subroutines and put them in the higher level functions that drive them ... we
   are probably needlessly pushing and pulling in some cases that might be in
   big 320x200 pixel loops, so saving 7 cycles per push/pull will really add up.
-- optimize for frames with a single chunk (no need to keep a render/shuffle list)
-- see if we can get away with setting the RAM bank once at startup rather than
-  every time. is it safe to assume any kernal calls that need bank 0 will set it back?
 
 

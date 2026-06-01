@@ -20,10 +20,9 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
 ; specific to preparing the address for a delta line.
 ;
 ; @param .X is line offset
-; @cycles 21
+; @cycles 16
 ;==============================================================================
 .macro SET_VRAM_ADDR_FOR_DELTA_LINE
-   SWITCH_RAM_BANK_IMM FLI_PLAYER_RAM_BANK
    stz VERA_CTRL
    lda VRAM_ADDR_TABLE_L,x
    sta VERA_ADDRx_L
@@ -83,7 +82,8 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
 ; ADVANCE_VERA_ADDR_FOR_DELTA_PACKET
 ;
 ; This is highly specific to delta packet rendering, where we know the VRAM
-; address has already been established, and it uses VERA_DATA0 and auto-inc 1.
+; address has already been established, and we know it uses VERA_DATA0 and
+; auto-inc 1, and we know we'll never be advancing for more than 255 columns.
 ;
 ; @param .A is how many pixels to advance
 ; @cycles 37

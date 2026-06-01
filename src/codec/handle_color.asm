@@ -49,10 +49,6 @@
 
 sub_handle_color:
 
-   tempColor      = GR24_scratch1
-   tempColorRed   = GR24_scratch1+0
-   tempColorGreen = GR24_scratch1+1
-   tempColorBlue  = GR24_scratch1+2
    tempVeraRed    = GR8_scratch1
    tempVeraGreen  = GR8_scratch2
    copyCount      = GR8_scratch3
@@ -82,12 +78,22 @@ sub_handle_color:
 
       ldx #0
    packet_loop:
-      jsr sub_skip_colors
+
+      SLURP_INTO_A                     ; .A holds skip count, where 0 means 0
+      cmp #0
+      beq @zero_skip
+      tay
+   :  lda VERA_DATA0
+      lda VERA_DATA0
+      dey
+      bne :-
+
+   @zero_skip:
+
       SLURP_INTO_U8 copyCount
       ldy #0
    copy_loop:
-      SLURP_INTO_U24 tempColor ; slurp RGB
-      lda tempColor+0          ; load R
+      SLURP_INTO_A             ; slurp RGB's R
    smc_anchor_r_shift:
       lsr                      ; nop if 6-bit
       lsr                      ; nop if 6-bit
@@ -95,14 +101,14 @@ sub_handle_color:
       lsr
       sta tempVeraRed
 
-      lda tempColor+1          ; load G
+      SLURP_INTO_A             ; slurp RGB's G
    smc_anchor_g_shift:
       nop                      ; asl if 6-bit
       nop                      ; asl if 6-bit
       and #$F0
       sta tempVeraGreen
 
-      lda tempColor+2          ; load B
+      SLURP_INTO_A             ; slurp RGB's B
    smc_anchor_b_shift:
       lsr                      ; nop if 6-bit
       lsr                      ; nop if 6-bit
@@ -126,11 +132,3 @@ sub_handle_color:
    U8_COPY_IMM ZP8_lineCount, $FF
    rts
 
-.proc sub_skip_colors: near
-   SLURP_INTO_A           ; skip count
-   cmp #0
-   beq @done
-   SKIP_COLORS
-@done:
-   rts
-.endproc

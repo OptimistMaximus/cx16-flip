@@ -3,7 +3,7 @@
 .export func_print_hex
 .export func_load_palette
 .export func_load_image
-.export func_init_vram_addr_table
+.export func_init_ram_bank
 
 .segment "CODE"
 
@@ -52,12 +52,7 @@
 ;==============================================================================
 .proc func_vera_setup: near
 
-   ; is this what's causing a flash-bang?
-   stz VERA_CTRL                            ; DCSEL=0
-   stz VERA_DC0_VIDEO                       ; disable everything
-
-   U16_STZ CX16_API_R0                      ; use default driver
-   jsr KERNAL_GRAPH_INIT
+   jsr sub_init_palette
 
    stz VERA_CTRL                            ; DCSEL=0
    lda #64
@@ -119,6 +114,22 @@
    rts
 .endproc
 
+.proc sub_init_palette: near
+   SET_VERA_ADDR24_IMM $00, VERA_ADDR_PALETTE, $10
+   ldy #(512 / 4)
+   lda #0
+@loop:
+   sta VERA_DATA0
+   sta VERA_DATA0
+   sta VERA_DATA0
+   sta VERA_DATA0
+   dey
+   bne @loop
+   rts
+.endproc
+
+
+
 ;==============================================================================
 ; func_load_image
 ;
@@ -157,7 +168,11 @@
 .endproc
 
 ;==============================================================================
-; func_init_vram_addr_table
+; func_init_ram_bank
+;
+; This must be called once before calling any FLI related subroutines and
+; macros.  It switches the active RAM bank to whatever was configured in the
+; global settings.
 ;
 ; This creates a table for 24-bit VRAM addresses where the table index is
 ; the line in VRAM, and the resulting address is offset for our staging area
@@ -166,7 +181,7 @@
 ; Invoke this once before any attempts to establish VRAM addresses while
 ; rendering chunks.
 ;==============================================================================
-.proc func_init_vram_addr_table: near
+.proc func_init_ram_bank: near
    scratch = GR24_scratch1
    U24_COPY_IMM scratch, (VRAM_BUFF_IMAGE | $100000)
    SWITCH_RAM_BANK_IMM FLI_PLAYER_RAM_BANK
@@ -184,6 +199,3 @@
    bne @loop
    rts
 .endproc
-
-
-

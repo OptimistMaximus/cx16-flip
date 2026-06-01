@@ -11,7 +11,7 @@
 .import func_vera_restore
 .import func_slurp_header
 .import func_slurp_frame
-.import func_init_vram_addr_table
+.import func_init_ram_bank
 
 .segment "INIT"
 .segment "STARTUP"
@@ -31,7 +31,7 @@
 
 start:
 
-   jsr func_init_vram_addr_table
+   jsr func_init_ram_bank
    jsr func_setup_irq_handler
 
    DEBUG_TIMER_START

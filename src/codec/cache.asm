@@ -13,6 +13,7 @@
 .include "../include/kernal.inc"
 .include "../include/math.inc"
 .include "../include/slurp.inc"
+.include "../include/video.inc"
 .include "../include/vera.inc"
 
 ;==============================================================================
@@ -74,7 +75,6 @@ smc_anchor_for_cache_size:
          BSOD_A RC_READ_ERROR
 
 @read_success:
-       stx ZP8_cacheRemaining ; .X (bytes read) is now bytes remaining
        stx ZP8_cacheLoadCount ;    and for convenience the load count
        stz ZP16_cachePointer  ; reset the pointer
 
@@ -117,18 +117,22 @@ smc_anchor_for_cache_size:
 ;      from 600 to 750 cycles depending on the number of bytes requested.
 ;==============================================================================
 .proc func_cache_read_into_vram: near
-   cmp ZP8_cacheRemaining
-   bcs @requested_greater_than_or_equal_to_remaining
-   jmp handle_lte_read
+   sta ZP8_cacheScratch   ; the original request, saved as state
+   sec
+   lda ZP8_cacheLoadCount
+   sbc ZP16_cachePointer
+   beq @nothing_remaining
 
-@requested_greater_than_or_equal_to_remaining:
-   bne @requested_greater_than_remaining
-   jmp handle_lte_read
-
-@requested_greater_than_remaining:
-   jmp handle_gt_read
+   cmp ZP8_cacheScratch
+   bcs @plenty_remaining
+   jmp handle_gt_read     ; this guy assumes scratch holds original request
+@plenty_remaining:
+   jmp handle_lte_read    ; this guy assumes scratch holds original request
+@nothing_remaining:
+   jsr func_cache_load_page   ; load a fresh page and try again
+   lda ZP8_cacheScratch       ; re-establish .A as having the original request
+   jmp func_cache_read_into_vram ; i.e. try again
 .endproc
-
 
 ;------------------------------------------------------------------------------
 ; efficient copy when requested number of bytes are in cache
@@ -142,28 +146,20 @@ smc_anchor_for_cache_size:
 ; should be $5A8 ($588+$20) and remaining should be $10 ($30-$20).
 ;------------------------------------------------------------------------------
 .proc handle_lte_read: near
-   tmpLoopMax = GR8_scratch1
-   tmpRequest = GR8_scratch2
-
-   sta tmpRequest           ; squirrel away .A for later
    clc
+   lda ZP8_cacheScratch     ; prep .A with the original request
    adc ZP16_cachePointer    ; add pointer's low byte, $20 + $88 = $A8
-   sta tmpLoopMax           ; which is now the loop max
+   sta ZP8_cacheScratch     ; scratch is now the loop max
 
    phy
       ldy ZP16_cachePointer ; pointer low is where to start, e.g. $88
    :  lda CONST_cacheAddr,y ; read at offset  e.g. $500 + $55
       sta VERA_DATA0        ; write to VRAM
       iny
-      cpy tmpLoopMax
+      cpy ZP8_cacheScratch  ; see if we hit loop max yet
       bne :-
       sty ZP16_cachePointer ; .Y is $A8 at this point, so make pointer $5A8
    ply
-
-   sec
-   lda ZP8_cacheRemaining   ; now subtract the request from remaining
-   sbc tmpRequest           ; to get the new remaining value
-   sta ZP8_cacheRemaining
    rts
 .endproc
 
@@ -175,32 +171,27 @@ smc_anchor_for_cache_size:
 ; remaining number of bytes, and try again.
 ;
 .proc handle_gt_read: near
-   varRequest = GR8_scratch1
 
-   sec                           ; .A holds the request. After draining what
-   sbc ZP8_cacheRemaining        ; remains and loading the next page, we'll
-   sta varRequest                ; make a request for the difference
-
-   lda ZP8_cacheRemaining        ; handle rare edge case of nothing remaining
-   beq @none_remaining
+   varRequest = ZP8_cacheScratch ; the original request
+   varRemaining = GR8_scratch1
 
    phy
+      sec                           ; establish .A has having the bytes
+      lda ZP8_cacheLoadCount        ; remaining (i.e. how much we need to
+      sbc ZP16_cachePointer         ; drain) and squirrel it in .Y
+      sta varRemaining
       ldy ZP16_cachePointer
    :  lda CONST_cacheAddr,y
       sta VERA_DATA0
       iny
       cpy ZP8_cacheLoadCount
       bne :-
+      sty ZP16_cachePointer         ; .Y is conveniently the end
    ply
+   sec
+   lda varRequest
+   sbc varRemaining
 
-@none_remaining:
-   phx
-      phy
-         jsr func_cache_load_page ; definitely exhausted, so load a fresh page,
-      ply
-   plx
-
-   lda varRequest                ; follow-up with a read request for the
    jmp func_cache_read_into_vram ; original request less what we drained
 .endproc
 

@@ -14,11 +14,11 @@
 ; byte was just read into the .A buffer.
 ;==============================================================================
 .macro SLURP_INTO_A
-   lda ZP8_cacheRemaining
-   bne :+
+   lda ZP16_cachePointer
+   cmp ZP8_cacheLoadCount
+   bcc :+
    jsr func_cache_load_page
 :  lda (ZP16_cachePointer)
-   dec ZP8_cacheRemaining
    inc ZP16_cachePointer
 .endmacro
 
@@ -72,35 +72,6 @@
    sta targetAddr+2
    SLURP_INTO_A
    sta targetAddr+3
-.endmacro
-
-;==============================================================================
-; SKIP_PIXELS (using VERA_DATA0)
-;
-; @param .A holds the number of pixels to advance (skip over)
-;==============================================================================
-.macro SKIP_PIXELS
-   phx
-      tax
-   :  lda VERA_DATA0
-      dex
-      bne :-
-   plx
-.endmacro
-
-;==============================================================================
-; SKIP_COLORS (using VERA_DATA0)
-;
-; @param .A holds the number of colors to advance (skip over)
-;==============================================================================
-.macro SKIP_COLORS
-   phx
-      tax
-   :  lda VERA_DATA0 ; low (GB)
-      lda VERA_DATA0 ; high (R)
-      dex
-      bne :-
-   plx
 .endmacro
 
 .endif

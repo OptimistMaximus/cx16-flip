@@ -18,10 +18,12 @@
 .import func_load_palette
 .import sub_resolve_chunk_type
 .import sub_resolve_frame_type
+.import smc_anchor_for_bsod
 
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
+.include "../include/opcodes.inc"
 .include "../include/slurp.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
@@ -61,6 +63,17 @@ VRAM_IMAGE_LINE_3  := $003C0
    pla
 .endmacro
 
+.macro DISABLE_BSOD
+   lda #OPCODE_RTS
+   sta smc_anchor_for_bsod ; overwrite JMP with RTS
+.endmacro
+
+.macro ENABLE_BSOD
+   lda #OPCODE_JMP_ABS
+   sta smc_anchor_for_bsod ; overwrite RTS with JMP
+.endmacro
+
+
 .proc test_suite_2: near
 
    ;---------------------------------------------------------------------------
@@ -72,7 +85,9 @@ VRAM_IMAGE_LINE_3  := $003C0
    ASSERT_VAR_U8_EQUALS_IMM $3001, $48, GR8_speedLimitVSyncs ; $55 * 6 / 7 = $48
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
+   DISABLE_BSOD
    jsr func_slurp_header
+   ENABLE_BSOD
    CLOSE_INPUTSTREAM
    ASSERT_VAR_U8_EQUALS_IMM $3011, RC_UNSUPPORTED_FILE_TYPE, GR8_returnCode
    ASSERT_VAR_U16_EQUALS_IMM $3012, $AF12, GR16_returnDetail
@@ -86,7 +101,9 @@ VRAM_IMAGE_LINE_3  := $003C0
    ; TEST 31 - handle_invalid
    ;---------------------------------------------------------------------------
    U16_COPY_IMM GR16_chunkType, $DEAD
+   DISABLE_BSOD
    jsr handle_invalid
+   ENABLE_BSOD
    ASSERT_VAR_U8_EQUALS_IMM $3100, RC_INVALID_CHUNK_TYPE, GR8_returnCode
    ASSERT_VAR_U16_EQUALS_IMM $3101, $DEAD, GR16_returnDetail
 
@@ -117,7 +134,7 @@ VRAM_IMAGE_LINE_3  := $003C0
    ;           sub_resolve_frame_type
    ;
    ; Note that this implementation doesn't handle padding, so we should expect
-   ; what is resolved on the first pass.
+   ; what is resolved on the first (and only) try.
    ;
    ; The test expectations are based on white-box knowledge of the handler
    ; jump table, where offset $0E is for "BLACK" and $02 is for "FRAME_TYPE"
