@@ -99,8 +99,16 @@
 .proc func_load_palette: near
    SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
    SET_VERA_ADDR24_IMM $01, VERA_ADDR_PALETTE, $10
-   ldy #(512 / 4)
+   ldy #(512 / 8)
 @loop:
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
+   lda VERA_DATA0
+   sta VERA_DATA1
    lda VERA_DATA0
    sta VERA_DATA1
    lda VERA_DATA0
@@ -152,8 +160,12 @@
       BATCH_COPY_ENABLE
    plx                                 ; pull line count into .X
 @bulk_vram_copy_outer_loop:
-   ldy #(320 / 16)                     ; .Y is for columns, batched
+   ldy #(320 / 32)                     ; .Y is for columns, batched
 @bulk_vram_copy_inner_loop:
+   BATCH_COPY
+   BATCH_COPY
+   BATCH_COPY
+   BATCH_COPY
    BATCH_COPY
    BATCH_COPY
    BATCH_COPY

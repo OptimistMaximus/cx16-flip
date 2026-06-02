@@ -101,8 +101,12 @@ will be used.  The results are tracked here, for each released version:
 | 0.6.1   | $0072  |  31 | $0024    | 2340      |
 | 0.6.2   | $006B  |  33 | $0021    | 2322      |
 | 0.6.3   | $0069  |  34 | $0023    | 2308      |
+| 0.6.4   | $0068  |  34 | $0020    | 2392      |
 
 ### Version History
+
+- 2026/06/01 Version 0.6.4
+  - minor performance optimizations
 
 - 2026/06/01 Version 0.6.3
   - minor performance optimizations
