@@ -52,8 +52,10 @@ start:
 
    DEBUG_TIMER_READ
 
+.ifndef DEBUG_TIMER_ENABLED
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)
+.endif
 
    jsr func_vera_restore        ; restore vera to text mode
    jsr func_restore_irq_handler

@@ -218,5 +218,7 @@ Bad FLI files:
   subroutines and put them in the higher level functions that drive them ... we
   are probably needlessly pushing and pulling in some cases that might be in
   big 320x200 pixel loops, so saving 7 cycles per push/pull will really add up.
-
-
+- postpone the staging copy to happen during vsync.  Basic idea is to have 2 bits:
+  FLIP_REQUESTED and FLIP_DONE.  Main code clears FLIP_DONE and sets FLIP_REQUESTED.
+  Then waits for FLIP_DONE to become set.  IRQ code looks on VSync if FLIP_REQUESTED
+  is set, and if so it flips the stage data then sets FLIP_DONE.
