@@ -72,63 +72,59 @@ sub_handle_color:
    ; zero (don't skip) but a copy count of zero means 256 (i.e. a full palette
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
-   phy
-      SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
-      SLURP_INTO_U16 numPackets
+   SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
+   SLURP_INTO_U16 numPackets
 
-      ldx #0
-   packet_loop:
+   ldx #0
+packet_loop:
 
-      SLURP_INTO_A                     ; .A holds skip count, where 0 means 0
-      cmp #0
-      beq @zero_skip
-      tay
-   :  lda VERA_DATA0
-      lda VERA_DATA0
-      dey
-      bne :-
+   SLURP_INTO_A                     ; .A holds skip count, where 0 means 0
+   cmp #0
+   beq @zero_skip
+   tay
+:  lda VERA_DATA0
+   lda VERA_DATA0
+   dey
+   bne :-
 
-   @zero_skip:
+@zero_skip:
+   SLURP_INTO_U8 copyCount
+   ldy #0
+copy_loop:
+   SLURP_INTO_A             ; slurp RGB's R
+smc_anchor_r_shift:
+   lsr                      ; nop if 6-bit
+   lsr                      ; nop if 6-bit
+   lsr
+   lsr
+   sta tempVeraRed
 
-      SLURP_INTO_U8 copyCount
-      ldy #0
-   copy_loop:
-      SLURP_INTO_A             ; slurp RGB's R
-   smc_anchor_r_shift:
-      lsr                      ; nop if 6-bit
-      lsr                      ; nop if 6-bit
-      lsr
-      lsr
-      sta tempVeraRed
+   SLURP_INTO_A             ; slurp RGB's G
+smc_anchor_g_shift:
+   nop                      ; asl if 6-bit
+   nop                      ; asl if 6-bit
+   and #$F0
+   sta tempVeraGreen
 
-      SLURP_INTO_A             ; slurp RGB's G
-   smc_anchor_g_shift:
-      nop                      ; asl if 6-bit
-      nop                      ; asl if 6-bit
-      and #$F0
-      sta tempVeraGreen
-
-      SLURP_INTO_A             ; slurp RGB's B
+   SLURP_INTO_A             ; slurp RGB's B
    smc_anchor_b_shift:
-      lsr                      ; nop if 6-bit
-      lsr                      ; nop if 6-bit
-      lsr
-      lsr
-      ora tempVeraGreen
-      sta VERA_DATA0           ; store VERA color (GB)
-      lda tempVeraRed          ; store VERA color (R)
-      sta VERA_DATA0
+   lsr                      ; nop if 6-bit
+   lsr                      ; nop if 6-bit
+   lsr
+   lsr
+   ora tempVeraGreen
+   sta VERA_DATA0           ; store VERA color (GB)
+   lda tempVeraRed          ; store VERA color (R)
+   sta VERA_DATA0
 
-      iny
-      cpy copyCount
-      bne copy_loop
+   iny
+   cpy copyCount
+   bne copy_loop
 
-      inx
-      cpx numPackets                       ; just the low byte
-      bne packet_loop
+   inx
+   cpx numPackets                       ; just the low byte
+   bne packet_loop
 
-   ply
    U8_COPY_IMM ZP8_lineSkip, $FF
    U8_COPY_IMM ZP8_lineCount, $FF
    rts
-

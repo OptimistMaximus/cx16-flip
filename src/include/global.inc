@@ -20,6 +20,7 @@ ZP8_lineCount           := $29
 ZP8_lineStop            := $2A
 ZP8_timerTrigger        := $2B ; state variable needed by speed timer
 ZP8_imageVSyncsElapsed  := $2C ; VSyncs elapsed while rendering current image
+ZP8_lineIndex           := $2D
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES

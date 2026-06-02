@@ -100,8 +100,12 @@ will be used.  The results are tracked here, for each released version:
 | 0.6.0   | $009A  |  23 | $0029    | 1951      |
 | 0.6.1   | $0072  |  31 | $0024    | 2340      |
 | 0.6.2   | $006B  |  33 | $0021    | 2322      |
+| 0.6.3   | $0069  |  34 | $0023    | 2308      |
 
 ### Version History
+
+- 2026/06/01 Version 0.6.3
+  - minor performance optimizations
 
 - 2026/05/31 Version 0.6.2
   - minor performance optimizations to column skip and caching
@@ -214,9 +218,7 @@ Bad FLI files:
 
 ## IDEAS / TODO
 
-- consider saving time by taking phx/plx and phy/ply out of low level caching
-  subroutines and put them in the higher level functions that drive them ... we
-  are probably needlessly pushing and pulling in some cases that might be in
-  big 320x200 pixel loops, so saving 7 cycles per push/pull will really add up.
-
-
+- postpone the staging copy to happen during vsync.  Basic idea is to have 2 bits:
+  FLIP_REQUESTED and FLIP_DONE.  Main code clears FLIP_DONE and sets FLIP_REQUESTED.
+  Then waits for FLIP_DONE to become set.  IRQ code looks on VSync if FLIP_REQUESTED
+  is set, and if so it flips the stage data then sets FLIP_DONE.

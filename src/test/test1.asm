@@ -268,7 +268,6 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    SLURP_INTO_A
    sta VERA_DATA0
 
-   stp
    ;
    ; now another edge case case: multi-read equal to remaining
    ;

@@ -52,8 +52,12 @@
 ; intended for use only by subroutines and macros involved in cache management.
 ; Please don't call it directly.
 ;
-; @effect .X clobbered
-; @effect .Y clobbered
+; Since it gets used in various places where calling code might not expect
+; .X and .Y to be clobbered, and since it gets called relatively infrequently,
+; its implmenetation makes sure to preserve .X and .Y
+;
+; @effect .X preserved
+; @effect .Y preserved
 ;==============================================================================
 func_cache_load_page:
    phx
@@ -86,16 +90,15 @@ smc_anchor_for_cache_size:
 ; func_cache_dupe_into_vram
 ;
 ; @param .A is the number of times to duplicate the input stream's next byte
+; @effect .X clobbered
+; @effect .Y preserved
 ;==============================================================================
 .proc func_cache_dupe_into_vram: near
-   phx
-      pha
-         SLURP_INTO_A
-      plx
-   :  sta VERA_DATA0
-      dex
-      bne :-
-   plx
+   tax
+   SLURP_INTO_A
+:  sta VERA_DATA0
+   dex
+   bne :-
    rts
 .endproc
 
@@ -105,6 +108,8 @@ smc_anchor_for_cache_size:
 ; This reads data from cache and writes it into VRAM using VERA's DATA0.
 ;
 ; @param .A holds the number of bytes to transfer
+; @effect .X clobbered
+; @effect .Y preserved
 ;
 ; This has various cycle counts based on how many bytes are requested, and
 ; how many of them are available in cache already. The branching strategy is
@@ -137,6 +142,9 @@ smc_anchor_for_cache_size:
 ;------------------------------------------------------------------------------
 ; efficient copy when requested number of bytes are in cache
 ;
+; @effect .X clobbered
+; @effect .Y preserved
+;
 ; Comments here use the following scenario for illustration purpose. Suppose
 ; the pointer is presently $588 and someone requested $20 bytes (.A has $20)
 ; and remaining bytes was $30.
@@ -151,15 +159,13 @@ smc_anchor_for_cache_size:
    adc ZP16_cachePointer    ; add pointer's low byte, $20 + $88 = $A8
    sta ZP8_cacheScratch     ; scratch is now the loop max
 
-   phy
-      ldy ZP16_cachePointer ; pointer low is where to start, e.g. $88
-   :  lda CONST_cacheAddr,y ; read at offset  e.g. $500 + $55
+      ldx ZP16_cachePointer ; pointer low is where to start, e.g. $88
+   :  lda CONST_cacheAddr,x ; read at offset  e.g. $500 + $55
       sta VERA_DATA0        ; write to VRAM
-      iny
-      cpy ZP8_cacheScratch  ; see if we hit loop max yet
+      inx
+      cpx ZP8_cacheScratch  ; see if we hit loop max yet
       bne :-
-      sty ZP16_cachePointer ; .Y is $A8 at this point, so make pointer $5A8
-   ply
+      stx ZP16_cachePointer ; .Y is $A8 at this point, so make pointer $5A8
    rts
 .endproc
 
@@ -170,24 +176,25 @@ smc_anchor_for_cache_size:
 ; remaining, then adjust the request to reflect that we just read that
 ; remaining number of bytes, and try again.
 ;
+; @effect .X clobbered
+; @effect .Y preserved
 .proc handle_gt_read: near
 
    varRequest = ZP8_cacheScratch ; the original request
    varRemaining = GR8_scratch1
 
-   phy
       sec                           ; establish .A has having the bytes
       lda ZP8_cacheLoadCount        ; remaining (i.e. how much we need to
       sbc ZP16_cachePointer         ; drain) and squirrel it in .Y
       sta varRemaining
-      ldy ZP16_cachePointer
-   :  lda CONST_cacheAddr,y
+      ldx ZP16_cachePointer
+   :  lda CONST_cacheAddr,x
       sta VERA_DATA0
-      iny
-      cpy ZP8_cacheLoadCount
+      inx
+      cpx ZP8_cacheLoadCount
       bne :-
-      sty ZP16_cachePointer         ; .Y is conveniently the end
-   ply
+      stx ZP16_cachePointer         ; .Y is conveniently the end
+
    sec
    lda varRequest
    sbc varRemaining

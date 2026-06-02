@@ -11,15 +11,14 @@
 .include "../include/video.inc"
 
 .proc handle_byte_run: near
-   phy
-      SET_VRAM_ADDR_FOR_FULL_LINE
+   SET_VRAM_ADDR_FOR_FULL_LINE
 
-      ldx #200                    ; .X is the line countdown
-   @line_loop:
-      jsr sub_render_line
-      dex
-      bne @line_loop
-   ply
+   lda #200
+   sta ZP8_lineIndex          ; acts as line countdown
+@line_loop:
+   jsr sub_render_line
+   dec ZP8_lineIndex
+   bne @line_loop
    U8_COPY_IMM ZP8_lineSkip, 0
    U8_COPY_IMM ZP8_lineCount, 200
    rts

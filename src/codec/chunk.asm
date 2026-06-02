@@ -62,6 +62,8 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;
 ; @effect ZP8_lineSkip holds the line skip ($FF if color chunk)
 ; @effect ZP8_lineCount holds line count ($FF if color chunk)
+; @effect .X clobbered
+; @effect .Y clobbered
 ;
 ; This works fine because FLI format has a maximum height of 200, so anything
 ; over 200 can be used to signify other stuff
@@ -79,6 +81,23 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    jmp (chunk_type_jump_table,x)
 .endproc
 
+;==============================================================================
+; func_slurp_frame
+;
+; Reads the chunk size and chunk type, then verifies if the chunk is indeed of
+; type FRAME_TYPE.  If so, it jumps to its appropriate handler. If not, it
+; shuffles in another byte from the input stream and evaluates again.  In this
+; way it can easily handle padding of 1 zero (which seems to be about 99.99%
+; of the padding found in FLI files in the wild).  It also works well for any
+; arbitrary padding, so long as the frame after the padding doesn't happen to
+; have the low two bytes of its chunk size as exactly $FA,$F1.  In this case
+; the file parsing will go awry. But it is a concious trade-off because it
+; means we don't need to keep track of 32-byte stream offsets (which is a
+; performance killer for an 8-bit chip)
+;
+; @effect .X clobbered
+; @effect .Y clobbered
+;==============================================================================
 .proc func_slurp_frame: near
    SLURP_INTO_U32 GR32_chunkSize
    SLURP_INTO_U16 GR16_chunkType

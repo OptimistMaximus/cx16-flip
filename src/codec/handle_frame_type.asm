@@ -38,12 +38,12 @@
    ldy #0                         ; .Y is the chunk index
 @subchunk_loop:
    phy
-      jsr func_slurp_chunk
+      jsr func_slurp_chunk        ; clobbers .X and .Y
    ply
    lda ZP8_lineSkip
-   sta CONST_skipArray,y       ; squirrel the line skip
+   sta CONST_skipArray,y          ; squirrel the line skip
    lda ZP8_lineCount
-   sta CONST_countArray,y      ; squirrel the line count
+   sta CONST_countArray,y         ; squirrel the line count
    iny
    cpy GR8_chunkCount
    bne @subchunk_loop
