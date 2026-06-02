@@ -27,9 +27,8 @@
 
    SLURP_INTO_A   ; burn high byte of line count (always zero)
 
-   ldx ZP8_lineSkip
    @line_loop:
-      SET_VRAM_ADDR_FOR_DELTA_LINE
+      SET_VRAM_ADDR_FOR_DELTA_LINE  ; uses .X to set the line addr
       phx
          jsr sub_render_line
       plx
@@ -40,8 +39,6 @@
 .endproc
 
 .proc sub_render_line: near
-
-
    SLURP_INTO_A       ; packet count
    cmp #0
    beq @packet_loop_done            ; (packet count can legit be zero)
