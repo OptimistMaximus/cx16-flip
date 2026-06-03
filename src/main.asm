@@ -52,7 +52,7 @@ start:
 
    DEBUG_TIMER_READ
 
-.ifndef DEBUG_TIMER_ENABLED
+.ifndef ENABLE_DEBUG_TIMER
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)
 .endif

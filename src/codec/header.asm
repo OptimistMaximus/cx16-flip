@@ -24,9 +24,8 @@ FILE_TYPE_FLI := $AF11
 
    varFileType = GR16_scratch1  ; can be repurposed after file type validation
 
-   lda #4
-   jsr func_cache_discard_bytes ; dword size (file size)
-   SLURP_INTO_U16 varFileType  ;  word type (file type)
+   SLURP_INTO_OBLIVION 4        ; dword size (file size)
+   SLURP_INTO_U16 varFileType   ;  word type (file type)
 
    ;---------------------------------------------------------------------------
    ; validate file type
@@ -37,8 +36,7 @@ FILE_TYPE_FLI := $AF11
 @fileType_is_fli:
 
    SLURP_INTO_U16 GR16_frameCount
-   lda #8
-   jsr func_cache_discard_bytes ; width, height, depth, flags
+   SLURP_INTO_OBLIVION 8          ; width, height, depth, flags
 
    ;---------------------------------------------------------------------------
    ; validate speed
@@ -88,8 +86,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    ; burn remaining bytes of header
    ;---------------------------------------------------------------------------
-   lda #108
-   jsr func_cache_discard_bytes
+   SLURP_INTO_OBLIVION 108
 
    rts
 .endproc

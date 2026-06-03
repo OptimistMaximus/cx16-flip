@@ -3,7 +3,7 @@
 
 .include "./kernal.inc"
 
-; MINIMIZE_ZEROPAGE_USAGE = 1
+; ENABLE_DEBUG_TIMER = 1
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page)
@@ -18,55 +18,37 @@ ZP8_cacheScratch        := $27
 ZP8_lineSkip            := $28
 ZP8_lineCount           := $29
 ZP8_lineStop            := $2A
-ZP8_timerTrigger        := $2B ; state variable needed by speed timer
-ZP8_imageVSyncsElapsed  := $2C ; VSyncs elapsed while rendering current image
-ZP8_lineIndex           := $2D
+ZP8_lineIndex           := $2B
+ZP8_timerTrigger        := $2C ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $2D ; VSyncs elapsed while rendering current image
 
-;------------------------------------------------------------------------------
-; GLOBAL VARIABLES
-;
-; These can be anywhere in RAM, though the program will be smaller and faster
-; if they exist in Zero Page.  As long as the total usage here is under $40
-; bytes, it can easily fit in either ZP or GOLDEN RAM.
-;------------------------------------------------------------------------------
-.ifdef MINIMIZE_ZEROPAGE_USAGE
-   GLOBAL_VAR_BASE    := $B600
-.else
-   GLOBAL_VAR_BASE    := $0
+GR16_origIrqHandler     := $2E
+
+GR32_scratch1           := $30
+GR16_scratch1           := $34
+GR16_scratch2           := $46
+GR16_scratch3           := $48
+GR24_scratch1           := $4A
+GR8_scratch1            := $4D
+GR8_scratch2            := $4E
+GR8_scratch3            := $4F
+
+GR32_chunkSize          := $50 ; needed for padding logic
+GR16_chunkType          := $54
+GR16_frameIndex         := $56
+GR16_frameCount         := $58
+GR8_chunkIndex          := $5A
+GR8_chunkCount          := $5B
+GR8_speedLimitVSyncs    := $5C  ; speed limit as VSyncs
+GR8_returnCode          := $5D
+GR16_returnDetail       := $5E
+
+.ifdef ENABLE_DEBUG_TIMER
+GR16_debugTimerVSyncs   := $60
+GR16_debugSpeedOverrun  := $62
+GR16_debugSpeedUnderrun := $64
+GR16_debugTimerValue    := $66
 .endif
-
-GR32_scratch1         := GLOBAL_VAR_BASE + $40
-GR32_scratch2         := GLOBAL_VAR_BASE + $44
-
-GR16_scratch1         := GLOBAL_VAR_BASE + $48
-GR16_scratch2         := GLOBAL_VAR_BASE + $4A
-GR16_scratch3         := GLOBAL_VAR_BASE + $4C
-GR16_scratch4         := GLOBAL_VAR_BASE + $4E
-
-GR24_scratch1         := GLOBAL_VAR_BASE + $50
-GR24_scratch2         := GLOBAL_VAR_BASE + $53
-
-GR8_scratch1          := GLOBAL_VAR_BASE + $56
-GR8_scratch2          := GLOBAL_VAR_BASE + $57
-GR8_scratch3          := GLOBAL_VAR_BASE + $58
-GR8_scratch4          := GLOBAL_VAR_BASE + $59
-GR16_debugTimerValue  := GLOBAL_VAR_BASE + $5A
-
-GR32_chunkSize        := GLOBAL_VAR_BASE + $60 ; needed for padding logic
-GR16_chunkType        := GLOBAL_VAR_BASE + $64
-GR16_frameIndex       := GLOBAL_VAR_BASE + $66
-GR16_frameCount       := GLOBAL_VAR_BASE + $68
-GR8_chunkIndex        := GLOBAL_VAR_BASE + $6A
-GR8_chunkCount        := GLOBAL_VAR_BASE + $6B
-GR8_cacheSize         := GLOBAL_VAR_BASE + $6C
-
-GR8_speedLimitVSyncs  := GLOBAL_VAR_BASE + $70  ; speed limit as VSyncs
-GR8_returnCode        := GLOBAL_VAR_BASE + $71
-GR16_returnDetail     := GLOBAL_VAR_BASE + $72
-GR16_origIrqHandler   := GLOBAL_VAR_BASE + $74
-GR16_debugTimerVSyncs := GLOBAL_VAR_BASE + $76
-GR16_debugSpeedOverrun := GLOBAL_VAR_BASE + $78
-GR16_debugSpeedUnderrun := GLOBAL_VAR_BASE + $7A
 
 ;------------------------------------------------------------------------------
 ; BANKED VARIABLES

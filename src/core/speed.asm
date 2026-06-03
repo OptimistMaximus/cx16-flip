@@ -118,7 +118,7 @@ JIFFY_CYCLES := $AD9C
 ; So to sleep 1/60, we'll sleep $AD9C three times.
 ;==============================================================================
 .proc func_snooze: near
-.ifdef DEBUG_TIMER_ENABLED
+.ifdef ENABLE_DEBUG_TIMER
    rts
 .endif
    tax

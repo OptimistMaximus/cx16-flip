@@ -2,126 +2,35 @@
         DEBUG_INC = $1
 
 .import func_print_hex
-.import debug_print_istring
 
+.include "./global.inc"
 .include "./math.inc"
 .include "./math2.inc"
 
 ; The debug timer assumes your IRQ Handler is incrementing a 16-bit
 ; value ZP16_vsyncs_total on every VERA interrupt for VSync
-; DEBUG_TIMER_ENABLED = 1
-
-.macro DEBUG_PRINT_U8_VAR addr
-   pha
-      lda addr
-      jsr func_print_hex
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_LABEL label
-   pha
-      lda #>label ; high
-      jsr func_print_hex
-      lda #<label ; low
-      jsr func_print_hex
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_U8_IMM value
-   pha
-      lda #value
-      jsr func_print_hex
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_U16_IMM value
-   pha
-      lda #>value ; high
-      jsr func_print_hex
-      lda #<value ; low
-      jsr func_print_hex
-   pla
-.endmacro
 
 .macro DEBUG_PRINT_U16_VAR addr
-   pha
-      lda addr+1 ; high
-      jsr func_print_hex
-      lda addr+0 ; low
-      jsr func_print_hex
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_U24_VAR addr
-   pha
-      lda addr+2 ; bank
-      jsr func_print_hex
-      lda addr+1 ; high
-      jsr func_print_hex
-      lda addr+0 ; low
-      jsr func_print_hex
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_STRING stringLiteral
-   pha
-      jsr debug_print_istring
-      .asciiz stringLiteral
-   pla
+   lda addr+1 ; high
+   jsr func_print_hex
+   lda addr+0 ; low
+   jsr func_print_hex
 .endmacro
 
 .macro DEBUG_PRINT_NEWLINE
-   pha
-      lda #$0D ; petscii return
-      jsr KERNAL_CHROUT
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_CHAR petscii
-   pha
-      lda #petscii
-      jsr KERNAL_CHROUT
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_CHAR_A
-   pha
-      jsr KERNAL_CHROUT
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_HEX_A
-   pha
-      jsr func_print_hex
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_HEX_X
-   pha
-      phx
-         txa
-         jsr func_print_hex
-      plx
-   pla
-.endmacro
-
-.macro DEBUG_PRINT_HEX_Y
-   pha
-      phy
-         tya
-         jsr func_print_hex
-      ply
-   pla
+   lda #$0D ; petscii return
+   jsr KERNAL_CHROUT
+   jsr KERNAL_CHROUT
 .endmacro
 
 .macro DEBUG_TIMER_INCREMENT
-.ifdef DEBUG_TIMER_ENABLED
+.ifdef ENABLE_DEBUG_TIMER
    U16_INC GR16_debugTimerVSyncs
 .endif
 .endmacro
 
 .macro DEBUG_TIMER_START
-.ifdef DEBUG_TIMER_ENABLED
+.ifdef ENABLE_DEBUG_TIMER
    sei
    U16_STZ GR16_debugTimerVSyncs
    U16_STZ GR16_debugSpeedOverrun
@@ -131,7 +40,7 @@
 .endmacro
 
 .macro DEBUG_TIMER_READ
-.ifdef DEBUG_TIMER_ENABLED
+.ifdef ENABLE_DEBUG_TIMER
    sei
    U16_COPY_VAR GR16_debugTimerValue, GR16_debugTimerVSyncs
    cli
@@ -139,14 +48,12 @@
 .endmacro
 
 .macro DEBUG_TIMER_DUMP
-.ifdef DEBUG_TIMER_ENABLED
+.ifdef ENABLE_DEBUG_TIMER
 
-   DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_STRING "elapsed vsyncs:  $"
-   DEBUG_PRINT_U16_VAR GR16_debugTimerValue
-   DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_STRING "total frames:    $"
+   DEBUG_PRINT_NEWLINE
    DEBUG_PRINT_U16_VAR GR16_frameCount
+   DEBUG_PRINT_NEWLINE
+   DEBUG_PRINT_U16_VAR GR16_debugTimerValue
 
    ; FPS calculation is 60 frames per 60th of a second
    ; Assuming we don't have any images with more than $C30 (~3000) frames,
@@ -172,28 +79,24 @@
    U16_SLOW_MULTIPLY GR16_scratch1, GR16_frameCount, GR8_scratch1
    U16_SLOW_DIVIDE GR16_scratch2, GR16_scratch1, GR16_debugTimerValue
 
-   DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_STRING "average fps:     $"
+   DEBUG_PRINT_NEWLINE
    DEBUG_PRINT_U16_VAR GR16_scratch2
-   DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_STRING "speed overruns:  $"
+   DEBUG_PRINT_NEWLINE
    DEBUG_PRINT_U16_VAR GR16_debugSpeedOverrun
-   DEBUG_PRINT_CHAR PETSCII_RETURN
-   DEBUG_PRINT_STRING "speed underruns: $"
+   DEBUG_PRINT_NEWLINE
    DEBUG_PRINT_U16_VAR GR16_debugSpeedUnderrun
-   DEBUG_PRINT_CHAR PETSCII_RETURN
+   DEBUG_PRINT_NEWLINE
 .endif
 .endmacro
 
 .macro DEBUG_TIMER_REGISTER_SPEED_OVERRUN
-.ifdef DEBUG_TIMER_ENABLED
+.ifdef ENABLE_DEBUG_TIMER
    U16_INC GR16_debugSpeedOverrun
 .endif
 .endmacro
 
 .macro DEBUG_TIMER_REGISTER_SPEED_UNDERRUN
-.ifdef DEBUG_TIMER_ENABLED
+.ifdef ENABLE_DEBUG_TIMER
    U16_INC GR16_debugSpeedUnderrun
 .endif
 .endmacro

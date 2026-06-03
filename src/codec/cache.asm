@@ -33,12 +33,16 @@
 ; func_cache_discard_bytes
 ;
 ; @param .A holds the number of bytes to discard
+;
+; Note, this is inefficient for large numbers of bytes, but we only do large
+; discards rarely (once in the header and once per frame) so for now it is not
+; worth fretting over for performance reasons.
 ;==============================================================================
 .proc func_cache_discard_bytes: near
    phx
       tax
    @loop:
-      SLURP_INTO_A   ; this uses an anonymous label, so our :- must be a :--
+      SLURP_INTO_A ; this uses an anonymous label, so we mustn't use too
       dex
       bne @loop
    plx
@@ -122,6 +126,19 @@ smc_anchor_for_cache_size:
 ;      from 600 to 750 cycles depending on the number of bytes requested.
 ;==============================================================================
 .proc func_cache_read_into_vram: near
+   cmp #6                ; if >= 6 then batching is faster
+   bcs @batch_is_faster
+
+   tax
+@brute_loop:
+   SLURP_INTO_A
+   sta VERA_DATA0
+   dex
+   bne @brute_loop
+   rts
+   
+@batch_is_faster:
+
    sta ZP8_cacheScratch   ; the original request, saved as state
    sec
    lda ZP8_cacheLoadCount
@@ -159,13 +176,13 @@ smc_anchor_for_cache_size:
    adc ZP16_cachePointer    ; add pointer's low byte, $20 + $88 = $A8
    sta ZP8_cacheScratch     ; scratch is now the loop max
 
-      ldx ZP16_cachePointer ; pointer low is where to start, e.g. $88
-   :  lda CONST_cacheAddr,x ; read at offset  e.g. $500 + $55
-      sta VERA_DATA0        ; write to VRAM
-      inx
-      cpx ZP8_cacheScratch  ; see if we hit loop max yet
-      bne :-
-      stx ZP16_cachePointer ; .Y is $A8 at this point, so make pointer $5A8
+   ldx ZP16_cachePointer ; pointer low is where to start, e.g. $88
+:  lda CONST_cacheAddr,x ; read at offset  e.g. $500 + $55
+   sta VERA_DATA0        ; write to VRAM
+   inx
+   cpx ZP8_cacheScratch  ; see if we hit loop max yet
+   bne :-
+   stx ZP16_cachePointer ; .Y is $A8 at this point, so make pointer $5A8
    rts
 .endproc
 
@@ -183,17 +200,17 @@ smc_anchor_for_cache_size:
    varRequest = ZP8_cacheScratch ; the original request
    varRemaining = GR8_scratch1
 
-      sec                           ; establish .A has having the bytes
-      lda ZP8_cacheLoadCount        ; remaining (i.e. how much we need to
-      sbc ZP16_cachePointer         ; drain) and squirrel it in .Y
-      sta varRemaining
-      ldx ZP16_cachePointer
-   :  lda CONST_cacheAddr,x
-      sta VERA_DATA0
-      inx
-      cpx ZP8_cacheLoadCount
-      bne :-
-      stx ZP16_cachePointer         ; .Y is conveniently the end
+   sec                           ; establish .A has having the bytes
+   lda ZP8_cacheLoadCount        ; remaining (i.e. how much we need to
+   sbc ZP16_cachePointer         ; drain) and squirrel it in .Y
+   sta varRemaining
+   ldx ZP16_cachePointer
+:  lda CONST_cacheAddr,x
+   sta VERA_DATA0
+   inx
+   cpx ZP8_cacheLoadCount
+   bne :-
+   stx ZP16_cachePointer         ; .Y is conveniently the end
 
    sec
    lda varRequest

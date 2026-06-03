@@ -12,20 +12,20 @@
 .include "../include/video.inc"
 
 .proc handle_delta_fli: near
-   SLURP_INTO_A   ; slurp low byte of line skip
+   SLURP_INTO_A       ; slurp low byte of line skip
    sta ZP8_lineSkip
    tax                ; (we need this in .X also)
-   SLURP_INTO_A   ; burn high byte of line skip (always zero)
+   SLURP_INTO_A       ; burn high byte of line skip (always zero)
 
-   SLURP_INTO_A   ; slurp low byte of line count
+   SLURP_INTO_A       ; slurp low byte of line count
    sta ZP8_lineCount
 
    clc
-   sta ZP8_lineStop  ; line stop is the count ...
-   adc ZP8_lineSkip  ; ... plus the skip
+   sta ZP8_lineStop   ; line stop is the count ...
+   adc ZP8_lineSkip   ; ... plus the skip
    sta ZP8_lineStop
 
-   SLURP_INTO_A   ; burn high byte of line count (always zero)
+   SLURP_INTO_A       ; burn high byte of line count (always zero)
 
    @line_loop:
       SET_VRAM_ADDR_FOR_DELTA_LINE  ; uses .X to set the line addr
@@ -39,7 +39,7 @@
 .endproc
 
 .proc sub_render_line: near
-   SLURP_INTO_A       ; packet count
+   SLURP_INTO_A                     ; packet count
    cmp #0
    beq @packet_loop_done            ; (packet count can legit be zero)
    tay                              ; .Y is the packet countdown
