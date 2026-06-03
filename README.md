@@ -36,9 +36,9 @@ The parser's assumptions are as follows:
   silly to have a delta that does nothing. A sensible encoder would
   simply not have created the delta chunk.
 - frames never have more than 255 sub-chunks, since even the most
-  inefficiently encoded frame imaginable would be 1 color chunk
-  and 200 delta packets each representing 1 line.  No sensible
-  encoder would ever do such a thing.
+  inefficiently encoded frame imaginable would be 201 chunks:
+  1 color chunk and 200 delta packets each representing 1 line.
+  No sensible encoder would ever do such a thing.
 
 ## Caveats
 
@@ -74,7 +74,7 @@ resets to BASIC (effectively unloading the program).
 
 ### Performance Timing Info
 
-When the program is compiled with `DEBUG_TIMER_ENABLED` defined, after the
+When the program is compiled with `ENABLE_DEBUG_TIMER` defined, after the
 image has been rendered, it will display the total elapsed vsyncs starting
 from just before the header was parsed, until just after the final chunk
 was parsed and rendered.  The time spent waiting for you to press "any key"
@@ -102,8 +102,14 @@ will be used.  The results are tracked here, for each released version:
 | 0.6.2   | $006B  |  33 | $0021    | 2322      |
 | 0.6.3   | $0069  |  34 | $0023    | 2308      |
 | 0.6.4   | $0068  |  34 | $0020    | 2392      |
+| 0.7.0   | $0067  |  34 | $0023    | 2417      |
+
 
 ### Version History
+
+- 2026/06/03 Version 0.7.0
+  - minor performance optimizations
+  - code clean up
 
 - 2026/06/01 Version 0.6.4
   - minor performance optimizations

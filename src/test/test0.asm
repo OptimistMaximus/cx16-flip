@@ -107,8 +107,8 @@ test_bb_expect_default: .asciiz "image.fli,r"
    ASSERT_VAR_U16_EQUALS_IMM $0021, $AABB, GR16_scratch1
 
    U24_STZ      GR24_scratch1
-   U24_COPY_IMM GR24_scratch2, $AABB
-   U24_COPY_VAR GR24_scratch1, GR24_scratch2
+   U24_COPY_IMM GR32_scratch1, $AABB          ; hack: use lower 24 bits of this
+   U24_COPY_VAR GR24_scratch1, GR32_scratch1  ; instead of declaring a new var
    ASSERT_VAR_U24_EQUALS_IMM $0022, $AABB, GR24_scratch1
 
    ;---------------------------------------------------------------------------

@@ -12,6 +12,10 @@
 ;
 ; Note that unlike the LDA instruction, the status flags do not reflect what
 ; byte was just read into the .A buffer.
+;
+; With the caching algorithim as of version 0.7.0, batch reading N bytes is
+; slower than individual reads when N < 6.  So for now, unless that algorithm
+; is revisited, it is faster to do 16/24/32 bit reads as individual reads. 
 ;==============================================================================
 .macro SLURP_INTO_A
    lda ZP16_cachePointer
@@ -72,6 +76,16 @@
    sta targetAddr+2
    SLURP_INTO_A
    sta targetAddr+3
+.endmacro
+
+;==============================================================================
+; SLURP_INTO_OBLIVION
+;
+; @param count the number of bytes to slurp
+;==============================================================================
+.macro SLURP_INTO_OBLIVION count
+   lda #count
+   jsr func_cache_discard_bytes
 .endmacro
 
 .endif
