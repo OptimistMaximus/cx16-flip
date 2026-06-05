@@ -1,13 +1,11 @@
 .export handle_byte_run
 
 .import func_cache_load_page
-.import func_cache_read_into_vram
-.import func_cache_dupe_into_vram
 
 .segment "CODE"
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
-.include "../include/slurp.inc"
 .include "../include/video.inc"
 
 .proc handle_byte_run: near
@@ -25,23 +23,17 @@
 .endproc
 
 .proc sub_render_line: near
-   SLURP_INTO_A      ; packet count
+   SIP_INTO_A      ; packet count
    tay                             ; .Y is the packet countdown
 packet_loop:
-   SLURP_INTO_A      ; byte count
-   bit #%10000000
-   beq @process_positive_count  ; i.e. bit 7 was clear
-
+   SIP_INTO_A      ; byte count
+   bpl @process_positive_count  ; i.e. bit 7 was clear
       TWOS_COMPLIMENT_A
-      jsr func_cache_read_into_vram
-
+      SIP_INTO_VRAM
       bra @process_count_done
    @process_positive_count:
-
-      jsr func_cache_dupe_into_vram ; repeat next byte .A times
-
+      SIP_INTO_VRAM_REPEATED
    @process_count_done:
-
    dey
    bne packet_loop
    rts

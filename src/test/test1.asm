@@ -5,18 +5,18 @@
 .import func_load_image
 .import func_load_palette
 .import func_cache_load_page
-.import func_cache_read_into_vram
-.import func_cache_dupe_into_vram
 .import func_print_hex
 .import func_cache_init
 .import smc_anchor_for_cache_size
-.import func_init_ram_bank
-.import func_cache_discard_bytes
+.import func_init_vram_table
 
 .segment "RODATA"
 
-test_filename: .asciiz "slurp.bin,r"
-test_filename_end:
+fn_cache11: .asciiz "cache11.bin,r"
+fn_cache11_end:
+
+fn_cache260: .asciiz "cache260.bin,r"
+fn_cache260_end:
 
 expect_aaa_buffer: .byte $61,$62,$63,$64,$2C,$57,$00 ; abcd,w
 
@@ -49,11 +49,11 @@ u64data: .res 8, $00
 
 .segment "CODE"
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
-.include "../include/slurp.inc"
 .include "../include/video.inc"
 .include "../include/xunit.inc"
 
@@ -68,6 +68,19 @@ VRAM_BUFFER_LINE_1 := $0FA00 + VRAM_IMAGE_LINE_1
 VRAM_BUFFER_LINE_2 := $0FA00 + VRAM_IMAGE_LINE_2
 VRAM_BUFFER_LINE_3 := $0FA00 + VRAM_IMAGE_LINE_3
 VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
+
+.macro OPEN_INPUTSTREAM filenameLabel, filenameLabelEnd
+   lda #(filenameLabelEnd - filenameLabel)
+   ldx #<filenameLabel
+   ldy #>filenameLabel
+   jsr func_open_inputstream
+.endmacro
+
+.macro CLOSE_INPUTSTREAM
+   jsr func_close_inputstream
+.endmacro
+
+
 
 .macro BURN_THEN_WRITE value
    lda VERA_DATA0 ; burn
@@ -101,30 +114,26 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ; func_open_inputstream
    ; func_close_inputstream
    ;---------------------------------------------------------------------------
-   lda #(test_filename_end - test_filename)
-   ldx #<test_filename
-   ldy #>test_filename
-   jsr func_open_inputstream
-   jsr KERNAL_ACPTR               ; should get first value 00
+   OPEN_INPUTSTREAM fn_cache11, fn_cache11_end
+   jsr KERNAL_ACPTR               ; should get first value 33
    sta u8data1
-   jsr KERNAL_ACPTR               ; should get next value 11
+   jsr KERNAL_ACPTR               ; should get next value 22
    sta u8data2
-   jsr func_close_inputstream
+   CLOSE_INPUTSTREAM
 
-   ASSERT_VAR_U8_EQUALS_IMM $1100, $00, u8data1
-   ASSERT_VAR_U8_EQUALS_IMM $1101, $11, u8data2
+   ASSERT_VAR_U8_EQUALS_IMM $1100, $33, u8data1
+   ASSERT_VAR_U8_EQUALS_IMM $1101, $22, u8data2
 
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
    ;
-   ; func_init_ram_bank
+   ; func_init_vram_table
    ; SET_VRAM_ADDR_FOR_FULL_LINE
    ; SET_VRAM_ADDR_FOR_DELTA_LINE
    ; SET_VRAM_ADDR_FOR_SCREEN_LINE
    ; ADVANCE_VERA_ADDR_FOR_DELTA_PACKET
    ;---------------------------------------------------------------------------
-   jsr func_init_ram_bank
-   ASSERT_VAR_U8_EQUALS_IMM $1200, FLI_PLAYER_RAM_BANK, SYSTEM_RAM_SELECTOR_ADDR
+   jsr func_init_vram_table
 
    ; Line 0 is (0 * 320) + $0FA00 with high byte OR'ed with $10
    ASSERT_VAR_U8_EQUALS_IMM $1200, $00, VRAM_ADDR_TABLE_L+0
@@ -161,137 +170,74 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ASSERT_VAR_U24_EQUALS_IMM $1240, $300640, VERA_ADDRx_L
 
    ;---------------------------------------------------------------------------
-   ; TEST 13
+   ; TEST 13 (basic cache reads)
+   ;---------------------------------------------------------------------------
+   .scope test13_basic_reads
+      jsr func_cache_init
+      OPEN_INPUTSTREAM fn_cache11, fn_cache11_end
+      SIP_INTO_U32 GR32_scratch1
+      SIP_INTO_U24 GR24_scratch1
+      SIP_INTO_U16 GR16_scratch1
+      SIP_INTO_U8 GR8_scratch1
+      SIP_INTO_A
+      sta GR8_scratch2
+
+      CLOSE_INPUTSTREAM   
+
+      ; TODO test cache status
+;      lda GR8_cacheStatus
+;      ASSERT_BNE $1300
+      
+      ASSERT_VAR_U32_EQUALS_IMM $1301, $00,$112233, GR32_scratch1
+      ASSERT_VAR_U24_EQUALS_IMM $1302, $445566, GR24_scratch1
+      ASSERT_VAR_U16_EQUALS_IMM $1303, $7788, GR16_scratch1
+      ASSERT_VAR_U8_EQUALS_IMM $1304, $99, GR8_scratch1
+      ASSERT_VAR_U8_EQUALS_IMM $1305, $AA, GR8_scratch2
+   .endscope
+   
+   .scope test13_page_read_into_vram_with_load_side_effect
+      jsr func_cache_init
+      jsr sub_init_stages_line0
+      SET_VERA_ADDR24_IMM $00, $00000, $10
+
+      OPEN_INPUTSTREAM fn_cache260, fn_cache260_end
+      SIP_INTO_OBLIVION 3                       ; skip 00,11,22
+      lda #3
+      SIP_INTO_VRAM_REPEATED                    ; read next 33 and write 3 times
+      lda #2
+      SIP_INTO_VRAM                             ; read 44,55 and write
+      SIP_INTO_OBLIVION 250                     ; read remaining in loaded page
+      U8_COPY_VAR GR8_scratch1, GR8_cacheStatus ; save for later assertion
+      lda #1
+      SIP_INTO_VRAM                             ; read fresh byte into VRAM 
+      CLOSE_INPUTSTREAM
+
+      ; cache status should still be zero      
+;      ASSERT_VAR_U8_EQUALS_IMM $1310, $00, GR8_cacheStatus
+
+      ; cache status now, after running over, should be non-zero
+;      lda GR8_cacheStatus
+;      ASSERT_BNE $1311
+
+      ; reset VRAM address and verify what was written (and untouched)
+      SET_VERA_ADDR24_IMM $00, $00000, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1320, $33
+      ASSERT_VRAM_U8_EQUALS_IMM $1321, $33
+      ASSERT_VRAM_U8_EQUALS_IMM $1322, $33
+      ASSERT_VRAM_U8_EQUALS_IMM $1323, $44
+      ASSERT_VRAM_U8_EQUALS_IMM $1324, $55
+      ASSERT_VRAM_U8_EQUALS_IMM $1325, $DE
+      ASSERT_VRAM_U8_EQUALS_IMM $1326, $00 ; untouched
+      
+   .endscope
+   
+   ;---------------------------------------------------------------------------
+   ; TEST 14 (VRAM address calculations)
    ;---------------------------------------------------------------------------
 
    ;---------------------------------------------------------------------------
-   ; TEST 14 (slurp 'n skip)
-   ;
-   ; SLURP_INTO_A
-   ; func_cache_read_into_vram
-   ; func_cache_dupe_into_vram
-   ; SLURP_INTO_U8
-   ; SLURP_INTO_U16
-   ; SLURP_INTO_U24
-   ; SLURP_INTO_U32
+   ; Test 15
    ;---------------------------------------------------------------------------
-   jsr sub_init_stages_line0
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-
-   ldx #<test_filename
-   ldy #>test_filename
-   jsr func_open_inputstream
-   jsr func_cache_init
-
-   SLURP_INTO_A ; burn first byte 00
-   SLURP_INTO_A ; VRAM gains 11
-   sta VERA_DATA0
-
-   lda #2
-   ADVANCE_VERA_ADDR_FOR_DELTA_PACKET ; VRAM skips ahead 2 bytes
-
-   lda #2                    ; VRAM gains 2233
-   jsr func_cache_read_into_vram
-   lda #3                    ; VRAM gains 444444
-   jsr func_cache_dupe_into_vram
-
-   lda #1
-   jsr func_cache_discard_bytes ; discard 55
-
-   SLURP_INTO_U8  u8data2    ; var set to 66
-   SLURP_INTO_U16 u16data    ; var set to 7788
-   SLURP_INTO_U24 u24data    ; var set to 99AABB
-   SLURP_INTO_U32 u32data    ; var set to CCDDEEFF
-
-   jsr func_close_inputstream
-
-   ASSERT_VAR_U8_EQUALS_IMM  $1401, $66, u8data2
-   ASSERT_VAR_U16_EQUALS_IMM $1402, $8877, u16data
-   ASSERT_VAR_U24_EQUALS_IMM $1403, $BBAA99, u24data
-   ASSERT_VAR_U16_EQUALS_IMM $1404, $DDCC, u32data+0 ; low half
-   ASSERT_VAR_U16_EQUALS_IMM $1405, $FFEE, u32data+2 ; high half
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-   ASSERT_VRAM_EQUALS_ARRAY $1410, 7, test13_expect
-
-   ;---------------------------------------------------------------------------
-   ; Test 15 (cache stuff)
-   ;
-   ; This test is most effective when running on the emulator using the host FS
-   ; because there, MACPTR seems to very predictably always read the exact
-   ; number of bytes asked for. So our test logic here can be very confident
-   ; that page loads are happening based on a precise set of test requests.
-   ; This might not be true on real hardware, so when this test runs on real
-   ; hardware it will just be generally exercising cache, covering a
-   ; non-deterministic subset of scenarios and edge cases.
-   ;---------------------------------------------------------------------------
-   lda #16
-   sta smc_anchor_for_cache_size+1 ; force cache size for test convenience
-
-   jsr sub_init_stages_line0
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-
-   ldx #<test_filename
-   ldy #>test_filename
-   jsr func_open_inputstream
-   jsr func_cache_init
-
-   ;
-   ; single read, cache hit scenario with bytes remaining
-   ;
-   SLURP_INTO_A          ; slurp $00 and discard
-   SLURP_INTO_A          ; slurp $11
-   sta VERA_DATA0
-
-   ;
-   ; single read/dupe, cache hit scenario with bytes remaining
-   ;
-   lda #3                ; slurp $22 and write to VRAM 3 times ($22,$22,$22)
-   jsr func_cache_dupe_into_vram
-
-   ;
-   ; multi read, cache hit scenario with bytes remaining
-   ; (prior to this we read 3 bytes, so 12 more is 15, leaving 1 remaining)
-   ;
-   lda #12               ; slurp 12 more bytes ($33-$EE)
-   jsr func_cache_read_into_vram
-
-   ;
-   ; single read, cache hit but it's an edge-case: the last byte
-   ;
-   SLURP_INTO_A          ; slurp 1 more byte ($FF)
-   sta VERA_DATA0
-
-   ;
-   ; single read, cache miss, should load 16 fresh, leaving 15 remaining
-   ;
-   SLURP_INTO_A
-   sta VERA_DATA0
-
-   ;
-   ; now another edge case case: multi-read equal to remaining
-   ;
-   lda #15
-   jsr func_cache_read_into_vram
-
-   ;
-   ; edge case, handling a multi-read while cache is exhausted, also
-   ; preps for final test by reading 8 bytes, leaving 8 remaining
-   ;
-   lda #8
-   jsr func_cache_read_into_vram
-
-   ;
-   ; test split read scenario where we ask for more than is remaining.
-   ; at this time there are 8 remaining so we'll ask for 32.  This should
-   ; cause 2 page loads behind the scenes.
-   lda #32
-   jsr func_cache_read_into_vram
-
-   jsr func_close_inputstream
-
-   SET_VERA_ADDR24_IMM $00, VRAM_IMAGE_LINE_0, $10
-   ASSERT_VRAM_EQUALS_ARRAY $1508, $48, test14_expect
 
 
    PASS

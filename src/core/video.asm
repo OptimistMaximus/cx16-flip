@@ -3,7 +3,7 @@
 .export func_print_hex
 .export func_load_palette
 .export func_load_image
-.export func_init_ram_bank
+.export func_init_vram_table
 
 .segment "CODE"
 
@@ -180,11 +180,10 @@
 .endproc
 
 ;==============================================================================
-; func_init_ram_bank
+; func_init_vram_table
 ;
 ; This must be called once before calling any FLI related subroutines and
-; macros.  It switches the active RAM bank to whatever was configured in the
-; global settings.
+; macros.
 ;
 ; This creates a table for 24-bit VRAM addresses where the table index is
 ; the line in VRAM, and the resulting address is offset for our staging area
@@ -193,10 +192,9 @@
 ; Invoke this once before any attempts to establish VRAM addresses while
 ; rendering chunks.
 ;==============================================================================
-.proc func_init_ram_bank: near
+.proc func_init_vram_table: near
    scratch = GR24_scratch1
    U24_COPY_IMM scratch, (VRAM_BUFF_IMAGE | $100000)
-   SWITCH_RAM_BANK_IMM FLI_PLAYER_RAM_BANK
    ldx #0
 @loop:
    lda scratch+0

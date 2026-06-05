@@ -1,11 +1,11 @@
 .export handle_fli_copy
 
-.import func_cache_read_into_vram
+.import func_cache_load_page
 
 .segment "CODE"
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
-.include "../include/slurp.inc"
 .include "../include/video.inc"
 .include "../include/vera.inc"
 
@@ -14,9 +14,9 @@
    ldy #200
 @outer_loop:
    lda #160
-   jsr func_cache_read_into_vram
+   SIP_INTO_VRAM
    lda #160
-   jsr func_cache_read_into_vram
+   SIP_INTO_VRAM
    dey
    bne @outer_loop
    U8_COPY_IMM ZP8_lineSkip, 0

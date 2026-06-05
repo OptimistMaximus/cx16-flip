@@ -103,9 +103,15 @@ will be used.  The results are tracked here, for each released version:
 | 0.6.3   | $0069  |  34 | $0023    | 2308      |
 | 0.6.4   | $0068  |  34 | $0020    | 2392      |
 | 0.7.0   | $0067  |  34 | $0023    | 2417      |
+| 0.7.1   | $0065  |  35 | $0021    | 2223      |
 
 
 ### Version History
+
+- 2026/06/04 Version 0.7.1
+  - significant refactoring of caching logic, resulting in minor 
+    performance boost, but potentially a good base for even better
+    performance on bulk reads (to be investigated)
 
 - 2026/06/03 Version 0.7.0
   - minor performance optimizations
@@ -232,3 +238,19 @@ Bad FLI files:
   FLIP_REQUESTED and FLIP_DONE.  Main code clears FLIP_DONE and sets FLIP_REQUESTED.
   Then waits for FLIP_DONE to become set.  IRQ code looks on VSync if FLIP_REQUESTED
   is set, and if so it flips the stage data then sets FLIP_DONE.
+  
+- instead of loading all cache when we wrap to 00 offset, try
+  wrapping at 00 and 80.  this might make for smoother playback
+  since we won't be taking a big hit to read 256 bytes at a
+  time.  MAYBE doing 2 128 byte reads spread apart would be
+  less noticeable?
+- consider batch copies from cache if it can be done really
+  fast. If the read request is more than N (where profiling
+  suggests batching is worthwhile) then see how many bytes
+  are left before we wrap.  If less than requested then
+  do a bulk copy and update the offset ... or if the amount
+  that's less is smaller than N then just do single reads
+  to drain then call again for remainder (which absolutely 
+  will be in cache since runs are never more than 7F) ... but
+  this might end up being too much overhead.  Need to do some
+  experimentation and benchmarking.

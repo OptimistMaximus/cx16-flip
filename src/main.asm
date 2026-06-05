@@ -11,7 +11,7 @@
 .import func_vera_restore
 .import func_slurp_header
 .import func_slurp_frame
-.import func_init_ram_bank
+.import func_init_vram_table
 
 .segment "INIT"
 .segment "STARTUP"
@@ -23,7 +23,6 @@
 .include "include/kernal.inc"
 .include "include/math.inc"
 .include "include/petscii.inc"
-.include "include/slurp.inc"
 .include "include/vera.inc"
 .include "include/zeropage.inc"
 
@@ -31,13 +30,15 @@
 
 start:
 
-   jsr func_init_ram_bank
+   jsr func_init_vram_table
    jsr func_setup_irq_handler
 
-   DEBUG_TIMER_START
    jsr func_vera_setup
    jsr func_detect_filename
    jsr func_open_inputstream
+
+   DEBUG_TIMER_START
+
    jsr func_cache_init
    jsr func_slurp_header
 
@@ -48,9 +49,9 @@ start:
    U16_CMP_VAR GR16_frameIndex, GR16_frameCount
    bne @frame_loop
 
-   jsr func_close_inputstream
-
    DEBUG_TIMER_READ
+
+   jsr func_close_inputstream
 
 .ifndef ENABLE_DEBUG_TIMER
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue

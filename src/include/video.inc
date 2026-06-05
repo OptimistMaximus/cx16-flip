@@ -60,7 +60,6 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
 ; called once per line in a delta chunk).
 ;==============================================================================
 .macro SET_VRAM_ADDR_FOR_SCREEN_LINE
-   SWITCH_RAM_BANK_IMM FLI_PLAYER_RAM_BANK
    lda #1                    ; establish DATA1
    sta VERA_CTRL
 
