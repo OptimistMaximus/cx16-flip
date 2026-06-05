@@ -174,6 +174,18 @@
 .endmacro
 
 ;=============================================================================
+; ASSERT_VAR_U32_EQUALS_IMM - assert 32-bit value at addr
+;                             equals the specified immediate 32-bit value
+;
+; Note, cc65 does not offer a way to represent a 32-bit immediate value so
+; the most-significant-byte must be specified first, then the remaining bytes.
+;=============================================================================
+.macro ASSERT_VAR_U32_EQUALS_IMM testId, expectMSB, expectValue, actualAddr
+   ASSERT_VAR_U24_EQUALS_IMM testId, expectValue, actualAddr
+   ASSERT_VAR_U8_EQUALS_IMM testId, expectMSB, actualAddr+3
+.endmacro
+
+;=============================================================================
 ; ASSERT_RAM_EQUALS_ARRAY_INDIRECT
 ; @param expectAddr is an absolute address in RAM
 ; @param actualPtr  is a zero-page pointer holding address of actual data

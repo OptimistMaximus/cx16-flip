@@ -45,12 +45,12 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
 .segment "CODE"
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
-.include "../include/slurp.inc"
 
 ;==============================================================================
 ; func_slurp_chunk
@@ -69,8 +69,8 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; over 200 can be used to signify other stuff
 ;==============================================================================
 .proc func_slurp_chunk: near
-   SLURP_INTO_U32 GR32_chunkSize
-   SLURP_INTO_U16 GR16_chunkType
+   SIP_INTO_U32 GR32_chunkSize
+   SIP_INTO_U16 GR16_chunkType
 @resolve_loop:
    jsr sub_resolve_chunk_type       ; resolve
    cpx #0                           ; compare to 0 (invalid) ...
@@ -99,8 +99,8 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; @effect .Y clobbered
 ;==============================================================================
 .proc func_slurp_frame: near
-   SLURP_INTO_U32 GR32_chunkSize
-   SLURP_INTO_U16 GR16_chunkType
+   SIP_INTO_U32 GR32_chunkSize
+   SIP_INTO_U16 GR16_chunkType
 @resolve_loop:
    jsr sub_resolve_frame_type       ; resolve
    cpx #0                           ; compare to 0 (invalid) ...
@@ -160,7 +160,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    U8_COPY_VAR GR32_chunkSize+2, GR32_chunkSize+3 ; the next byte, then try
    U8_COPY_VAR GR32_chunkSize+3, GR16_chunkType+0 ; again
    U8_COPY_VAR GR16_chunkType+0, GR16_chunkType+1
-   SLURP_INTO_U8 GR16_chunkType+1
+   SIP_INTO_U8 GR16_chunkType+1
    rts
 .endproc
 

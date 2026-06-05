@@ -4,12 +4,12 @@
 .import func_cache_load_page
 .import bsod
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
-.include "../include/slurp.inc"
 
 FILE_TYPE_FLI := $AF11
 
@@ -24,8 +24,8 @@ FILE_TYPE_FLI := $AF11
 
    varFileType = GR16_scratch1  ; can be repurposed after file type validation
 
-   SLURP_INTO_OBLIVION 4        ; dword size (file size)
-   SLURP_INTO_U16 varFileType   ;  word type (file type)
+   SIP_INTO_OBLIVION 4        ; dword size (file size)
+   SIP_INTO_U16 varFileType   ;  word type (file type)
 
    ;---------------------------------------------------------------------------
    ; validate file type
@@ -35,8 +35,8 @@ FILE_TYPE_FLI := $AF11
    BSOD RC_UNSUPPORTED_FILE_TYPE, varFileType
 @fileType_is_fli:
 
-   SLURP_INTO_U16 GR16_frameCount
-   SLURP_INTO_OBLIVION 8          ; width, height, depth, flags
+   SIP_INTO_U16 GR16_frameCount
+   SIP_INTO_OBLIVION 8          ; width, height, depth, flags
 
    ;---------------------------------------------------------------------------
    ; validate speed
@@ -52,7 +52,7 @@ FILE_TYPE_FLI := $AF11
    ; of the speed value)
    ;---------------------------------------------------------------------------
    varSpeed = GR32_scratch1
-   SLURP_INTO_U32 varSpeed     ; dword speed
+   SIP_INTO_U32 varSpeed     ; dword speed
    U16_CMP_IMM varSpeed+2, 0   ; verify upper 2 bytes are zero
    beq @speed_is_cool
    U16_CMP_IMM varSpeed+0, 297 ; verify lower 2 bytes less than 297
@@ -86,7 +86,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    ; burn remaining bytes of header
    ;---------------------------------------------------------------------------
-   SLURP_INTO_OBLIVION 108
+   SIP_INTO_OBLIVION 108
 
    rts
 .endproc

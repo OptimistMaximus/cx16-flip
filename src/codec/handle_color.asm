@@ -6,10 +6,10 @@
 
 .segment "CODE"
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/opcodes.inc"
-.include "../include/slurp.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
 
@@ -73,12 +73,12 @@ sub_handle_color:
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
    SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
-   SLURP_INTO_U16 numPackets
+   SIP_INTO_U16 numPackets
 
    ldx #0
 packet_loop:
 
-   SLURP_INTO_A                     ; .A holds skip count, where 0 means 0
+   SIP_INTO_A                     ; .A holds skip count, where 0 means 0
    cmp #0
    beq @zero_skip
    tay
@@ -88,10 +88,10 @@ packet_loop:
    bne :-
 
 @zero_skip:
-   SLURP_INTO_U8 copyCount
+   SIP_INTO_U8 copyCount
    ldy #0
 copy_loop:
-   SLURP_INTO_A             ; slurp RGB's R
+   SIP_INTO_A             ; slurp RGB's R
 smc_anchor_r_shift:
    lsr                      ; nop if 6-bit
    lsr                      ; nop if 6-bit
@@ -99,14 +99,14 @@ smc_anchor_r_shift:
    lsr
    sta tempVeraRed
 
-   SLURP_INTO_A             ; slurp RGB's G
+   SIP_INTO_A             ; slurp RGB's G
 smc_anchor_g_shift:
    nop                      ; asl if 6-bit
    nop                      ; asl if 6-bit
    and #$F0
    sta tempVeraGreen
 
-   SLURP_INTO_A             ; slurp RGB's B
+   SIP_INTO_A             ; slurp RGB's B
    smc_anchor_b_shift:
    lsr                      ; nop if 6-bit
    lsr                      ; nop if 6-bit

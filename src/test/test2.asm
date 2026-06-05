@@ -20,11 +20,11 @@
 .import sub_resolve_frame_type
 .import smc_anchor_for_bsod
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/opcodes.inc"
-.include "../include/slurp.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
 .include "../include/xunit.inc"
@@ -141,8 +141,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    ;---------------------------------------------------------------------------
    .macro T33 lambda, filenumPetscii, testId, expect
       OPEN_INPUTSTREAM_R fn_chunk_x, 5, filenumPetscii
-      SLURP_INTO_U32 GR32_chunkSize
-      SLURP_INTO_U16 GR16_chunkType
+      SIP_INTO_U32 GR32_chunkSize
+      SIP_INTO_U16 GR16_chunkType
       jsr lambda
       CLOSE_INPUTSTREAM
       ASSERT_X_EQUALS_IMM testId, expect

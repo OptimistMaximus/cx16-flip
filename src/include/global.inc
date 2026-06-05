@@ -13,8 +13,6 @@
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
 ZP16_cachePointer       := $24
-ZP8_cacheLoadCount      := $26
-ZP8_cacheScratch        := $27
 ZP8_lineSkip            := $28
 ZP8_lineCount           := $29
 ZP8_lineStop            := $2A
@@ -42,26 +40,27 @@ GR8_chunkCount          := $5B
 GR8_speedLimitVSyncs    := $5C  ; speed limit as VSyncs
 GR8_returnCode          := $5D
 GR16_returnDetail       := $5E
+GR8_cacheStatus         := $60
 
 .ifdef ENABLE_DEBUG_TIMER
-GR16_debugTimerVSyncs   := $60
-GR16_debugSpeedOverrun  := $62
-GR16_debugSpeedUnderrun := $64
-GR16_debugTimerValue    := $66
+GR16_debugTimerVSyncs   := $62
+GR16_debugSpeedOverrun  := $64
+GR16_debugSpeedUnderrun := $66
+GR16_debugTimerValue    := $68
 .endif
 
-;------------------------------------------------------------------------------
-; BANKED VARIABLES
-;------------------------------------------------------------------------------
-FLI_PLAYER_RAM_BANK := 1
-VRAM_ADDR_TABLE_L := $B000
-VRAM_ADDR_TABLE_M := $B100
-VRAM_ADDR_TABLE_H := $B200
 
-CONST_cacheAddr   := $B300
-CONST_cacheSize   := $FF  ; (this is a constant, not a variable)
-CONST_skipArray   := $B400
-CONST_countArray  := $B500
+
+;------------------------------------------------------------------------------
+; RAM VARIABLES
+;------------------------------------------------------------------------------
+VRAM_ADDR_TABLE_L    := $8000
+VRAM_ADDR_TABLE_M    := $8100
+VRAM_ADDR_TABLE_H    := $8200
+CONST_skipArray      := $8300
+CONST_countArray     := $8400
+CONST_cacheLowerAddr := $8500
+CONST_cacheUpperAddr := $8580
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

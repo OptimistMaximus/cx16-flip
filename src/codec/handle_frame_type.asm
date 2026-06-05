@@ -10,8 +10,8 @@
 
 .segment "CODE"
 
+.include "../include/cache.inc"
 .include "../include/global.inc"
-.include "../include/slurp.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
 
@@ -19,8 +19,8 @@
 ; handle_frame_type
 .proc handle_frame_type: near
    stz ZP8_imageVSyncsElapsed     ; i.e. start the frame timer
-   SLURP_INTO_U8 GR8_chunkCount   ; low byte of chunk count
-   SLURP_INTO_OBLIVION 9          ; high byte of chunk count & remaining 8
+   SIP_INTO_U8 GR8_chunkCount     ; low byte of chunk count
+   SIP_INTO_OBLIVION 9            ; high byte of chunk count & remaining 8
 
    lda GR8_chunkCount             ; zero-chunk frames are a common way to
    cmp #0                         ; make the current image linger longer
