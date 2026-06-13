@@ -1,6 +1,7 @@
 .export handle_delta_fli
 
 .import func_cache_load_page
+.import func_cache_read_into_vram
 
 .segment "CODE"
 

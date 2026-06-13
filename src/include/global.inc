@@ -13,6 +13,8 @@
 ;------------------------------------------------------------------------------
 ZP_VOLATILE_PTR         := $22
 ZP16_cachePointer       := $24
+ZP8_cacheRequest        := $26
+ZP8_cacheStop           := $27
 ZP8_lineSkip            := $28
 ZP8_lineCount           := $29
 ZP8_lineStop            := $2A

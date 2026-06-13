@@ -284,12 +284,21 @@
 .endmacro
 
 ;==============================================================================
+; ONES_COMPLIMENT_A                                                   [TEST ??]
+;
+; transforms .A into the one's compliment of .A
+;==============================================================================
+.macro ONES_COMPLIMENT_A
+   eor #$FF
+.endmacro
+
+;==============================================================================
 ; TWOS_COMPLIMENT_A                                                   [TEST 08]
 ;
 ; transforms .A into the two's compliment of .A
 ;==============================================================================
 .macro TWOS_COMPLIMENT_A
-   eor #$FF
+   ONES_COMPLIMENT_A
    inc
 .endmacro
 

@@ -1,5 +1,6 @@
 #!/bin/sh
 
+make zzz/MAIN.PRG
 cd zzz
 rm -f IMAGE.FLI
 ln -s $1 IMAGE.FLI

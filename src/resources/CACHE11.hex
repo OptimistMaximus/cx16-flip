@@ -4,8 +4,8 @@
 # will be non-zero because MACPTR could not give us the 256 bytes we
 # asked for.  But those 11 should be available in the cache.
 
+AA       #  8-bit value
 33221100 # 32-bit value
 665544   # 24-bit value
 8877     # 16-bit value
 99       #  8-bit value
-AA       #  8-bit value

@@ -81,7 +81,7 @@
 ;==============================================================================
 ; SIP_INTO_VRAM_REPEATED
 ;
-; Read one byte from the stream and repeat it into VRAM 
+; Read one byte from the stream and repeat it into VRAM
 ;
 ; Note, this macro uses TWO unnamed labels
 ;
@@ -99,19 +99,25 @@
 ;==============================================================================
 ; SIP_INTO_VRAM
 ;
-; Read byte from the stream into VRAM 
-;
-; Note, this macro uses TWO unnamed labels
+; Read byte from the stream into VRAM
 ;
 ; @param .A the number of bytes to read
 ; @effect .X clobbered
 ;==============================================================================
 .macro SIP_INTO_VRAM
+@sip_into_vram:
+   cmp #8                    ; reading 1-by-1 is faster when less than this
+   bcs @bulk_is_faster
    tax
-:  SIP_INTO_A
+@sip_into_vram_loop:
+   SIP_INTO_A
    sta VERA_DATA0
    dex
-   bne :--    ; compensate for unnamed label within SIP_INTO_A
+   bne @sip_into_vram_loop
+   bra @sipped
+@bulk_is_faster:
+   jsr func_cache_read_into_vram
+@sipped:
 .endmacro
 
 .endif
