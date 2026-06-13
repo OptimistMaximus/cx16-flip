@@ -91,25 +91,29 @@ will be used.  The results are tracked here, for each released version:
 
 | Version | VSyncs | FPS | Overruns | PRG Bytes |
 |---------|--------|-----|----------|-----------|
-| 0.1.0   | $0183  |   9 | $0033    | 1825      |
-| 0.1.1   | $0176  |   9 | $0032    | 1705      |
-| 0.2.1   | $0163  |  10 | $0032    | 1747      |
-| 0.3.0   | $00F9  |  15 | $0031    | 2114      |
-| 0.4.0   | $00A7  |  21 | $0024    | 1998      |
-| 0.5.0   | $009E  |  22 | $0029    | 1948      |
-| 0.6.0   | $009A  |  23 | $0029    | 1951      |
-| 0.6.1   | $0072  |  31 | $0024    | 2340      |
-| 0.6.2   | $006B  |  33 | $0021    | 2322      |
-| 0.6.3   | $0069  |  34 | $0023    | 2308      |
-| 0.6.4   | $0068  |  34 | $0020    | 2392      |
-| 0.7.0   | $0067  |  34 | $0023    | 2417      |
-| 0.7.1   | $0065  |  35 | $0021    | 2223      |
+| 0.1.0   | $0183  | $09 | $0033    | 1825      |
+| 0.1.1   | $0176  | $09 | $0032    | 1705      |
+| 0.2.1   | $0163  | $0A | $0032    | 1747      |
+| 0.3.0   | $00F9  | $0F | $0031    | 2114      |
+| 0.4.0   | $00A7  | $15 | $0024    | 1998      |
+| 0.5.0   | $009E  | $16 | $0029    | 1948      |
+| 0.6.0   | $009A  | $17 | $0029    | 1951      |
+| 0.6.1   | $0072  | $1F | $0024    | 2340      |
+| 0.6.2   | $006B  | $21 | $0021    | 2322      |
+| 0.6.3   | $0069  | $22 | $0023    | 2308      |
+| 0.6.4   | $0068  | $22 | $0020    | 2392      |
+| 0.7.0   | $0067  | $22 | $0023    | 2417      |
+| 0.7.1   | $0065  | $23 | $0021    | 2223      |
+| 0.7.2   | $0064  | $24 | $0022    | 2318      |
 
 
 ### Version History
 
+- 2026/06/13 Version 0.7.2
+  - handle large reads in bulk for slight gain in performance
+
 - 2026/06/04 Version 0.7.1
-  - significant refactoring of caching logic, resulting in minor 
+  - significant refactoring of caching logic, resulting in minor
     performance boost, but potentially a good base for even better
     performance on bulk reads (to be investigated)
 
@@ -133,7 +137,7 @@ will be used.  The results are tracked here, for each released version:
 - 2026/05/27 Version 0.6.0
   - speed is now correctly applied per frame (not per chunk, as incorrectly
     done in prior versions)
-  - palette transitions look much better now, since they are postponed
+  - palette transitions look much better now, since they are delayed
     until the entire new frame has been rendered, and swapped just before
     that new frame is shuffled into VRAM
   - files whose frames have multiple chunks (e.g. a small delta for the
@@ -220,6 +224,7 @@ Good FLI files for regression test:
 - OWL  (small, simple)
 - BOOKSPIN (padding, per the spec (align to even boundaries)
 - CHOPCITY (very long)
+- POND (FLI_COPY)
 - SAUCER04 (FLI_COPY)
 - MOONWALK (BLACK)
 - BA1 (excessive padding, well beyond what the spec suggests)
@@ -234,11 +239,11 @@ Bad FLI files:
 
 ## IDEAS / TODO
 
-- postpone the staging copy to happen during vsync.  Basic idea is to have 2 bits:
+- delay the staging copy to happen during vsync.  Basic idea is to have 2 bits:
   FLIP_REQUESTED and FLIP_DONE.  Main code clears FLIP_DONE and sets FLIP_REQUESTED.
   Then waits for FLIP_DONE to become set.  IRQ code looks on VSync if FLIP_REQUESTED
   is set, and if so it flips the stage data then sets FLIP_DONE.
-  
+
 - instead of loading all cache when we wrap to 00 offset, try
   wrapping at 00 and 80.  this might make for smoother playback
   since we won't be taking a big hit to read 256 bytes at a
@@ -250,7 +255,8 @@ Bad FLI files:
   are left before we wrap.  If less than requested then
   do a bulk copy and update the offset ... or if the amount
   that's less is smaller than N then just do single reads
-  to drain then call again for remainder (which absolutely 
+  to drain then call again for remainder (which absolutely
   will be in cache since runs are never more than 7F) ... but
   this might end up being too much overhead.  Need to do some
   experimentation and benchmarking.
+  

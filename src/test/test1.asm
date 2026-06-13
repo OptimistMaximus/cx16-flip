@@ -5,9 +5,9 @@
 .import func_load_image
 .import func_load_palette
 .import func_cache_load_page
+.import func_cache_read_into_vram
 .import func_print_hex
 .import func_cache_init
-.import smc_anchor_for_cache_size
 .import func_init_vram_table
 
 .segment "RODATA"
@@ -115,14 +115,10 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ; func_close_inputstream
    ;---------------------------------------------------------------------------
    OPEN_INPUTSTREAM fn_cache11, fn_cache11_end
-   jsr KERNAL_ACPTR               ; should get first value 33
+   jsr KERNAL_ACPTR               ; should get first value AA
    sta u8data1
-   jsr KERNAL_ACPTR               ; should get next value 22
-   sta u8data2
    CLOSE_INPUTSTREAM
-
-   ASSERT_VAR_U8_EQUALS_IMM $1100, $33, u8data1
-   ASSERT_VAR_U8_EQUALS_IMM $1101, $22, u8data2
+   ASSERT_VAR_U8_EQUALS_IMM $1100, $AA, u8data1
 
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
@@ -170,54 +166,77 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ASSERT_VAR_U24_EQUALS_IMM $1240, $300640, VERA_ADDRx_L
 
    ;---------------------------------------------------------------------------
-   ; TEST 13 (basic cache reads)
+   ; TEST 13a (basic reads)
+   ;
+   ; SIP_INTO_A
+   ; SIP_INTO_U32
+   ; SIP_INTO_U24
+   ; SIP_INTO_U16
+   ; SIP_INTO_U8
+   ;
+   ; SIP_INTO_A as the very first read tests just-in-time page in for single
+   ; reads (upon which all macros in this test are based).
    ;---------------------------------------------------------------------------
-   .scope test13_basic_reads
+   .scope test13a
       jsr func_cache_init
       OPEN_INPUTSTREAM fn_cache11, fn_cache11_end
+      SIP_INTO_A
+      sta GR8_scratch2
       SIP_INTO_U32 GR32_scratch1
       SIP_INTO_U24 GR24_scratch1
       SIP_INTO_U16 GR16_scratch1
       SIP_INTO_U8 GR8_scratch1
-      SIP_INTO_A
-      sta GR8_scratch2
+      CLOSE_INPUTSTREAM
 
-      CLOSE_INPUTSTREAM   
-
-      ; TODO test cache status
-;      lda GR8_cacheStatus
-;      ASSERT_BNE $1300
-      
+      ASSERT_VAR_U8_EQUALS_IMM  $1300, $AA, GR8_scratch2
       ASSERT_VAR_U32_EQUALS_IMM $1301, $00,$112233, GR32_scratch1
       ASSERT_VAR_U24_EQUALS_IMM $1302, $445566, GR24_scratch1
       ASSERT_VAR_U16_EQUALS_IMM $1303, $7788, GR16_scratch1
-      ASSERT_VAR_U8_EQUALS_IMM $1304, $99, GR8_scratch1
-      ASSERT_VAR_U8_EQUALS_IMM $1305, $AA, GR8_scratch2
+      ASSERT_VAR_U8_EQUALS_IMM  $1304, $99, GR8_scratch1
    .endscope
-   
-   .scope test13_page_read_into_vram_with_load_side_effect
+
+   ;---------------------------------------------------------------------------
+   ; TEST 13b (read into VRAM)
+   ;
+   ; SIP_INTO_OBLIVION
+   ; SIP_INTO_VRAM_REPEATED
+   ; SIP_INTO_VRAM
+   ;
+   ; The first SIP_INTO_VRAM in this test runs in a situation where there is
+   ; definitely enough bytes remaining for that read.
+   ;
+   ; The second SIP_INTO_VRAM in this test runs in a situation where there is
+   ; not enough remaining bytes, such that it will be broken into two reads.
+   ;---------------------------------------------------------------------------
+   .scope test13b
       jsr func_cache_init
       jsr sub_init_stages_line0
       SET_VERA_ADDR24_IMM $00, $00000, $10
 
       OPEN_INPUTSTREAM fn_cache260, fn_cache260_end
-      SIP_INTO_OBLIVION 3                       ; skip 00,11,22
+
+      SIP_INTO_OBLIVION 3                 ; skip 00,11,22
+
       lda #3
-      SIP_INTO_VRAM_REPEATED                    ; read next 33 and write 3 times
-      lda #2
-      SIP_INTO_VRAM                             ; read 44,55 and write
-      SIP_INTO_OBLIVION 250                     ; read remaining in loaded page
-      U8_COPY_VAR GR8_scratch1, GR8_cacheStatus ; save for later assertion
-      lda #1
-      SIP_INTO_VRAM                             ; read fresh byte into VRAM 
+      SIP_INTO_VRAM_REPEATED              ; read next 33 and write 3 times
+
+      .scope
+         lda #2                           ; small enough to avoid bulk read
+         SIP_INTO_VRAM                    ; read 44,55 and write
+      .endscope
+
+      SIP_INTO_OBLIVION 10                ; burn 66-FF
+      .scope
+         lda #$90                         ; bulk read where avail >= request
+         SIP_INTO_VRAM
+      .endscope
+
+      SIP_INTO_OBLIVION $0C               ; burn most of row of AA
+      .scope
+         lda #$58                         ; bulk read where avail < request
+         SIP_INTO_VRAM
+      .endscope
       CLOSE_INPUTSTREAM
-
-      ; cache status should still be zero      
-;      ASSERT_VAR_U8_EQUALS_IMM $1310, $00, GR8_cacheStatus
-
-      ; cache status now, after running over, should be non-zero
-;      lda GR8_cacheStatus
-;      ASSERT_BNE $1311
 
       ; reset VRAM address and verify what was written (and untouched)
       SET_VERA_ADDR24_IMM $00, $00000, $10
@@ -226,11 +245,55 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
       ASSERT_VRAM_U8_EQUALS_IMM $1322, $33
       ASSERT_VRAM_U8_EQUALS_IMM $1323, $44
       ASSERT_VRAM_U8_EQUALS_IMM $1324, $55
-      ASSERT_VRAM_U8_EQUALS_IMM $1325, $DE
-      ASSERT_VRAM_U8_EQUALS_IMM $1326, $00 ; untouched
-      
+      ASSERT_VRAM_U8_EQUALS_IMM $1325, $11
+
+      SET_VERA_ADDR24_IMM $00, $00094, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1330, $99
+      ASSERT_VRAM_U8_EQUALS_IMM $1331, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1332, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1333, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1334, $AA
+      ASSERT_VRAM_U8_EQUALS_IMM $1335, $BB
+
+      SET_VERA_ADDR24_IMM $00, $000E8, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1340, $FF
+      ASSERT_VRAM_U8_EQUALS_IMM $1341, $DE
+      ASSERT_VRAM_U8_EQUALS_IMM $1342, $AD
+      ASSERT_VRAM_U8_EQUALS_IMM $1343, $BE
+      ASSERT_VRAM_U8_EQUALS_IMM $1344, $EF
+      ASSERT_VRAM_U8_EQUALS_IMM $1345, $00 ; untouched
+
    .endscope
-   
+
+   ;---------------------------------------------------------------------------
+   ; TEST 13c (read into VRAM)
+   ;
+   ; SIP_INTO_VRAM
+   ;
+   ; This tests an additional scenario where the current offset is $FF, and
+   ; the next read is a bulk read.
+   ;---------------------------------------------------------------------------
+   .scope test13c
+      jsr func_cache_init
+      jsr sub_init_stages_line0
+      SET_VERA_ADDR24_IMM $00, $00000, $10
+
+      OPEN_INPUTSTREAM fn_cache260, fn_cache260_end
+      lda #33
+      SIP_INTO_VRAM
+      CLOSE_INPUTSTREAM
+
+      SET_VERA_ADDR24_IMM $00, $0000F, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1330, $FF
+      ASSERT_VRAM_U8_EQUALS_IMM $1331, $11
+
+      SET_VERA_ADDR24_IMM $00, $0001F, $10
+      ASSERT_VRAM_U8_EQUALS_IMM $1332, $11
+      ASSERT_VRAM_U8_EQUALS_IMM $1333, $22
+      ASSERT_VRAM_U8_EQUALS_IMM $1324, $00 ; (untouched)
+   .endscope
+
+
    ;---------------------------------------------------------------------------
    ; TEST 14 (VRAM address calculations)
    ;---------------------------------------------------------------------------

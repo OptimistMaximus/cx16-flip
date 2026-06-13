@@ -1,10 +1,13 @@
 .export func_cache_init
 .export func_cache_load_page
+.export func_cache_read_into_vram
 
 .segment "CODE"
 
 .include "../include/global.inc"
 .include "../include/kernal.inc"
+.include "../include/math.inc"
+.include "../include/vera.inc"
 
 ; @param targetAddr where to write the result
 ; @param count how many bytes to request
@@ -85,3 +88,97 @@
    rts
 .endproc
 
+;------------------------------------------------------------------------------
+; func_cache_read_into_vram
+;
+; @param .A holds the requested amount of bytes
+;
+; Note that the cache trick involves incrementing FIRST and then reading, so
+; we need to take that into account when doing a bulk read.
+;------------------------------------------------------------------------------
+.proc func_cache_read_into_vram: near
+   sta ZP8_cacheRequest
+   lda ZP16_cachePointer          ; increment pointer with side-effect of
+   inc                            ; leaving the incremented value in .A
+   sta ZP16_cachePointer          ; (needed in normal non-edge scenario)
+   beq @edge_case_rollover        ; handle literal edge case of rollover
+
+   TWOS_COMPLIMENT_A              ; .A still holds cache pointer, and two's
+   cmp ZP8_cacheRequest           ; compliment is conveniently bytes remaining
+   bcs @request_gte
+   jmp sub_handle_remaining_lt
+@request_gte:
+   jmp sub_handle_remaining_gte
+
+@edge_case_rollover:              ; we get here if we just rolled over, which
+   jsr func_cache_load_page       ; means we need to load in a fresh page, in
+   jmp sub_handle_remaining_gte   ; which case there's now enough remaining.
+
+.endproc
+
+;------------------------------------------------------------------------------
+; sub_handle_remaining_lt
+;
+; @param ZP8_cacheRequest set to the number of bytes to read
+; @param .A the number of bytes remaining in cache
+;
+; This gets called when there aren't enough remaining bytes to satisfy the
+; request.  For example, the pointer is at $F0 (so there's only $10 bytes left)
+; and the request is for $30. The basic idea is to drain the remaining bytes
+; and then load in a fresh cache page and call the subroutine to handle
+; "less than" requests.  We can be 100% sure that the follow-up request will
+; be for less than because the FLI format can only request runs of up to $7E
+; and our cache is 256 bytes.
+;------------------------------------------------------------------------------
+.proc sub_handle_remaining_lt: near
+   varRemaining = GR8_scratch1
+
+   sta varRemaining
+   sec                      ; the new request will be the original request
+   lda ZP8_cacheRequest     ; less the remaining amount
+   sbc varRemaining
+   sta ZP8_cacheRequest
+
+   ldx ZP16_cachePointer
+@loop:
+   lda CONST_cacheLowerAddr,x
+   sta VERA_DATA0
+   inx
+   bne @loop
+
+   ; at this point, .X is zero and we've drained the current cache page,
+   ; so we'll load a fresh one.
+   stx ZP16_cachePointer
+   jsr func_cache_load_page
+   jmp sub_handle_remaining_gte
+.endproc
+
+;------------------------------------------------------------------------------
+; sub_handle_remaining_gte
+;
+; @param ZP8_cacheRequest set to the number of bytes to read
+; @param .A the number of bytes remaining in cache
+;
+; This gets called when there are enough remaining bytes to satisfy the
+; request.  For example, the pointer is at $10 (so there's $F0 bytes left)
+; and the request is for $20.  This method is only called by the calling code
+; when it knows there's enough space. So, all we need to do is iterate from
+; the current pointer to the current pointer plus the request.  When we're
+; done, the end point is essentially the new pointer value.
+;------------------------------------------------------------------------------
+.proc sub_handle_remaining_gte: near
+   clc
+   lda ZP16_cachePointer
+   tax                      ; save a cycle and squirrel into .X now
+   adc ZP8_cacheRequest
+   sta ZP8_cacheStop
+@loop:
+   lda CONST_cacheLowerAddr,x
+   sta VERA_DATA0
+   inx
+   cpx ZP8_cacheStop
+   bne @loop
+   dex                      ; decrement here since we overshot, above
+   stx ZP16_cachePointer
+   rts
+.endproc
