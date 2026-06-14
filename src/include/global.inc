@@ -72,23 +72,4 @@ RC_UNSUPPORTED_FILE_TYPE      := 1  ; type
 RC_INVALID_CHUNK_TYPE         := 2  ; type
 RC_READ_ERROR                 := 3  ; lower byte is READST value
 
-.macro BSOD returnCode, detailAddr
-   lda #returnCode
-   sta GR8_returnCode
-   lda detailAddr+0
-   sta GR16_returnDetail+0
-   lda detailAddr+1
-   sta GR16_returnDetail+1
-   jmp bsod
-.endmacro
-
-.macro BSOD_A returnCode
-   lda #returnCode
-   sta GR8_returnCode
-   sta GR16_returnDetail+0
-   stz GR16_returnDetail+1
-   jmp bsod
-.endmacro
-
-
 .endif

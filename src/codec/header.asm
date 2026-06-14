@@ -2,7 +2,6 @@
 
 .import func_cache_discard_bytes
 .import func_cache_load_page
-.import bsod
 
 .include "../include/cache.inc"
 .include "../include/global.inc"
@@ -32,7 +31,10 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    U16_CMP_IMM varFileType, FILE_TYPE_FLI
    beq @fileType_is_fli
-   BSOD RC_UNSUPPORTED_FILE_TYPE, varFileType
+   U8_COPY_IMM GR8_returnCode, RC_UNSUPPORTED_FILE_TYPE
+   U16_COPY_VAR GR16_returnDetail, varFileType
+   rts
+
 @fileType_is_fli:
 
    SIP_INTO_U16 GR16_frameCount
@@ -88,6 +90,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    SIP_INTO_OBLIVION 108
 
+   stz GR8_returnCode
    rts
 .endproc
 

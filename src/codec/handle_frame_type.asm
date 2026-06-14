@@ -6,7 +6,6 @@
 .import func_load_palette
 .import func_cache_load_page
 .import func_cache_discard_bytes
-.import bsod
 
 .segment "CODE"
 
@@ -27,6 +26,10 @@
    beq @rendering_complete        ; 1-chunk frames are common but optimzing
                                   ; for them has no perceivable benefit.
    jsr sub_render_chunks
+   lda GR8_returnCode
+   beq @success
+   rts
+@success:
    jsr sub_apply_chunks
 
 @rendering_complete:
@@ -37,8 +40,13 @@
    ldy #0                         ; .Y is the chunk index
 @subchunk_loop:
    phy
-      jsr func_slurp_chunk        ; clobbers .X and .Y
+      jsr func_slurp_chunk        ; .A is return code
    ply
+   lda GR8_returnCode
+   beq @success
+   rts
+@success:
+   
    lda ZP8_lineSkip
    sta CONST_skipArray,y          ; squirrel the line skip
    lda ZP8_lineCount
@@ -47,6 +55,7 @@
    cpy GR8_chunkCount
    bne @subchunk_loop
 @subchunk_loop_done:
+   stz GR8_returnCode
    rts
 .endproc
 

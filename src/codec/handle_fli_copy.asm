@@ -20,6 +20,7 @@
    bne @outer_loop
    U8_COPY_IMM ZP8_lineSkip, 0
    U8_COPY_IMM ZP8_lineCount, 200
+   stz GR8_returnCode
    rts
 .endproc
 

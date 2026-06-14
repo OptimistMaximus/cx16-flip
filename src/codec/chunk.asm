@@ -12,7 +12,6 @@
 .import handle_byte_run
 .import handle_fli_copy
 .import func_cache_load_page
-.import bsod
 
 .segment "RODATA"
 

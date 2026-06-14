@@ -1,10 +1,12 @@
 .export handle_invalid
-.import bsod
 
 .segment "CODE"
 
 .include "../include/global.inc"
+.include "../include/math.inc"
 
 .proc handle_invalid: near
-   BSOD RC_INVALID_CHUNK_TYPE, GR16_chunkType
+   U8_COPY_IMM GR8_returnCode, RC_INVALID_CHUNK_TYPE
+   U16_COPY_VAR GR16_returnDetail, GR16_chunkType
+   rts
 .endproc

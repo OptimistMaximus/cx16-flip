@@ -27,6 +27,7 @@
    bne @packet_loop
    U8_COPY_IMM ZP8_lineSkip, $FF
    U8_COPY_IMM ZP8_lineCount, $FF
+   stz GR8_returnCode
    rts
 .endproc
 
@@ -44,6 +45,7 @@
    bne @packet_loop
    U8_COPY_IMM ZP8_lineSkip, $FF
    U8_COPY_IMM ZP8_lineCount, $FF
+   stz GR8_returnCode
    rts
 .endproc
 

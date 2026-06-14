@@ -37,5 +37,6 @@ packet_loop:
    @process_count_done:
    dey
    bne packet_loop
+   stz GR8_returnCode
    rts
 .endproc

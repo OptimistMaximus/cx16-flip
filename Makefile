@@ -2,7 +2,7 @@ SOURCE := ./src
 RESDIR := $(SOURCE)/resources
 INCDIR := $(SOURCE)/include
 
-.PHONY: run debug clean test 
+.PHONY: run debug clean test dll
 
 #------------------------------------------------------------------
 # Resources
@@ -40,9 +40,11 @@ INCLUDES := $(wildcard $(INCDIR)/*.inc)
 #------------------------------------------------------------------
 LIB_CORE_SOURCES  := $(wildcard $(SOURCE)/core/*.asm)
 LIB_CORE_OBJECTS  := $(LIB_CORE_SOURCES:$(SOURCE)/core/%.asm=zzz/core/%.o)
+DLL_CORE_OBJECTS  := $(LIB_CORE_SOURCES:$(SOURCE)/core/%.asm=zzz/core/%.so)
 
 LIB_CODEC_SOURCES := $(wildcard $(SOURCE)/codec/*.asm)
 LIB_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=zzz/codec/%.o)
+DLL_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=zzz/codec/%.so)
 
 LIB_TEST_SOURCES := $(wildcard $(SOURCE)/test/*.asm)
 LIB_TEST_OBJECTS := $(LIB_TEST_SOURCES:$(SOURCE)/test/%.asm=zzz/test/%.o)
@@ -63,6 +65,8 @@ test: zzz/TEST.PRG $(TEST_RESOURCES)
 run: zzz/MAIN.PRG $(MAIN_RESOURCES)
 	cd zzz && x16emu -run -prg MAIN.PRG
 	ls -l $<
+
+dll: zzz/FLIP.DLL
 
 debug: zzz/MAIN.PRG $(MAIN_RESOURCES)
 	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG -dump V
@@ -107,6 +111,9 @@ zzz/HACK.PRG: zzz/hack.o $(MAIN_LIBS) | zzz
 #------------------------------------------------------------------
 # Targets to build libraries
 #------------------------------------------------------------------
+zzz/FLIP.DLL: $(DLL_CODEC_OBJECTS) $(DLL_CORE_OBJECTS)
+	ld65 -C dll.cfg $^ -o $@
+
 zzz/core.lib: $(LIB_CORE_OBJECTS) | zzz
 	ar65 a $@ zzz/core/*.o
 
@@ -130,6 +137,12 @@ zzz/test.lib: $(LIB_TEST_OBJECTS) | zzz
 #       cl65 -t cx16 -o zzz/bar.o -c src/bar.asm
 #
 #------------------------------------------------------------------
+zzz/core/%.so: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
+	cl65 -t none --cpu 65c02 -C dll.cfg -D FLIPDLL=1 -o $@ -c $<
+
+zzz/codec/%.so: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
+	cl65 -t none --cpu 65c02 -C dll.cfg -D FLIPDLL=1 -o $@ -c $<
+
 zzz/core/%.o: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
 	cl65 -t cx16 -o $@ -c $<
 

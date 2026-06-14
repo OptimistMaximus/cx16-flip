@@ -30,6 +30,7 @@
       inx
       cpx ZP8_lineStop
       bne @line_loop
+   stz GR8_returnCode
    rts
 .endproc
 

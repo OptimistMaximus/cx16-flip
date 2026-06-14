@@ -39,6 +39,7 @@ The parser's assumptions are as follows:
   inefficiently encoded frame imaginable would be 201 chunks:
   1 color chunk and 200 delta packets each representing 1 line.
   No sensible encoder would ever do such a thing.
+- the frame count in the header is greater than zero
 
 ## Caveats
 
@@ -277,4 +278,104 @@ Bad FLI files:
   will be in cache since runs are never more than 7F) ... but
   this might end up being too much overhead.  Need to do some
   experimentation and benchmarking.
+  
+## LOADABLE LIBRARY
+
+The "flip.dll" file is somewhat of a "dynamically loadable library" in the general
+sense. The main program loads this at runtime into a specific memory offset (as
+controlled by the `dll.cfg` file).  The first 9 bytes hold entry points for the
+library's public interface.  The main program can then call these subroutines to 
+drive basic video rendering.
+
+The library must be loaded into RAM, since it uses offsets within itself for
+runtime variables.  It also assumes the Zero Page range of `$22` to `$2F` (inclusive)
+is usable by the library.
+
+This library attempts to be as generic as possible, such that its conventions
+and interface code also be adopted by other video formats.  This library itself
+only supports the "FLI" format (as originally used by AutoDesk Animator).
+
+### Return Codes
+
+All routines share the same return codes in the range of `$00` to `$7F`.  Return codes
+in the range of `$80` to `$FF` are specific to each video driver implementation.  For
+now, there is only an "FLI" implementation.
+
+#### Common Return Codes
+
+| RC  | Meaning           | Detail Meaning                                   |
+|-----|-------------------|--------------------------------------------------|
+| $00 | Success           |                                                  |
+| $01 | File I/O Error    |                                                  |
+
+#### FLI Player Return Codes
+
+| RC  | Meaning            | Detail Meaning                  |
+|-----|--------------------|---------------------------------|
+| $80 | Invalid File Type  | the file type, e.g. $FA12 (FLC) |
+| $81 | Invalid Chunk Type | the chunk type                  |
+
+Supposing the library is configured to load into memory offset $7000, the entry points
+are as follows.
+
+### $7000 video_driver_open
+
+This subroutine has a pre-requisite that an input stream has been opened to
+the image data to be processed, and that the current stream offset is at
+the very first byte of the image's binary format.
+
+*Parameters:*
+
+  none
+  
+*Side Effects*
+
+  - .A holds the return code
+  - .X holds the return code detail (low)
+  - .Y holds the return code detail (high)
+  
+When the return code indicates success, the return detail indicates the frame rate,
+expressed as the number of sixtieths of a second that the frame should be shown
+on screen.  This is the default rate that should apply to every frame, unless
+explicitly overridden.  If the video format has no concept of frame rate, then the
+return value will be `$0000`
+
+### $7003 video_driver_next
+
+This subroutine has a pre-requisite that `video_driver_init` has been called
+once and only once, and returned with success.  It will read from the input
+stream assuming the file input stream is at the offset where the next image
+frame's data (possibly including meta-data, palette info, etc) exists.
+
+When the return code indicates success, the return detail indicates the frame rate,
+of the specific frame just rendered, expressed as the number of sixtieths of a
+second that the frame should be shown on screen.  This is the default rate that
+should apply to every frame, unless explicitly overridden.  If set to `$0000` it
+indicates that the default frame rate established via `video_driver_init` applies.
+
+*Parameters:*
+  none
+  
+*Side Effects*
+  - .A holds the return code
+  - .X holds the return code detail (low)
+  - .Y holds the return code detail (high)
+  - .C = 0 indicates another frame exists after the one just processed
+  - .C = 1 indicates no more frames exist after the one just processed
+
+### $7006 video_driver_close
+
+This subroutine has a pre-requisite that `video_driver_open` has been called
+once. This routine cleans up or undoes whatever state was established by
+the `video_driver_open` subroutine.
+
+*Parameters:*
+
+  none
+  
+*Side Effects*
+
+  - .A holds the return code
+  - .X holds the return code detail (low)
+  - .Y holds the return code detail (high)
   
