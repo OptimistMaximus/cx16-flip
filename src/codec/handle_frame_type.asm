@@ -1,6 +1,5 @@
 .export handle_frame_type
 
-.import func_snooze_if_necessary
 .import func_slurp_chunk
 .import func_load_image
 .import func_load_palette
@@ -33,7 +32,7 @@
    jsr sub_apply_chunks
 
 @rendering_complete:
-   jmp func_snooze_if_necessary
+   rts
 .endproc
 
 .proc sub_render_chunks: near

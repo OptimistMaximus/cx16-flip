@@ -12,6 +12,7 @@
 .import func_slurp_header
 .import func_slurp_frame
 .import func_init_vram_table
+.import func_snooze_if_necessary
 
 .segment "INIT"
 .segment "STARTUP"
@@ -45,6 +46,7 @@ start:
    U16_STZ GR16_frameIndex
 @frame_loop:
    jsr func_slurp_frame
+   jsr func_snooze_if_necessary
    U16_INC     GR16_frameIndex
    U16_CMP_VAR GR16_frameIndex, GR16_frameCount
    bne @frame_loop

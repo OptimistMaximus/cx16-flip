@@ -40,7 +40,6 @@ INCLUDES := $(wildcard $(INCDIR)/*.inc)
 #------------------------------------------------------------------
 LIB_CORE_SOURCES  := $(wildcard $(SOURCE)/core/*.asm)
 LIB_CORE_OBJECTS  := $(LIB_CORE_SOURCES:$(SOURCE)/core/%.asm=zzz/core/%.o)
-DLL_CORE_OBJECTS  := $(LIB_CORE_SOURCES:$(SOURCE)/core/%.asm=zzz/core/%.so)
 
 LIB_CODEC_SOURCES := $(wildcard $(SOURCE)/codec/*.asm)
 LIB_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=zzz/codec/%.o)
@@ -111,7 +110,7 @@ zzz/HACK.PRG: zzz/hack.o $(MAIN_LIBS) | zzz
 #------------------------------------------------------------------
 # Targets to build libraries
 #------------------------------------------------------------------
-zzz/FLIP.DLL: $(DLL_CODEC_OBJECTS) $(DLL_CORE_OBJECTS)
+zzz/FLIP.DLL: $(DLL_CODEC_OBJECTS)
 	ld65 -C dll.cfg $^ -o $@
 
 zzz/core.lib: $(LIB_CORE_OBJECTS) | zzz

@@ -282,18 +282,17 @@ Bad FLI files:
 ## LOADABLE LIBRARY
 
 The "flip.dll" file is somewhat of a "dynamically loadable library" in the general
-sense. The main program loads this at runtime into a specific memory offset (as
-controlled by the `dll.cfg` file).  The first 9 bytes hold entry points for the
+sense. The main program loads this at runtime into a specific memory offset (declared in the `dll.cfg` file).  The first 9 bytes hold entry points for the
 library's public interface.  The main program can then call these subroutines to 
 drive basic video rendering.
 
-The library must be loaded into RAM, since it uses offsets within itself for
+The library must be in RAM (not ROM), since it uses offsets within itself for
 runtime variables.  It also assumes the Zero Page range of `$22` to `$2F` (inclusive)
 is usable by the library.
 
 This library attempts to be as generic as possible, such that its conventions
 and interface code also be adopted by other video formats.  This library itself
-only supports the "FLI" format (as originally used by AutoDesk Animator).
+only supports the "FLI" format (used by AutoDesk Animator).
 
 ### Return Codes
 
