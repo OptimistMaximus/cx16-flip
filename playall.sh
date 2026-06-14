@@ -2,7 +2,7 @@
 
 top=`pwd`
 program=$top/zzz/MAIN.PRG
-dirs="error"
+dirs="fps-20-up"
 
 for dir in $dirs ; do
   cd $top/images/$dir

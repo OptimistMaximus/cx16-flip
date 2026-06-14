@@ -3,7 +3,7 @@
 
 .include "./kernal.inc"
 
-; ENABLE_DEBUG_TIMER = 1
+ ENABLE_DEBUG_TIMER = 1
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page)

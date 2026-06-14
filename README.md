@@ -220,12 +220,30 @@ The Makefile is a bit clunky, but hopefully isn't too hard to follow. The main t
 
 Good FLI files for regression test:
 
-- BELL (small, simple)
-- OWL  (small, simple)
-- BOOKSPIN (padding, per the spec (align to even boundaries)
-- CHOPCITY (very long)
-- POND (FLI_COPY)
-- SAUCER04 (FLI_COPY)
+- Files with FLI_COPY (CC)
+  - HIRISE
+  - TR2
+  - NAYLOR
+  - RRHOOD
+  - POND
+  - PUZZLE5
+  
+- Files with BLACK (AA)
+  - MOONWALK
+
+- Files with COLOR 256 (BB
+  INSANITI.FLI ???
+
+- Small Simple Files
+  - BELL
+  - OWL
+
+- Files with padding
+  - BOOKSPIN
+  - BA1  
+  
+  
+  (align to even boundaries)
 - MOONWALK (BLACK)
 - BA1 (excessive padding, well beyond what the spec suggests)
 

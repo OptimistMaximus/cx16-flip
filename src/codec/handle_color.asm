@@ -19,15 +19,15 @@
 ; Parses color chunk and populates palette buffer
 ;------------------------------------------------------------------------------
 .proc handle_color_64: near
-   lda #OPCODE_NOP
-   sta smc_anchor_r_shift+0
-   sta smc_anchor_r_shift+1
-   sta smc_anchor_b_shift+0
-   sta smc_anchor_b_shift+1
-   lda #OPCODE_ASL_A
-   sta smc_anchor_g_shift+0
-   sta smc_anchor_g_shift+1
-   jmp sub_handle_color
+   jsr sub_handle_color_prep
+@packet_loop:
+   lda #0 ; zero means color 256
+   jsr sub_handle_color_packet
+   dex
+   bne @packet_loop
+   U8_COPY_IMM ZP8_lineSkip, $FF
+   U8_COPY_IMM ZP8_lineCount, $FF
+   rts
 .endproc
 
 ;------------------------------------------------------------------------------
@@ -36,23 +36,23 @@
 ; Parses color chunk and populates palette buffer
 ;------------------------------------------------------------------------------
 .proc handle_color_256: near
-   lda #OPCODE_LSR_A
-   sta smc_anchor_r_shift+0
-   sta smc_anchor_r_shift+1
-   sta smc_anchor_b_shift+0
-   sta smc_anchor_b_shift+1
-   lda #OPCODE_NOP
-   sta smc_anchor_g_shift+0
-   sta smc_anchor_g_shift+1
-   jmp sub_handle_color
+   jsr sub_handle_color_prep
+@packet_loop:
+   lda #1 ; non-zero means color 256
+   jsr sub_handle_color_packet
+   dex
+   bne @packet_loop
+   U8_COPY_IMM ZP8_lineSkip, $FF
+   U8_COPY_IMM ZP8_lineCount, $FF
+   rts
 .endproc
 
-sub_handle_color:
-
-   tempVeraRed    = GR8_scratch1
-   tempVeraGreen  = GR8_scratch2
-   copyCount      = GR8_scratch3
-   numPackets     = GR16_scratch1
+;==============================================================================
+; sub_handle_color_prep
+;
+; @effect .X holds the number of packets
+;==============================================================================
+.proc sub_handle_color_prep: near
 
    ;---------------------------------------------------------------------------
    ; Although packet count is 16-bit, it doesn't make sense for the size to be
@@ -73,58 +73,82 @@ sub_handle_color:
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
    SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
-   SIP_INTO_U16 numPackets
+   SIP_INTO_U16 GR16_scratch1
 
-   ldx #0
-packet_loop:
+   ldx GR16_scratch1
+   rts
+.endproc
 
+.proc sub_handle_color_packet: near
+
+   tempVeraRed    = GR8_scratch1
+   tempVeraGreen  = GR8_scratch2
+   colorMode      = GR8_scratch3
+
+   sta colorMode
+   
    SIP_INTO_A                     ; .A holds skip count, where 0 means 0
    cmp #0
    beq @zero_skip
    tay
-:  lda VERA_DATA0
+@skip_loop:
+   lda VERA_DATA0
    lda VERA_DATA0
    dey
-   bne :-
-
+   bne @skip_loop
 @zero_skip:
-   SIP_INTO_U8 copyCount
-   ldy #0
+
+   SIP_INTO_A                ; read in copy count
+   tay
 copy_loop:
-   SIP_INTO_A             ; slurp RGB's R
-smc_anchor_r_shift:
-   lsr                      ; nop if 6-bit
-   lsr                      ; nop if 6-bit
-   lsr
-   lsr
-   sta tempVeraRed
 
-   SIP_INTO_A             ; slurp RGB's G
-smc_anchor_g_shift:
-   nop                      ; asl if 6-bit
-   nop                      ; asl if 6-bit
-   and #$F0
-   sta tempVeraGreen
+   lda colorMode
+   bne @mode256
 
-   SIP_INTO_A             ; slurp RGB's B
-   smc_anchor_b_shift:
-   lsr                      ; nop if 6-bit
-   lsr                      ; nop if 6-bit
-   lsr
-   lsr
+      SIP_INTO_A             ; slurp RGB's R
+      lsr
+      lsr
+      sta tempVeraRed
+
+      SIP_INTO_A             ; slurp RGB's G
+      asl
+      asl
+      and #$F0
+      sta tempVeraGreen
+
+      SIP_INTO_A             ; slurp RGB's B
+      lsr
+      lsr
+      bra @mode_handled
+
+   @mode256:
+
+      SIP_INTO_A             ; slurp RGB's R
+      lsr
+      lsr
+      lsr
+      lsr
+      sta tempVeraRed
+
+      SIP_INTO_A             ; slurp RGB's G
+      and #$F0
+      sta tempVeraGreen
+
+      SIP_INTO_A             ; slurp RGB's B
+      lsr
+      lsr
+      lsr
+      lsr
+   
+   @mode_handled:
+
    ora tempVeraGreen
    sta VERA_DATA0           ; store VERA color (GB)
    lda tempVeraRed          ; store VERA color (R)
    sta VERA_DATA0
 
-   iny
-   cpy copyCount
+   dey
    bne copy_loop
 
-   inx
-   cpx numPackets                       ; just the low byte
-   bne packet_loop
-
-   U8_COPY_IMM ZP8_lineSkip, $FF
-   U8_COPY_IMM ZP8_lineCount, $FF
    rts
+.endproc
