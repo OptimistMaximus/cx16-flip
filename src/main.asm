@@ -29,39 +29,87 @@
 
    jmp start
 
+FLIP_DLL_LOAD_ADDR := $7000
+video_driver_open  := FLIP_DLL_LOAD_ADDR + 0
+video_driver_next  := FLIP_DLL_LOAD_ADDR + 3
+video_driver_close := FLIP_DLL_LOAD_ADDR + 6
+   
+lib_fn: .asciiz "flip080.dll,r"
+lib_fn_end:
+
 start:
 
-   jsr func_init_vram_table
+   jsr sub_load_library
    jsr func_setup_irq_handler
-
-   jsr func_vera_setup
    jsr func_detect_filename
    jsr func_open_inputstream
-
+   jsr video_driver_open
+   
+   cmp #0
+   beq @open_success
+   jmp error
+@open_success:
+   stx GR8_speedLimitVSyncs    ; FLI max speed limit fits in 8-bits
+   
    DEBUG_TIMER_START
 
-   jsr func_cache_init
-   jsr func_slurp_header
-
-   U16_STZ GR16_frameIndex
 @frame_loop:
-   jsr func_slurp_frame
+   jsr video_driver_next
+   bcs @frame_loop_done
    jsr func_snooze_if_necessary
-   U16_INC     GR16_frameIndex
-   U16_CMP_VAR GR16_frameIndex, GR16_frameCount
-   bne @frame_loop
+   bra @frame_loop
+
+@frame_loop_done:
+   cmp #0
+   beq @next_success
+   jmp error
+@next_success:
+   php
+   plp
+   bcc @frame_loop              ; .C = 0 means another frame exists
 
    DEBUG_TIMER_READ
-
-   jsr func_close_inputstream
 
 .ifndef ENABLE_DEBUG_TIMER
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)
 .endif
-
-   jsr func_vera_restore        ; restore vera to text mode
+   
+   jsr video_driver_close
+   jsr func_close_inputstream
    jsr func_restore_irq_handler
 
    DEBUG_TIMER_DUMP
    rts
+   
+error:
+   rts
+
+;==============================================================================
+; sub_load_library
+;
+; This optimistically assumes that there will be no I/O error, such that the
+; only reason for READST to return non-zero will be end-of-file.
+;==============================================================================
+.proc sub_load_library: near
+   varLoadAddr = GR16_scratch1
+   varReadCount = GR16_scratch2
+
+   lda #(lib_fn_end - lib_fn)
+   ldx #<lib_fn
+   ldy #>lib_fn
+   jsr func_open_inputstream
+   U16_COPY_IMM varLoadAddr, FLIP_DLL_LOAD_ADDR   
+@load_loop:
+   clc
+   lda #0
+   ldx varLoadAddr+0
+   ldy varLoadAddr+1
+   jsr KERNAL_MACPTR                       ; read a chunk of bytes into memory
+   stx varReadCount+0
+   sty varReadCount+1
+   U16_ADD_VAR varLoadAddr, varReadCount   ; update the load addr
+   jsr KERNAL_READST                       ; keep reading until "error"
+   beq @load_loop
+   jmp func_close_inputstream
+.endproc

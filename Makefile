@@ -2,6 +2,10 @@ SOURCE := ./src
 RESDIR := $(SOURCE)/resources
 INCDIR := $(SOURCE)/include
 
+VERSION := 080
+PROGRAM := FLIP$(VERSION).PRG
+LIBRARY := FLIP$(VERSION).DLL
+
 .PHONY: run debug clean test dll
 
 #------------------------------------------------------------------
@@ -61,14 +65,14 @@ hack: zzz/HACK.PRG
 test: zzz/TEST.PRG $(TEST_RESOURCES)
 	cd zzz && x16emu -run -debug 080D -prg TEST.PRG
 
-run: zzz/MAIN.PRG $(MAIN_RESOURCES)
-	cd zzz && x16emu -run -prg MAIN.PRG
+run: zzz/$(PROGRAM) zzz/$(LIBRARY) $(MAIN_RESOURCES)
+	cd zzz && x16emu -run -prg $(PROGRAM)
 	ls -l $<
 
-dll: zzz/FLIP.DLL
+dll: zzz/$(LIBRARY)
 
-debug: zzz/MAIN.PRG $(MAIN_RESOURCES)
-	cd zzz && x16emu -run -debug 080D -prg MAIN.PRG -dump V
+debug: zzz/$(PROGRAM) $(MAIN_RESOURCES)
+	cd zzz && x16emu -run -debug 080D -prg $(PROGRAM) -dump V
 	ls -l $<
 
 clean:
@@ -98,7 +102,7 @@ zzz/test:
 #------------------------------------------------------------------
 # Targets to build programs
 #------------------------------------------------------------------
-zzz/MAIN.PRG: zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
+zzz/$(PROGRAM): zzz/main.o $(MAIN_LIBS) $(MAIN_RESOURCES) | zzz
 	cl65 -o $@ $< $(MAIN_LIBS)
 
 zzz/TEST.PRG: zzz/test.o $(TEST_LIBS) | zzz
@@ -110,7 +114,7 @@ zzz/HACK.PRG: zzz/hack.o $(MAIN_LIBS) | zzz
 #------------------------------------------------------------------
 # Targets to build libraries
 #------------------------------------------------------------------
-zzz/FLIP.DLL: $(DLL_CODEC_OBJECTS)
+zzz/$(LIBRARY): $(DLL_CODEC_OBJECTS)
 	ld65 -C dll.cfg $^ -o $@
 	ls -l $@
 
@@ -138,7 +142,7 @@ zzz/test.lib: $(LIB_TEST_OBJECTS) | zzz
 #
 #------------------------------------------------------------------
 zzz/core/%.so: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
-	cl65 -t none --cpu 65c02 -C dll.cfg -D FLIPDLL=1 -o $@ -c $<
+	cl65 -t none --cpu 65c02 -C dll.cfg -o $@ -c $<
 
 zzz/codec/%.so: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
 	cl65 -t none --cpu 65c02 -C dll.cfg -D FLIPDLL=1 -o $@ -c $<

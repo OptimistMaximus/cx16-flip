@@ -77,20 +77,19 @@ FILE_TYPE_FLI := $AF11
    varTemp       = GR16_scratch1
    varDivisor    = GR16_scratch2
    varMultiplier = GR8_scratch1
-   varQuotient   = GR16_scratch3
+   varQuotient   = GR16_returnDetail ; the quotient is also our return code
 
    U8_COPY_IMM varMultiplier, 6
    U16_SLOW_MULTIPLY varTemp, varSpeed, varMultiplier
    U16_COPY_IMM varDivisor, 7
    U16_SLOW_DIVIDE varQuotient, varTemp, varDivisor
-   U8_COPY_VAR GR8_speedLimitVSyncs, varQuotient+0
 
    ;---------------------------------------------------------------------------
    ; burn remaining bytes of header
    ;---------------------------------------------------------------------------
    SIP_INTO_OBLIVION 108
 
-   stz GR8_returnCode
+   stz GR8_returnCode                ; return code success
    rts
 .endproc
 

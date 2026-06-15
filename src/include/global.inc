@@ -6,7 +6,7 @@
 ENABLE_DEBUG_TIMER = 1
 
 ;------------------------------------------------------------------------------
-; GLOBAL VARIABLES (Zero Page)
+; GLOBAL VARIABLES (Zero Page) -- Library
 ;
 ; These MUST be in Zero Page, either because of addressing mode requirements,
 ; or for performance reasons.
@@ -18,6 +18,13 @@ ZP8_lineSkip            := $26
 ZP8_lineCount           := $27
 ZP8_lineStop            := $28
 ZP8_lineIndex           := $29
+
+;------------------------------------------------------------------------------
+; GLOBAL VARIABLES (Zero Page) -- Program
+;
+; These MUST be in Zero Page, either because of addressing mode requirements,
+; or for performance reasons.
+;------------------------------------------------------------------------------
 
 ZP8_timerTrigger        := $2A ; state variable needed by speed timer
 ZP8_imageVSyncsElapsed  := $2B ; VSyncs elapsed while rendering current image

@@ -100,7 +100,9 @@ vram_addr_table_hi:
    jsr func_cache_init
    jsr func_slurp_header
    U16_STZ GR16_frameIndex
-   lda #0
+   lda GR8_returnCode
+   ldx GR16_returnDetail+0
+   ldy GR16_returnDetail+1
    rts   
 .endproc
 
@@ -108,13 +110,16 @@ vram_addr_table_hi:
    jsr func_slurp_frame
    lda GR8_returnCode
    beq @success
+   sec ; no more frames
    ldx #<GR16_returnDetail
    ldy #>GR16_returnDetail
    rts
 @success:
    U16_INC     GR16_frameIndex
-   U16_CMP_VAR GR16_frameIndex, GR16_frameCount
-   lda #0
+   U16_CMP_VAR GR16_frameIndex, GR16_frameCount ; indirectly sets carry bit
+   lda #0 ; success
+   ldx #0 ; FLI does not support per-frame delay
+   ldy #0 ; so we'll hard-code it to zero.
    rts
 .endproc
 

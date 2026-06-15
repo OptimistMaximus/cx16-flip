@@ -302,10 +302,10 @@ now, there is only an "FLI" implementation.
 
 #### Common Return Codes
 
-| RC  | Meaning           | Detail Meaning                                   |
-|-----|-------------------|--------------------------------------------------|
-| $00 | Success           |                                                  |
-| $01 | File I/O Error    |                                                  |
+| RC  | Meaning            | Detail Meaning                  |
+|-----|--------------------|---------------------------------|
+| $00 | success            |                                 |
+| $01 | I/O error          |                                 |
 
 #### FLI Player Return Codes
 
@@ -348,9 +348,8 @@ frame's data (possibly including meta-data, palette info, etc) exists.
 
 When the return code indicates success, the return detail indicates the frame rate,
 of the specific frame just rendered, expressed as the number of sixtieths of a
-second that the frame should be shown on screen.  This is the default rate that
-should apply to every frame, unless explicitly overridden.  If set to `$0000` it
-indicates that the default frame rate established via `video_driver_init` applies.
+second that the frame should be shown on screen.  If set to `$0000` it indicates
+that the default frame rate established via `video_driver_init` applies.
 
 *Parameters:*
   none
@@ -359,8 +358,17 @@ indicates that the default frame rate established via `video_driver_init` applie
   - .A holds the return code
   - .X holds the return code detail (low)
   - .Y holds the return code detail (high)
-  - .C = 0 indicates another frame exists after the one just processed
-  - .C = 1 indicates no more frames exist after the one just processed
+  - .C = 1 means the stream does not have another frame
+  - .C = 0 means the stream has another frame
+
+Note that the return code will always be zero (success) when the Carry bit
+indicates that another frame exists.  So for the success case, it is enough
+to check if the Carry bit is clear. If the Carry bit is set, though, the
+return code distinguishes why there is no next frame: zero means that all
+frames in the input stream have been processed successfully, and there's 
+simply no more; non-zero indicates there is no next frame because something
+bad has happened during processing of the current frame.
+
 
 ### $7006 video_driver_close
 
