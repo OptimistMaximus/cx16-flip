@@ -3,8 +3,6 @@
 .export func_snooze_if_necessary
 .export func_snooze
 
-.import func_print_hex
-
 .segment "CODE"
 
 .include "../include/debug.inc"

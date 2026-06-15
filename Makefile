@@ -112,6 +112,7 @@ zzz/HACK.PRG: zzz/hack.o $(MAIN_LIBS) | zzz
 #------------------------------------------------------------------
 zzz/FLIP.DLL: $(DLL_CODEC_OBJECTS)
 	ld65 -C dll.cfg $^ -o $@
+	ls -l $@
 
 zzz/core.lib: $(LIB_CORE_OBJECTS) | zzz
 	ar65 a $@ zzz/core/*.o

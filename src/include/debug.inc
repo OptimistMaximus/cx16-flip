@@ -10,6 +10,11 @@
 ; The debug timer assumes your IRQ Handler is incrementing a 16-bit
 ; value ZP16_vsyncs_total on every VERA interrupt for VSync
 
+.macro DEBUG_PRINT_U8_VAR addr
+   lda addr
+   jsr func_print_hex
+.endmacro
+
 .macro DEBUG_PRINT_U16_VAR addr
    lda addr+1 ; high
    jsr func_print_hex
@@ -35,6 +40,7 @@
    U16_STZ GR16_debugTimerVSyncs
    U16_STZ GR16_debugSpeedOverrun
    U16_STZ GR16_debugSpeedUnderrun
+   stz GR8_biggestChunks
    cli
 .endif
 .endmacro
@@ -86,6 +92,8 @@
    DEBUG_PRINT_NEWLINE
    DEBUG_PRINT_U16_VAR GR16_debugSpeedUnderrun
    DEBUG_PRINT_NEWLINE
+   DEBUG_PRINT_U8_VAR  GR8_biggestChunks
+   DEBUG_PRINT_NEWLINE
 .endif
 .endmacro
 
@@ -98,6 +106,16 @@
 .macro DEBUG_TIMER_REGISTER_SPEED_UNDERRUN
 .ifdef ENABLE_DEBUG_TIMER
    U16_INC GR16_debugSpeedUnderrun
+.endif
+.endmacro
+
+.macro DEBUG_TIMER_REGISTER_BIGGEST_CHUNKS
+.ifdef ENABLE_DEBUG_TIMER
+   lda GR8_chunkCount
+   cmp GR8_biggestChunks
+   bcc :+
+   sta GR8_biggestChunks
+:
 .endif
 .endmacro
 

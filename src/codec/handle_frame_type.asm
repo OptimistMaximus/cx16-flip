@@ -9,6 +9,7 @@
 .segment "CODE"
 
 .include "../include/cache.inc"
+.include "../include/debug.inc"
 .include "../include/global.inc"
 .include "../include/vera.inc"
 .include "../include/video.inc"
@@ -19,6 +20,8 @@
    stz ZP8_imageVSyncsElapsed     ; i.e. start the frame timer
    SIP_INTO_U8 GR8_chunkCount     ; low byte of chunk count
    SIP_INTO_OBLIVION 9            ; high byte of chunk count & remaining 8
+   
+   DEBUG_TIMER_REGISTER_BIGGEST_CHUNKS
 
    lda GR8_chunkCount             ; zero-chunk frames are a common way to
    cmp #0                         ; make the current image linger longer

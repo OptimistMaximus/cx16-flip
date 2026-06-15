@@ -13,12 +13,86 @@
 ;==============================================================================
 ; VIDEO DRIVER ENTRY POINTS
 ;
-; The first 9 bytes of the video driver library (wherever it is loaded) are
-; a jump table holding the addresses of its three "public API" subroutines.
+; Per the library's public API, the first 9 bytes of the library MUST be these
+; three entry points.
 ;==============================================================================
 jmp video_driver_init
 jmp video_driver_next
 jmp video_driver_done
+
+.res (256 - 9), $AA ; unused for now, $09-
+
+;==============================================================================
+; PAGE-ALIGNED CACHE
+;
+; The caching algorithm is optimized to work only in the scenario where the
+; the cache is page-aligned.  We could do that with linker directives but
+; to keep things simple we'll just do it the old-fashioned way and make sure
+; the variable declarations above this (plus the entry points) add up to 
+; exactly 256.
+;==============================================================================
+cache_lower:
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+
+cache_upper:
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+
+vram_addr_table_lo:
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+.byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
+
+vram_addr_table_me:
+.byte $FA,$FB,$FC,$FD,$FF,$00,$01,$02,$04,$05,$06,$07,$09,$0A,$0B,$0C,$0E,$0F,$10,$11
+.byte $13,$14,$15,$16,$18,$19,$1A,$1B,$1D,$1E,$1F,$20,$22,$23,$24,$25,$27,$28,$29,$2A
+.byte $2C,$2D,$2E,$2F,$31,$32,$33,$34,$36,$37,$38,$39,$3B,$3C,$3D,$3E,$40,$41,$42,$43
+.byte $45,$46,$47,$48,$4A,$4B,$4C,$4D,$4F,$50,$51,$52,$54,$55,$56,$57,$59,$5A,$5B,$5C
+.byte $5E,$5F,$60,$61,$63,$64,$65,$66,$68,$69,$6A,$6B,$6D,$6E,$6F,$70,$72,$73,$74,$75
+.byte $77,$78,$79,$7A,$7C,$7D,$7E,$7F,$81,$82,$83,$84,$86,$87,$88,$89,$8B,$8C,$8D,$8E
+.byte $90,$91,$92,$93,$95,$96,$97,$98,$9A,$9B,$9C,$9D,$9F,$A0,$A1,$A2,$A4,$A5,$A6,$A7
+.byte $A9,$AA,$AB,$AC,$AE,$AF,$B0,$B1,$B3,$B4,$B5,$B6,$B8,$B9,$BA,$BB,$BD,$BE,$BF,$C0
+.byte $C2,$C3,$C4,$C5,$C7,$C8,$C9,$CA,$CC,$CD,$CE,$CF,$D1,$D2,$D3,$D4,$D6,$D7,$D8,$D9
+.byte $DB,$DC,$DD,$DE,$E0,$E1,$E2,$E3,$E5,$E6,$E7,$E8,$EA,$EB,$EC,$ED,$EF,$F0,$F1,$F2
+
+; Note that if the library size is too big, we can save 200 bytes at the expense of
+; a few more CPU cycles ... we'd just start the image buffer at $FF00 instead of
+; $FA00, which means every byte in the high table would be $11 except for Line Zero
+; which would be $10.  We could just calculate that with a comparison. It spends
+; more cycles than just having this table, but if we need to trim the library by
+; 200 bytes, then it is a reasonable compromise.  Note, that would also necessitate
+; moving the palette buffer down to $FA00.
+vram_addr_table_hi:
+.byte $10,$10,$10,$10,$10,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
+.byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
 
 .proc video_driver_init: near
    jsr func_init_vram_table

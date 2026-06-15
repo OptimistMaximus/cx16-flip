@@ -3,7 +3,7 @@
 
 .include "./kernal.inc"
 
- ENABLE_DEBUG_TIMER = 1
+ENABLE_DEBUG_TIMER = 1
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page)
@@ -11,17 +11,17 @@
 ; These MUST be in Zero Page, either because of addressing mode requirements,
 ; or for performance reasons.
 ;------------------------------------------------------------------------------
-ZP_VOLATILE_PTR         := $22
-ZP16_cachePointer       := $24
-ZP8_cacheRequest        := $26
-ZP8_cacheStop           := $27
-ZP8_lineSkip            := $28
-ZP8_lineCount           := $29
-ZP8_lineStop            := $2A
-ZP8_lineIndex           := $2B
-ZP8_timerTrigger        := $2C ; state variable needed by speed timer
-ZP8_imageVSyncsElapsed  := $2D ; VSyncs elapsed while rendering current image
+ZP16_cachePointer       := $22
+ZP8_cacheRequest        := $24
+ZP8_cacheStop           := $25
+ZP8_lineSkip            := $26
+ZP8_lineCount           := $27
+ZP8_lineStop            := $28
+ZP8_lineIndex           := $29
 
+ZP8_timerTrigger        := $2A ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $2B ; VSyncs elapsed while rendering current image
+ZP_VOLATILE_PTR         := $2C
 GR16_origIrqHandler     := $2E
 
 GR32_scratch1           := $30
@@ -49,7 +49,9 @@ GR16_debugTimerVSyncs   := $62
 GR16_debugSpeedOverrun  := $64
 GR16_debugSpeedUnderrun := $66
 GR16_debugTimerValue    := $68
+GR8_biggestChunks       := $6A 
 .endif
+
 
 
 
