@@ -40,7 +40,6 @@
    U16_STZ GR16_debugTimerVSyncs
    U16_STZ GR16_debugSpeedOverrun
    U16_STZ GR16_debugSpeedUnderrun
-   stz GR8_biggestChunks
    cli
 .endif
 .endmacro
@@ -81,18 +80,16 @@
    U16_LSR GR16_debugTimerValue
 
 @small_enough:
-   U8_COPY_IMM GR8_scratch1, 60
-   U16_SLOW_MULTIPLY GR16_scratch1, GR16_frameCount, GR8_scratch1
-   U16_SLOW_DIVIDE GR16_scratch2, GR16_scratch1, GR16_debugTimerValue
+   U8_COPY_IMM GR8_debugScratch1, 60
+   U16_SLOW_MULTIPLY GR16_debugScratch1, GR16_frameCount, GR8_debugScratch1
+   U16_SLOW_DIVIDE GR16_debugScratch2, GR16_debugScratch1, GR16_debugTimerValue
 
    DEBUG_PRINT_NEWLINE
-   DEBUG_PRINT_U16_VAR GR16_scratch2
+   DEBUG_PRINT_U16_VAR GR16_debugScratch2
    DEBUG_PRINT_NEWLINE
    DEBUG_PRINT_U16_VAR GR16_debugSpeedOverrun
    DEBUG_PRINT_NEWLINE
    DEBUG_PRINT_U16_VAR GR16_debugSpeedUnderrun
-   DEBUG_PRINT_NEWLINE
-   DEBUG_PRINT_U8_VAR  GR8_biggestChunks
    DEBUG_PRINT_NEWLINE
 .endif
 .endmacro
@@ -106,12 +103,6 @@
 .macro DEBUG_TIMER_REGISTER_SPEED_UNDERRUN
 .ifdef ENABLE_DEBUG_TIMER
    U16_INC GR16_debugSpeedUnderrun
-.endif
-.endmacro
-
-.macro DEBUG_TIMER_REGISTER_BIGGEST_CHUNKS
-.ifdef ENABLE_DEBUG_TIMER
-   U8_MAX_VAR GR8_biggestChunks, GR8_chunkCount
 .endif
 .endmacro
 

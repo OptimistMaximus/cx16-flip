@@ -28,6 +28,12 @@ test_bb_expect_default: .asciiz "image.fli,r"
 .segment "DATA"
 var24scratch1: .res 3
 var24scratch2: .res 3
+var16scratch1: .res 2
+var16scratch2: .res 2
+var8scratch1:  .res 1
+var8scratch2:  .res 1
+
+
 
 .segment "CODE"
 
@@ -62,10 +68,10 @@ var24scratch2: .res 3
    ; U24_STZ
    ;---------------------------------------------------------------------------
    lda #$55
-   sta GR16_scratch1+0
-   sta GR16_scratch1+1
-   U16_STZ GR16_scratch1
-   ASSERT_VAR_U16_EQUALS_IMM $0000, $0000, GR16_scratch1
+   sta var16scratch1+0
+   sta var16scratch1+1
+   U16_STZ var16scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0000, $0000, var16scratch1
 
    lda #$55
    sta var24scratch1+0
@@ -81,13 +87,13 @@ var24scratch2: .res 3
    ; U16_COPY_IMM
    ; U24_COPY_IMM
    ;---------------------------------------------------------------------------
-   stz GR8_scratch1
-   U8_COPY_IMM GR8_scratch1, $AA
-   ASSERT_VAR_U8_EQUALS_IMM $0010, $AA, GR8_scratch1
+   stz var8scratch1
+   U8_COPY_IMM var8scratch1, $AA
+   ASSERT_VAR_U8_EQUALS_IMM $0010, $AA, var8scratch1
 
-   U16_STZ GR16_scratch1
-   U16_COPY_IMM GR16_scratch1, $AABB
-   ASSERT_VAR_U16_EQUALS_IMM $0011, $AABB, GR16_scratch1
+   U16_STZ var16scratch1
+   U16_COPY_IMM var16scratch1, $AABB
+   ASSERT_VAR_U16_EQUALS_IMM $0011, $AABB, var16scratch1
 
    U24_STZ var24scratch1
    U24_COPY_IMM var24scratch1, $AABBCC
@@ -100,15 +106,15 @@ var24scratch2: .res 3
    ; U16_COPY_VAR
    ; U24_COPY_VAR
    ;---------------------------------------------------------------------------
-   stz         GR8_scratch1
-   U8_COPY_IMM GR8_scratch2, $AA
-   U8_COPY_VAR GR8_scratch1, GR8_scratch2
-   ASSERT_VAR_U8_EQUALS_IMM $0020, $AA, GR8_scratch1
+   stz         var8scratch1
+   U8_COPY_IMM var8scratch2, $AA
+   U8_COPY_VAR var8scratch1, var8scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0020, $AA, var8scratch1
 
-   U16_STZ      GR16_scratch1
-   U16_COPY_IMM GR16_scratch2, $AABB
-   U16_COPY_VAR GR16_scratch1, GR16_scratch2
-   ASSERT_VAR_U16_EQUALS_IMM $0021, $AABB, GR16_scratch1
+   U16_STZ      var16scratch1
+   U16_COPY_IMM var16scratch2, $AABB
+   U16_COPY_VAR var16scratch1, var16scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0021, $AABB, var16scratch1
 
    U24_STZ      var24scratch1
    U24_COPY_IMM var24scratch2, $AABB
@@ -123,18 +129,18 @@ var24scratch2: .res 3
    ; U16_ADD_VAR
    ; U16_SUB_VAR
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM GR16_scratch1, $00FE
-   U16_COPY_IMM GR16_scratch2, $0004
+   U16_COPY_IMM var16scratch1, $00FE
+   U16_COPY_IMM var16scratch2, $0004
 
    lda #3
-   U16_ADD_A GR16_scratch1
-   ASSERT_VAR_U16_EQUALS_IMM $0100, $0101, GR16_scratch1
+   U16_ADD_A var16scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0100, $0101, var16scratch1
 
-   U16_SUB_VAR GR16_scratch1, GR16_scratch2
-   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FD, GR16_scratch1
+   U16_SUB_VAR var16scratch1, var16scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0101, $00FD, var16scratch1
 
-   U16_ADD_VAR GR16_scratch1, GR16_scratch2
-   ASSERT_VAR_U16_EQUALS_IMM $0102, $0101, GR16_scratch1
+   U16_ADD_VAR var16scratch1, var16scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $0102, $0101, var16scratch1
 
    U24_COPY_IMM var24scratch1, $00EEEE
    U24_ADD_IMM  var24scratch1, $222222
@@ -146,43 +152,43 @@ var24scratch2: .res 3
    ;
    ; U16_INC
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM GR16_scratch1, $00FE
-   U16_INC      GR16_scratch1
-   ASSERT_VAR_U16_EQUALS_IMM $0106, $00FF, GR16_scratch1
+   U16_COPY_IMM var16scratch1, $00FE
+   U16_INC      var16scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0106, $00FF, var16scratch1
 
-   U16_INC      GR16_scratch1
-   ASSERT_VAR_U16_EQUALS_IMM $0107, $0100, GR16_scratch1
+   U16_INC      var16scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0107, $0100, var16scratch1
 
    ;---------------------------------------------------------------------------
    ; TEST 03 (cmp)
    ;
    ; U16_CMP_IMM    U16_CMP_VAR
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM GR16_scratch1, $5555
+   U16_COPY_IMM var16scratch1, $5555
 
-   U16_CMP_IMM  GR16_scratch1, $5555
+   U16_CMP_IMM  var16scratch1, $5555
    ASSERT_BCS $0300 ; >=
    ASSERT_BEQ $0301 ; ==
 
-   U16_CMP_IMM  GR16_scratch1, $4466
+   U16_CMP_IMM  var16scratch1, $4466
    ASSERT_BCS $0302 ; >=
    ASSERT_BNE $0303 ; !=
 
-   U16_CMP_IMM  GR16_scratch1, $6644
+   U16_CMP_IMM  var16scratch1, $6644
    ASSERT_BCC $0304 ; <
 
-   U16_COPY_IMM GR16_scratch2, $5555
-   U16_CMP_VAR  GR16_scratch1, GR16_scratch2
+   U16_COPY_IMM var16scratch2, $5555
+   U16_CMP_VAR  var16scratch1, var16scratch2
    ASSERT_BCS $0310 ; >=
    ASSERT_BEQ $0311 ; ==
 
-   U16_COPY_IMM GR16_scratch2, $4466
-   U16_CMP_VAR  GR16_scratch1, GR16_scratch2
+   U16_COPY_IMM var16scratch2, $4466
+   U16_CMP_VAR  var16scratch1, var16scratch2
    ASSERT_BCS $0312 ; >=
    ASSERT_BNE $0313 ; !=
 
-   U16_COPY_IMM GR16_scratch2, $6644
-   U16_CMP_VAR  GR16_scratch1, GR16_scratch2
+   U16_COPY_IMM var16scratch2, $6644
+   U16_CMP_VAR  var16scratch1, var16scratch2
    ASSERT_BCC $0314 ; <
 
    ;---------------------------------------------------------------------------
@@ -190,12 +196,12 @@ var24scratch2: .res 3
    ;
    ; U16_ASL
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM GR16_scratch1, $0040
+   U16_COPY_IMM var16scratch1, $0040
    sec       ; set clear to prove that it doesn't affect anything
-   U16_ASL GR16_scratch1
-   ASSERT_VAR_U16_EQUALS_IMM $0400, $0080, GR16_scratch1
-   U16_ASL GR16_scratch1
-   ASSERT_VAR_U16_EQUALS_IMM $0401, $0100, GR16_scratch1
+   U16_ASL var16scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0400, $0080, var16scratch1
+   U16_ASL var16scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $0401, $0100, var16scratch1
 
    ;---------------------------------------------------------------------------
    ; TEST 08 (misc)
@@ -209,19 +215,19 @@ var24scratch2: .res 3
    TWOS_COMPLIMENT_A
    ASSERT_A_EQUALS_IMM $0801, $02
 
-   stz GR8_scratch1
-   stz GR8_scratch2
-   U8_MAX_VAR GR8_scratch1, GR8_scratch2
-   ASSERT_VAR_U8_EQUALS_IMM $0810, 0, GR8_scratch1
-   U8_COPY_IMM GR8_scratch2, 3
-   U8_MAX_VAR GR8_scratch1, GR8_scratch2
-   ASSERT_VAR_U8_EQUALS_IMM $0810, 3, GR8_scratch1
-   U8_COPY_IMM GR8_scratch2, 2
-   U8_MAX_VAR GR8_scratch1, GR8_scratch2
-   ASSERT_VAR_U8_EQUALS_IMM $0810, 3, GR8_scratch1
-   U8_COPY_IMM GR8_scratch2, 200
-   U8_MAX_VAR GR8_scratch1, GR8_scratch2
-   ASSERT_VAR_U8_EQUALS_IMM $0810, 200, GR8_scratch1
+   stz var8scratch1
+   stz var8scratch2
+   U8_MAX_VAR var8scratch1, var8scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 0, var8scratch1
+   U8_COPY_IMM var8scratch2, 3
+   U8_MAX_VAR var8scratch1, var8scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 3, var8scratch1
+   U8_COPY_IMM var8scratch2, 2
+   U8_MAX_VAR var8scratch1, var8scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 3, var8scratch1
+   U8_COPY_IMM var8scratch2, 200
+   U8_MAX_VAR var8scratch1, var8scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 200, var8scratch1
 
 
 

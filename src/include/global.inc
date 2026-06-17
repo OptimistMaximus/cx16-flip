@@ -27,8 +27,7 @@ ZP8_lineSkip            := $26
 ZP8_lineCount           := $27
 ZP8_lineStop            := $28
 ZP8_lineIndex           := $29
-ZP24_unused1            := $2A
-ZP24_unused2            := $2D
+ZP8_cacheRemaining      := $2A
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page) -- Program
@@ -41,13 +40,6 @@ ZP_VOLATILE_PTR         := $30
 ZP8_timerTrigger        := $32 ; state variable needed by speed timer
 ZP8_imageVSyncsElapsed  := $33 ; VSyncs elapsed while rendering current image
 GR16_origIrqHandler     := $34
-
-GR16_scratch1           := $36
-GR16_scratch2           := $38
-GR16_scratch3           := $3A
-GR8_scratch1            := $3C
-GR8_scratch2            := $3D
-GR8_scratch3            := $3E
 
 GR32_chunkSize          := $50 ; needed for padding logic
 GR16_chunkType          := $54
@@ -65,7 +57,9 @@ GR16_debugTimerVSyncs   := $62
 GR16_debugSpeedOverrun  := $64
 GR16_debugSpeedUnderrun := $66
 GR16_debugTimerValue    := $68
-GR8_biggestChunks       := $6A
+GR16_debugScratch1      := $6A
+GR16_debugScratch2      := $6C
+GR8_debugScratch1       := $6E
 .endif
 
 

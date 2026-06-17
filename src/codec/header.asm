@@ -3,6 +3,7 @@
 .import volatile32a
 .import volatile16a
 .import volatile16b
+.import volatile8a
 
 .import func_cache_discard_bytes
 .import func_cache_load_page
@@ -80,7 +81,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    varTemp       = volatile16a
    varDivisor    = volatile16b
-   varMultiplier = GR8_scratch1
+   varMultiplier = volatile8a
    varQuotient   = GR16_returnDetail ; the quotient is also our return code
 
    U8_COPY_IMM varMultiplier, 6

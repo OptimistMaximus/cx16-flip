@@ -49,6 +49,12 @@ u64data: .res 8, $00
 
 var32scratch1: .res 4, $00
 var24scratch1: .res 3, $00
+var16scratch1: .res 2, $00
+var16scratch2: .res 2, $00
+var16scratch3: .res 2, $00
+var8scratch1:  .res 1
+var8scratch2:  .res 1
+
 
 .segment "CODE"
 
@@ -100,16 +106,16 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ; U16_SLOW_MULTIPLY
    ; U16_SLOW_DIVIDE
    ;---------------------------------------------------------------------------
-   U16_COPY_IMM GR16_scratch1, $4444
-   U8_COPY_IMM GR8_scratch1, $03
-   U16_SLOW_MULTIPLY GR16_scratch2, GR16_scratch1, GR8_scratch1
-   ASSERT_VAR_U16_EQUALS_IMM $1000, $CCCC, GR16_scratch2 ; result
+   U16_COPY_IMM var16scratch1, $4444
+   U8_COPY_IMM var8scratch1, $03
+   U16_SLOW_MULTIPLY var16scratch2, var16scratch1, var8scratch1
+   ASSERT_VAR_U16_EQUALS_IMM $1000, $CCCC, var16scratch2 ; result
 
-   U16_COPY_IMM GR16_scratch1, $2222
-   U16_COPY_IMM GR16_scratch2, $0777
-   U16_SLOW_DIVIDE GR16_scratch3, GR16_scratch1, GR16_scratch2
-   ASSERT_VAR_U16_EQUALS_IMM $1001, $0004, GR16_scratch3 ; result
-   ASSERT_VAR_U16_EQUALS_IMM $1002, $0446, GR16_scratch1 ; remainder
+   U16_COPY_IMM var16scratch1, $2222
+   U16_COPY_IMM var16scratch2, $0777
+   U16_SLOW_DIVIDE var16scratch3, var16scratch1, var16scratch2
+   ASSERT_VAR_U16_EQUALS_IMM $1001, $0004, var16scratch3 ; result
+   ASSERT_VAR_U16_EQUALS_IMM $1002, $0446, var16scratch1 ; remainder
 
    ;---------------------------------------------------------------------------
    ; TEST 11 (file stuff)
@@ -184,18 +190,18 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
       jsr func_cache_init
       OPEN_INPUTSTREAM fn_cache11, fn_cache11_end
       SIP_INTO_A
-      sta GR8_scratch2
+      sta var8scratch2
       SIP_INTO_U32 var32scratch1
       SIP_INTO_U24 var24scratch1
-      SIP_INTO_U16 GR16_scratch1
-      SIP_INTO_U8 GR8_scratch1
+      SIP_INTO_U16 var16scratch1
+      SIP_INTO_U8 var8scratch1
       CLOSE_INPUTSTREAM
 
-      ASSERT_VAR_U8_EQUALS_IMM  $1300, $AA, GR8_scratch2
+      ASSERT_VAR_U8_EQUALS_IMM  $1300, $AA, var8scratch2
       ASSERT_VAR_U32_EQUALS_IMM $1301, $00,$112233, var32scratch1
       ASSERT_VAR_U24_EQUALS_IMM $1302, $445566, var24scratch1
-      ASSERT_VAR_U16_EQUALS_IMM $1303, $7788, GR16_scratch1
-      ASSERT_VAR_U8_EQUALS_IMM  $1304, $99, GR8_scratch1
+      ASSERT_VAR_U16_EQUALS_IMM $1303, $7788, var16scratch1
+      ASSERT_VAR_U8_EQUALS_IMM  $1304, $99, var8scratch1
    .endscope
 
    ;---------------------------------------------------------------------------

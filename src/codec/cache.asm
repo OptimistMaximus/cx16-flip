@@ -139,12 +139,10 @@ cache_upper = $7180
 ; and our cache is 256 bytes.
 ;------------------------------------------------------------------------------
 .proc sub_handle_remaining_lt: near
-   varRemaining = GR8_scratch1
-
-   sta varRemaining
+   sta ZP8_cacheRemaining
    sec                      ; the new request will be the original request
    lda ZP8_cacheRequest     ; less the remaining amount
-   sbc varRemaining
+   sbc ZP8_cacheRemaining
    sta ZP8_cacheRequest
 
    ldx ZP16_cachePointer

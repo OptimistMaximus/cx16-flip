@@ -4,6 +4,9 @@
 .import func_load_palette
 .import func_cache_load_page
 .import volatile16a
+.import volatile8a
+.import volatile8b
+.import volatile8c
 
 .segment "CODE"
 
@@ -84,9 +87,9 @@
 
 .proc sub_handle_color_packet: near
 
-   tempVeraRed    = GR8_scratch1
-   tempVeraGreen  = GR8_scratch2
-   colorMode      = GR8_scratch3
+   tempVeraRed    = volatile8a
+   tempVeraGreen  = volatile8b
+   colorMode      = volatile8c
 
    sta colorMode
 

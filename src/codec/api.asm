@@ -2,6 +2,10 @@
 .export volatile32a
 .export volatile16a
 .export volatile16b
+.export volatile8a
+.export volatile8b
+.export volatile8c
+
 .export cache_lower
 .export cache_upper
 
@@ -67,6 +71,9 @@ volatile24a: .res 3, $24
 volatile32a: .res 4, $32
 volatile16a: .res 2, $16
 volatile16b: .res 2, $16
+volatile8a:  .res 1, $08
+volatile8b:  .res 1, $08
+volatile8c:  .res 1, $08
 volatiles_end:
 
 vram_addr_table_lo:

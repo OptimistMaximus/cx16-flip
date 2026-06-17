@@ -1,12 +1,13 @@
 #!/bin/sh
 
 top=`pwd`
-version=080
-program=$top/zzz/FLIP${version}.PRG
-dirs="fps-0E fps-0F"
+
+program=$top/zzz/FLIP.PRG
 dirs="fps-20-up"
 dirs="fps-10-1F"
+dirs="fps-04"
 
+make zzz/FLIP.PRG
 cd zzz
 for dir in $dirs ; do
   for file in $top/images/$dir/*.FLI ; do
