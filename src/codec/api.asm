@@ -1,8 +1,34 @@
+.export volatile24a
+.export volatile32a
+.export volatile16a
+.export volatile16b
+.export cache_lower
+.export cache_upper
+
+.import func_init_vram_table
+.import func_vera_setup
+.import func_vera_restore
+.import func_cache_init
+.import func_slurp_header
+.import func_slurp_frame
+
 .ifdef FLIPDLL
 .segment "DLL_API"
 .else
 .segment "CODE"
 .endif
+
+;==============================================================================
+; PAGE-ALIGNED CACHE
+;
+; The caching algorithm is optimized to work only in the scenario where the
+; the cache is page-aligned.  This is most easily acheived by making sure it
+; is the very first thing in the DLL_API segment.  This works perfectly
+; because it means the subroutine entry points can be situated immediately
+; after, and they will exist in the advertised offsets.
+;==============================================================================
+cache_lower: .res 128, $00
+cache_upper: .res 128, $00
 
 ;==============================================================================
 ; VIDEO DRIVER ENTRY POINTS (9 bytes)
@@ -16,18 +42,13 @@ jmp video_driver_next
 jmp video_driver_done
 entries_end:
 
-.import func_init_vram_table
-.import func_vera_setup
-.import func_vera_restore
-.import func_cache_init
-.import func_slurp_header
-.import func_slurp_frame
-
 .include "../include/global.inc"
 .include "../include/math.inc"
 
 .ifdef FLIPDLL
 .segment "CODE"
+.else
+.include "../include/cache.inc"
 .endif
 
 ;==============================================================================
@@ -41,31 +62,12 @@ entries_end:
 ; Note, the variable labels are exported only for purpose of making them
 ; available in other assembly files that are part of the FLI Player library.
 ;==============================================================================
-.export volatile24a
-.export volatile32a
-.export volatile16a
-.export volatile16b
-
 volatiles:
 volatile24a: .res 3, $24
 volatile32a: .res 4, $32
 volatile16a: .res 2, $16
 volatile16b: .res 2, $16
 volatiles_end:
-
-;==============================================================================
-; PAGE-ALIGNED CACHE
-;
-; The caching algorithm is optimized to work only in the scenario where the
-; the cache is page-aligned.  We could do that with linker directives but
-; to keep things simple we'll just do it the old-fashioned way and make sure
-; the variable declarations above this (plus the entry points) add up to
-; exactly 256.
-;==============================================================================
-padding: .res 256 - (entries_end - entries) - (volatiles_end - volatiles), $AA
-
-cache_lower: .res 128, $00
-cache_upper: .res 128, $00
 
 vram_addr_table_lo:
 .byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0

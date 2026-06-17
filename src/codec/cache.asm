@@ -2,6 +2,14 @@
 .export func_cache_load_page
 .export func_cache_read_into_vram
 
+.ifdef FLIPDLL
+.import cache_lower
+.import cache_upper
+.else
+cache_lower = $7100    ; special hack to facilitate testing!
+cache_upper = $7180
+.endif
+
 .segment "CODE"
 
 .include "../include/global.inc"
@@ -36,7 +44,7 @@
 .proc func_cache_init: near
    lda #$FF
    sta ZP16_cachePointer+0
-   lda #>CONST_cacheLowerAddr
+   lda #>cache_lower
    sta ZP16_cachePointer+1
    stz GR8_cacheStatus
    rts
@@ -78,10 +86,10 @@
       phy
          lda GR8_cacheStatus
          bne @read_error
-         SMACPTR CONST_cacheLowerAddr, 128
+         SMACPTR cache_lower, 128
          lda GR8_cacheStatus
          bne @read_error
-         SMACPTR CONST_cacheUpperAddr, 128
+         SMACPTR cache_upper, 128
 @read_error:
       ply
    plx
@@ -141,7 +149,7 @@
 
    ldx ZP16_cachePointer
 @loop:
-   lda CONST_cacheLowerAddr,x
+   lda cache_lower,x
    sta VERA_DATA0
    inx
    bne @loop
@@ -173,7 +181,7 @@
    adc ZP8_cacheRequest
    sta ZP8_cacheStop
 @loop:
-   lda CONST_cacheLowerAddr,x
+   lda cache_lower,x
    sta VERA_DATA0
    inx
    cpx ZP8_cacheStop

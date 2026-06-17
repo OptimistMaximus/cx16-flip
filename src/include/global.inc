@@ -9,9 +9,9 @@ ENABLE_DEBUG_TIMER = 1
 ; FLI Player Dynamically Loadable Library Symbols
 ;------------------------------------------------------------------------------
 FLIP_DLL_LOAD_ADDR  := $7000
-FLIP_DLL_FUNC_OPEN  := FLIP_DLL_LOAD_ADDR + 0
-FLIP_DLL_FUNC_NEXT  := FLIP_DLL_LOAD_ADDR + 3
-FLIP_DLL_FUNC_CLOSE := FLIP_DLL_LOAD_ADDR + 6
+FLIP_DLL_FUNC_OPEN  := FLIP_DLL_LOAD_ADDR + $100
+FLIP_DLL_FUNC_NEXT  := FLIP_DLL_LOAD_ADDR + $103
+FLIP_DLL_FUNC_CLOSE := FLIP_DLL_LOAD_ADDR + $106
 
 
 ;------------------------------------------------------------------------------
@@ -27,6 +27,8 @@ ZP8_lineSkip            := $26
 ZP8_lineCount           := $27
 ZP8_lineStop            := $28
 ZP8_lineIndex           := $29
+ZP24_unused1            := $2A
+ZP24_unused2            := $2D
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page) -- Program
@@ -35,17 +37,17 @@ ZP8_lineIndex           := $29
 ; or for performance reasons.
 ;------------------------------------------------------------------------------
 
-ZP8_timerTrigger        := $2A ; state variable needed by speed timer
-ZP8_imageVSyncsElapsed  := $2B ; VSyncs elapsed while rendering current image
-ZP_VOLATILE_PTR         := $2C
-GR16_origIrqHandler     := $2E
+ZP_VOLATILE_PTR         := $30
+ZP8_timerTrigger        := $32 ; state variable needed by speed timer
+ZP8_imageVSyncsElapsed  := $33 ; VSyncs elapsed while rendering current image
+GR16_origIrqHandler     := $34
 
-GR16_scratch1           := $34
-GR16_scratch2           := $46
-GR16_scratch3           := $48
-GR8_scratch1            := $4D
-GR8_scratch2            := $4E
-GR8_scratch3            := $4F
+GR16_scratch1           := $36
+GR16_scratch2           := $38
+GR16_scratch3           := $3A
+GR8_scratch1            := $3C
+GR8_scratch2            := $3D
+GR8_scratch3            := $3E
 
 GR32_chunkSize          := $50 ; needed for padding logic
 GR16_chunkType          := $54

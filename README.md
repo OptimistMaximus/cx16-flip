@@ -317,7 +317,7 @@ now, there is only an "FLI" implementation.
 Supposing the library is configured to load into memory offset $7000, the entry points
 are as follows.
 
-### $7000 video_driver_open
+### $7100 video_driver_open
 
 This subroutine has a pre-requisite that an input stream has been opened to
 the image data to be processed, and that the current stream offset is at
@@ -339,7 +339,7 @@ on screen.  This is the default rate that should apply to every frame, unless
 explicitly overridden.  If the video format has no concept of frame rate, then the
 return value will be `$0000`
 
-### $7003 video_driver_next
+### $7103 video_driver_next
 
 This subroutine has a pre-requisite that `video_driver_init` has been called
 once and only once, and returned with success.  It will read from the input
@@ -370,7 +370,7 @@ simply no more; non-zero indicates there is no next frame because something
 bad has happened during processing of the current frame.
 
 
-### $7006 video_driver_close
+### $7106 video_driver_close
 
 This subroutine has a pre-requisite that `video_driver_open` has been called
 once. This routine cleans up or undoes whatever state was established by
