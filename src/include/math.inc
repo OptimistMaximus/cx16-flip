@@ -302,4 +302,12 @@
    inc
 .endmacro
 
+.macro U8_MAX_VAR targetAddr, otherAddr
+   lda otherAddr
+   cmp targetAddr
+   bcc :+
+   sta targetAddr
+:
+.endmacro
+
 .endif

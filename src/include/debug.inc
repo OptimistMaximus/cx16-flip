@@ -111,11 +111,7 @@
 
 .macro DEBUG_TIMER_REGISTER_BIGGEST_CHUNKS
 .ifdef ENABLE_DEBUG_TIMER
-   lda GR8_chunkCount
-   cmp GR8_biggestChunks
-   bcc :+
-   sta GR8_biggestChunks
-:
+   U8_MAX_VAR GR8_biggestChunks, GR8_chunkCount
 .endif
 .endmacro
 

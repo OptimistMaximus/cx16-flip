@@ -4,6 +4,8 @@
 .export func_load_image
 .export func_init_vram_table
 
+.import volatile24a
+
 .segment "CODE"
 
 .include "../include/global.inc"
@@ -163,7 +165,7 @@
 ; rendering chunks.
 ;==============================================================================
 .proc func_init_vram_table: near
-   scratch = GR24_scratch1
+   scratch = volatile24a
    U24_COPY_IMM scratch, (VRAM_BUFF_IMAGE | $100000)
    ldx #0
 @loop:

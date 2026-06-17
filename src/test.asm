@@ -1,5 +1,6 @@
 .org $080D            ; specify where in memory our code will live
 
+.import func_load_library
 .import test_suite_0
 .import test_suite_1
 .import test_suite_2

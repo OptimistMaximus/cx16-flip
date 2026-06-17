@@ -228,7 +228,7 @@ Good FLI files for regression test:
   - RRHOOD
   - POND
   - PUZZLE5
-  
+
 - Files with BLACK (AA)
   - MOONWALK
 
@@ -241,9 +241,9 @@ Good FLI files for regression test:
 
 - Files with padding
   - BOOKSPIN
-  - BA1  
-  
-  
+  - BA1
+
+
   (align to even boundaries)
 - MOONWALK (BLACK)
 - BA1 (excessive padding, well beyond what the spec suggests)
@@ -278,12 +278,12 @@ Bad FLI files:
   will be in cache since runs are never more than 7F) ... but
   this might end up being too much overhead.  Need to do some
   experimentation and benchmarking.
-  
+
 ## LOADABLE LIBRARY
 
 The "flip.dll" file is somewhat of a "dynamically loadable library" in the general
 sense. The main program loads this at runtime into a specific memory offset (declared in the `dll.cfg` file).  The first 9 bytes hold entry points for the
-library's public interface.  The main program can then call these subroutines to 
+library's public interface.  The main program can then call these subroutines to
 drive basic video rendering.
 
 The library must be in RAM (not ROM), since it uses offsets within itself for
@@ -326,13 +326,13 @@ the very first byte of the image's binary format.
 *Parameters:*
 
   none
-  
+
 *Side Effects*
 
   - .A holds the return code
   - .X holds the return code detail (low)
   - .Y holds the return code detail (high)
-  
+
 When the return code indicates success, the return detail indicates the frame rate,
 expressed as the number of sixtieths of a second that the frame should be shown
 on screen.  This is the default rate that should apply to every frame, unless
@@ -353,7 +353,7 @@ that the default frame rate established via `video_driver_init` applies.
 
 *Parameters:*
   none
-  
+
 *Side Effects*
   - .A holds the return code
   - .X holds the return code detail (low)
@@ -365,7 +365,7 @@ Note that the return code will always be zero (success) when the Carry bit
 indicates that another frame exists.  So for the success case, it is enough
 to check if the Carry bit is clear. If the Carry bit is set, though, the
 return code distinguishes why there is no next frame: zero means that all
-frames in the input stream have been processed successfully, and there's 
+frames in the input stream have been processed successfully, and there's
 simply no more; non-zero indicates there is no next frame because something
 bad has happened during processing of the current frame.
 
@@ -379,10 +379,9 @@ the `video_driver_open` subroutine.
 *Parameters:*
 
   none
-  
+
 *Side Effects*
 
   - .A holds the return code
   - .X holds the return code detail (low)
   - .Y holds the return code detail (high)
-  

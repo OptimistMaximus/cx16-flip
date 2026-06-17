@@ -20,7 +20,7 @@
    stz ZP8_imageVSyncsElapsed     ; i.e. start the frame timer
    SIP_INTO_U8 GR8_chunkCount     ; low byte of chunk count
    SIP_INTO_OBLIVION 9            ; high byte of chunk count & remaining 8
-   
+
    DEBUG_TIMER_REGISTER_BIGGEST_CHUNKS
 
    lda GR8_chunkCount             ; zero-chunk frames are a common way to
@@ -48,7 +48,7 @@
    beq @success
    rts
 @success:
-   
+
    lda ZP8_lineSkip
    sta CONST_skipArray,y          ; squirrel the line skip
    lda ZP8_lineCount

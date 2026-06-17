@@ -2,9 +2,8 @@ SOURCE := ./src
 RESDIR := $(SOURCE)/resources
 INCDIR := $(SOURCE)/include
 
-VERSION := 080
-PROGRAM := FLIP$(VERSION).PRG
-LIBRARY := FLIP$(VERSION).DLL
+PROGRAM := FLIP.PRG
+LIBRARY := FLIP.DLL
 
 .PHONY: run debug clean test dll
 
@@ -67,7 +66,7 @@ test: zzz/TEST.PRG $(TEST_RESOURCES)
 
 run: zzz/$(PROGRAM) zzz/$(LIBRARY) $(MAIN_RESOURCES)
 	cd zzz && x16emu -run -prg $(PROGRAM)
-	ls -l $<
+	ls -l zzz/$(PROGRAM) zzz/$(LIBRARY)
 
 dll: zzz/$(LIBRARY)
 
@@ -141,11 +140,8 @@ zzz/test.lib: $(LIB_TEST_OBJECTS) | zzz
 #       cl65 -t cx16 -o zzz/bar.o -c src/bar.asm
 #
 #------------------------------------------------------------------
-zzz/core/%.so: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
-	cl65 -t none --cpu 65c02 -C dll.cfg -o $@ -c $<
-
 zzz/codec/%.so: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
-	cl65 -t none --cpu 65c02 -C dll.cfg -D FLIPDLL=1 -o $@ -c $<
+	cl65 -t none --cpu 65c02 -C dll.cfg --asm-define FLIPDLL -o $@ -c $<
 
 zzz/core/%.o: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
 	cl65 -t cx16 -o $@ -c $<

@@ -3,6 +3,7 @@
 
 .import func_load_palette
 .import func_cache_load_page
+.import volatile16a
 
 .segment "CODE"
 
@@ -75,9 +76,9 @@
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
    SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
-   SIP_INTO_U16 GR16_scratch1
+   SIP_INTO_U16 volatile16a
 
-   ldx GR16_scratch1
+   ldx volatile16a
    rts
 .endproc
 
@@ -88,7 +89,7 @@
    colorMode      = GR8_scratch3
 
    sta colorMode
-   
+
    SIP_INTO_A                     ; .A holds skip count, where 0 means 0
    cmp #0
    beq @zero_skip
@@ -141,7 +142,7 @@ copy_loop:
       lsr
       lsr
       lsr
-   
+
    @mode_handled:
 
    ora tempVeraGreen

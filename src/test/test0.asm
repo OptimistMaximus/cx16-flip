@@ -25,6 +25,10 @@ test_bb_cheeky:   ; i.e. someone's trying a buffer overrun attack
 test_bb_expect_found: .asciiz "aa,r"
 test_bb_expect_default: .asciiz "image.fli,r"
 
+.segment "DATA"
+var24scratch1: .res 3
+var24scratch2: .res 3
+
 .segment "CODE"
 
 .include "../include/global.inc"
@@ -64,11 +68,11 @@ test_bb_expect_default: .asciiz "image.fli,r"
    ASSERT_VAR_U16_EQUALS_IMM $0000, $0000, GR16_scratch1
 
    lda #$55
-   sta GR24_scratch1+0
-   sta GR24_scratch1+1
-   sta GR24_scratch1+2
-   U24_STZ GR24_scratch1
-   ASSERT_VAR_U24_EQUALS_IMM $0001, $000000, GR24_scratch1
+   sta var24scratch1+0
+   sta var24scratch1+1
+   sta var24scratch1+2
+   U24_STZ var24scratch1
+   ASSERT_VAR_U24_EQUALS_IMM $0001, $000000, var24scratch1
 
    ;---------------------------------------------------------------------------
    ; TEST 00 (simple macros that everything else depends upon)
@@ -85,9 +89,9 @@ test_bb_expect_default: .asciiz "image.fli,r"
    U16_COPY_IMM GR16_scratch1, $AABB
    ASSERT_VAR_U16_EQUALS_IMM $0011, $AABB, GR16_scratch1
 
-   U24_STZ GR24_scratch1
-   U24_COPY_IMM GR24_scratch1, $AABBCC
-   ASSERT_VAR_U24_EQUALS_IMM $0012, $AABBCC, GR24_scratch1
+   U24_STZ var24scratch1
+   U24_COPY_IMM var24scratch1, $AABBCC
+   ASSERT_VAR_U24_EQUALS_IMM $0012, $AABBCC, var24scratch1
 
    ;---------------------------------------------------------------------------
    ; TEST 00 (simple macros that everything else depends upon)
@@ -106,10 +110,10 @@ test_bb_expect_default: .asciiz "image.fli,r"
    U16_COPY_VAR GR16_scratch1, GR16_scratch2
    ASSERT_VAR_U16_EQUALS_IMM $0021, $AABB, GR16_scratch1
 
-   U24_STZ      GR24_scratch1
-   U24_COPY_IMM GR32_scratch1, $AABB          ; hack: use lower 24 bits of this
-   U24_COPY_VAR GR24_scratch1, GR32_scratch1  ; instead of declaring a new var
-   ASSERT_VAR_U24_EQUALS_IMM $0022, $AABB, GR24_scratch1
+   U24_STZ      var24scratch1
+   U24_COPY_IMM var24scratch2, $AABB
+   U24_COPY_VAR var24scratch1, var24scratch2
+   ASSERT_VAR_U24_EQUALS_IMM $0022, $AABB, var24scratch1
 
    ;---------------------------------------------------------------------------
    ; TEST 01 (add, subtract)
@@ -132,9 +136,9 @@ test_bb_expect_default: .asciiz "image.fli,r"
    U16_ADD_VAR GR16_scratch1, GR16_scratch2
    ASSERT_VAR_U16_EQUALS_IMM $0102, $0101, GR16_scratch1
 
-   U24_COPY_IMM GR24_scratch1, $00EEEE
-   U24_ADD_IMM  GR24_scratch1, $222222
-   ASSERT_VAR_U24_EQUALS_IMM $0110, $231110, GR24_scratch1
+   U24_COPY_IMM var24scratch1, $00EEEE
+   U24_ADD_IMM  var24scratch1, $222222
+   ASSERT_VAR_U24_EQUALS_IMM $0110, $231110, var24scratch1
 
 
    ;---------------------------------------------------------------------------
@@ -204,6 +208,22 @@ test_bb_expect_default: .asciiz "image.fli,r"
 
    TWOS_COMPLIMENT_A
    ASSERT_A_EQUALS_IMM $0801, $02
+
+   stz GR8_scratch1
+   stz GR8_scratch2
+   U8_MAX_VAR GR8_scratch1, GR8_scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 0, GR8_scratch1
+   U8_COPY_IMM GR8_scratch2, 3
+   U8_MAX_VAR GR8_scratch1, GR8_scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 3, GR8_scratch1
+   U8_COPY_IMM GR8_scratch2, 2
+   U8_MAX_VAR GR8_scratch1, GR8_scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 3, GR8_scratch1
+   U8_COPY_IMM GR8_scratch2, 200
+   U8_MAX_VAR GR8_scratch1, GR8_scratch2
+   ASSERT_VAR_U8_EQUALS_IMM $0810, 200, GR8_scratch1
+
+
 
 
 

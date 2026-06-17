@@ -1,3 +1,21 @@
+.ifdef FLIPDLL
+.segment "DLL_API"
+.else
+.segment "CODE"
+.endif
+
+;==============================================================================
+; VIDEO DRIVER ENTRY POINTS (9 bytes)
+;
+; Per the library's public API, the first 9 bytes of the library MUST be these
+; three entry points.
+;==============================================================================
+entries:
+jmp video_driver_init
+jmp video_driver_next
+jmp video_driver_done
+entries_end:
+
 .import func_init_vram_table
 .import func_vera_setup
 .import func_vera_restore
@@ -5,22 +23,35 @@
 .import func_slurp_header
 .import func_slurp_frame
 
-.segment "DLL_API"
-
 .include "../include/global.inc"
 .include "../include/math.inc"
 
-;==============================================================================
-; VIDEO DRIVER ENTRY POINTS
-;
-; Per the library's public API, the first 9 bytes of the library MUST be these
-; three entry points.
-;==============================================================================
-jmp video_driver_init
-jmp video_driver_next
-jmp video_driver_done
+.ifdef FLIPDLL
+.segment "CODE"
+.endif
 
-.res (256 - 9), $AA ; unused for now, $09-
+;==============================================================================
+; VOLATILE SCRATCH VARIABLES
+;
+; These can be used by any subroutine, but since any subroutine can use them,
+; it must be under the assumption that they are "volatile" and their contents
+; might change if the subroutine does a JSR or JMP to any other subroutine in
+; this library.
+;
+; Note, the variable labels are exported only for purpose of making them
+; available in other assembly files that are part of the FLI Player library.
+;==============================================================================
+.export volatile24a
+.export volatile32a
+.export volatile16a
+.export volatile16b
+
+volatiles:
+volatile24a: .res 3, $24
+volatile32a: .res 4, $32
+volatile16a: .res 2, $16
+volatile16b: .res 2, $16
+volatiles_end:
 
 ;==============================================================================
 ; PAGE-ALIGNED CACHE
@@ -28,28 +59,13 @@ jmp video_driver_done
 ; The caching algorithm is optimized to work only in the scenario where the
 ; the cache is page-aligned.  We could do that with linker directives but
 ; to keep things simple we'll just do it the old-fashioned way and make sure
-; the variable declarations above this (plus the entry points) add up to 
+; the variable declarations above this (plus the entry points) add up to
 ; exactly 256.
 ;==============================================================================
-cache_lower:
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+padding: .res 256 - (entries_end - entries) - (volatiles_end - volatiles), $AA
 
-cache_upper:
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
-.byte $CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$CC
+cache_lower: .res 128, $00
+cache_upper: .res 128, $00
 
 vram_addr_table_lo:
 .byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
@@ -103,7 +119,7 @@ vram_addr_table_hi:
    lda GR8_returnCode
    ldx GR16_returnDetail+0
    ldy GR16_returnDetail+1
-   rts   
+   rts
 .endproc
 
 .proc video_driver_next: near

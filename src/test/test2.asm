@@ -70,7 +70,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_header_x, 6, '0'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3001, $48, GR8_speedLimitVSyncs ; $55 * 6 / 7 = $48
+   ASSERT_VAR_U8_EQUALS_IMM $3001, $00, GR8_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3002, $48, GR16_returnDetail ; $55 * 6 / 7 = $48
 
    OPEN_INPUTSTREAM_R fn_header_x, 6, '1'
    jsr func_slurp_header
@@ -81,7 +82,8 @@ VRAM_IMAGE_LINE_3  := $003C0
    OPEN_INPUTSTREAM_R fn_header_x, 6, '2'
    jsr func_slurp_header
    CLOSE_INPUTSTREAM
-   ASSERT_VAR_U8_EQUALS_IMM $3021, $FE, GR8_speedLimitVSyncs
+   ASSERT_VAR_U8_EQUALS_IMM $3001, $00, GR8_returnCode
+   ASSERT_VAR_U16_EQUALS_IMM $3021, $FE, GR16_returnDetail
 
    ;---------------------------------------------------------------------------
    ; TEST 31 - handle_invalid

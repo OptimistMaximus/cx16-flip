@@ -47,6 +47,9 @@ u24data: .res 3, $00
 u32data: .res 4, $00
 u64data: .res 8, $00
 
+var32scratch1: .res 4, $00
+var24scratch1: .res 3, $00
+
 .segment "CODE"
 
 .include "../include/cache.inc"
@@ -182,15 +185,15 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
       OPEN_INPUTSTREAM fn_cache11, fn_cache11_end
       SIP_INTO_A
       sta GR8_scratch2
-      SIP_INTO_U32 GR32_scratch1
-      SIP_INTO_U24 GR24_scratch1
+      SIP_INTO_U32 var32scratch1
+      SIP_INTO_U24 var24scratch1
       SIP_INTO_U16 GR16_scratch1
       SIP_INTO_U8 GR8_scratch1
       CLOSE_INPUTSTREAM
 
       ASSERT_VAR_U8_EQUALS_IMM  $1300, $AA, GR8_scratch2
-      ASSERT_VAR_U32_EQUALS_IMM $1301, $00,$112233, GR32_scratch1
-      ASSERT_VAR_U24_EQUALS_IMM $1302, $445566, GR24_scratch1
+      ASSERT_VAR_U32_EQUALS_IMM $1301, $00,$112233, var32scratch1
+      ASSERT_VAR_U24_EQUALS_IMM $1302, $445566, var24scratch1
       ASSERT_VAR_U16_EQUALS_IMM $1303, $7788, GR16_scratch1
       ASSERT_VAR_U8_EQUALS_IMM  $1304, $99, GR8_scratch1
    .endscope

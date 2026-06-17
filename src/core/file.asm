@@ -1,12 +1,17 @@
 .export func_open_inputstream
 .export func_close_inputstream
-
-.segment "CODE"
+.export func_load_library
 
 .include "../include/kernal.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/petscii.inc"
+
+.segment "RODATA"
+lib_fn: .asciiz "flip.dll,r"
+lib_fn_end:
+
+.segment "CODE"
 
    FILE_LOGICAL_NUMBER := 1 ; arbitrary logical file number
    FILE_DEVICE_FLOPPY  := 8 ; 8 is the "floppy" SD Card
@@ -43,3 +48,33 @@
    lda #FILE_LOGICAL_NUMBER ; A is the logical file number
    jmp KERNAL_CLOSE         ; close the file
 .endproc
+
+;==============================================================================
+; func_load_library
+;
+; This optimistically assumes that there will be no I/O error, such that the
+; only reason for READST to return non-zero will be end-of-file.
+;==============================================================================
+varLoadAddr: .word $0000
+varReadCount: .word $0000
+.proc func_load_library: near
+   lda #(lib_fn_end - lib_fn)
+   ldx #<lib_fn
+   ldy #>lib_fn
+   jsr func_open_inputstream
+   U16_COPY_IMM varLoadAddr, FLIP_DLL_LOAD_ADDR
+@load_loop:
+   clc
+   lda #0
+   ldx varLoadAddr+0
+   ldy varLoadAddr+1
+   jsr KERNAL_MACPTR                       ; read a chunk of bytes into memory
+   stx varReadCount+0
+   sty varReadCount+1
+   U16_ADD_VAR varLoadAddr, varReadCount   ; update the load addr
+   jsr KERNAL_READST                       ; keep reading until "error"
+   beq @load_loop
+   jmp func_close_inputstream
+.endproc
+
+

@@ -6,6 +6,15 @@
 ENABLE_DEBUG_TIMER = 1
 
 ;------------------------------------------------------------------------------
+; FLI Player Dynamically Loadable Library Symbols
+;------------------------------------------------------------------------------
+FLIP_DLL_LOAD_ADDR  := $7000
+FLIP_DLL_FUNC_OPEN  := FLIP_DLL_LOAD_ADDR + 0
+FLIP_DLL_FUNC_NEXT  := FLIP_DLL_LOAD_ADDR + 3
+FLIP_DLL_FUNC_CLOSE := FLIP_DLL_LOAD_ADDR + 6
+
+
+;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page) -- Library
 ;
 ; These MUST be in Zero Page, either because of addressing mode requirements,
@@ -31,11 +40,9 @@ ZP8_imageVSyncsElapsed  := $2B ; VSyncs elapsed while rendering current image
 ZP_VOLATILE_PTR         := $2C
 GR16_origIrqHandler     := $2E
 
-GR32_scratch1           := $30
 GR16_scratch1           := $34
 GR16_scratch2           := $46
 GR16_scratch3           := $48
-GR24_scratch1           := $4A
 GR8_scratch1            := $4D
 GR8_scratch2            := $4E
 GR8_scratch3            := $4F
@@ -56,7 +63,7 @@ GR16_debugTimerVSyncs   := $62
 GR16_debugSpeedOverrun  := $64
 GR16_debugSpeedUnderrun := $66
 GR16_debugTimerValue    := $68
-GR8_biggestChunks       := $6A 
+GR8_biggestChunks       := $6A
 .endif
 
 
