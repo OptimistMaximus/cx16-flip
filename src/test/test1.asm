@@ -58,12 +58,12 @@ var8scratch2:  .res 1
 
 .segment "CODE"
 
-.include "../include/cache.inc"
+.include "../codec/cache.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
-.include "../include/video.inc"
+.include "../codec/video.inc"
 .include "../include/xunit.inc"
 
 VRAM_IMAGE_LINE_0  := $00000

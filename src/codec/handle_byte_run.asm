@@ -5,9 +5,9 @@
 
 .segment "CODE"
 
-.include "../include/cache.inc"
+.include "./cache.inc"
 .include "../include/global.inc"
-.include "../include/video.inc"
+.include "./video.inc"
 
 .proc handle_byte_run: near
    SET_VRAM_ADDR_FOR_FULL_LINE

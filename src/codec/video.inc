@@ -1,9 +1,9 @@
 .ifndef VIDEO_INC
         VIDEO_INC = 1
 
-.include "./global.inc"
-.include "./math.inc"
-.include "./vera.inc"
+.include "../include/global.inc"
+.include "../include/math.inc"
+.include "../include/vera.inc"
 
 VRAM_IMAGE        := $00000 ; $00000-$0F9FF 320x200 @ 8bpp
 VRAM_BUFF_IMAGE   := $0FA00 ; $0FA00-$1F3FF 320x200 @ 8bpp

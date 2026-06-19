@@ -8,10 +8,10 @@
 
 .segment "CODE"
 
-.include "../include/cache.inc"
+.include "./cache.inc"
 .include "../include/global.inc"
 .include "../include/vera.inc"
-.include "../include/video.inc"
+.include "./video.inc"
 
 ;==============================================================================
 ; handle_frame_type

@@ -3,9 +3,9 @@
 
 .import func_print_hex
 
-.include "./global.inc"
-.include "./math.inc"
-.include "./math2.inc"
+.include "../include/global.inc"
+.include "../include/math.inc"
+.include "../include/math2.inc"
 
 ; The debug timer assumes your IRQ Handler is incrementing a 16-bit
 ; value ZP16_vsyncs_total on every VERA interrupt for VSync

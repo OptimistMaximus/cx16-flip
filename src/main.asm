@@ -20,7 +20,7 @@
 .segment "ONCE"
 .segment "CODE"
 
-.include "include/debug.inc"
+.include "core/debug.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"
 .include "include/math.inc"

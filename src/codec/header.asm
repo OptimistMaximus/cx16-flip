@@ -1,14 +1,14 @@
 .export func_slurp_header
 
-.import volatile32a
-.import volatile16a
-.import volatile16b
-.import volatile8a
+.import v32_scratch1
+.import v16_scratch1
+.import v16_scratch2
+.import v8_scratch1
 
 .import func_cache_discard_bytes
 .import func_cache_load_page
 
-.include "../include/cache.inc"
+.include "./cache.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
@@ -26,7 +26,7 @@ FILE_TYPE_FLI := $AF11
 ;==============================================================================
 .proc func_slurp_header: near
 
-   varFileType = volatile16a  ; can be repurposed after file type validation
+   varFileType = v16_scratch1  ; can be repurposed after file type validation
 
    SIP_INTO_OBLIVION 4        ; dword size (file size)
    SIP_INTO_U16 varFileType   ;  word type (file type)
@@ -58,7 +58,7 @@ FILE_TYPE_FLI := $AF11
    ; follow-up math is all 16-bit (it will never look into the upper 2 bytes
    ; of the speed value)
    ;---------------------------------------------------------------------------
-   varSpeed = volatile32a
+   varSpeed = v32_scratch1
    SIP_INTO_U32 varSpeed     ; dword speed
    U16_CMP_IMM varSpeed+2, 0   ; verify upper 2 bytes are zero
    beq @speed_is_cool
@@ -79,9 +79,9 @@ FILE_TYPE_FLI := $AF11
    ; be even less than 6/7 of that (which is less than 256). So, we only need
    ; to squirrel away the lower byte for future runtime calculations.
    ;---------------------------------------------------------------------------
-   varTemp       = volatile16a
-   varDivisor    = volatile16b
-   varMultiplier = volatile8a
+   varTemp       = v16_scratch1
+   varDivisor    = v16_scratch2
+   varMultiplier = v8_scratch1
    varQuotient   = GR16_returnDetail ; the quotient is also our return code
 
    U8_COPY_IMM varMultiplier, 6

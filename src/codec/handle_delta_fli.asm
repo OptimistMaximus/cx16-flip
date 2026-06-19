@@ -5,10 +5,10 @@
 
 .segment "CODE"
 
-.include "../include/cache.inc"
+.include "./cache.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
-.include "../include/video.inc"
+.include "./video.inc"
 
 .proc handle_delta_fli: near
    SIP_INTO_U8 ZP8_lineSkip  ; slurp low byte of line skip

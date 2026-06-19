@@ -1,10 +1,12 @@
-.export volatile24a
-.export volatile32a
-.export volatile16a
-.export volatile16b
-.export volatile8a
-.export volatile8b
-.export volatile8c
+.export v24_scratch1
+.export v32_scratch1
+.export v16_scratch1
+.export v16_scratch2
+.export v8_scratch1
+.export v8_scratch2
+.export v8_scratch3
+
+.export v32_chunkSize
 
 .export cache_lower
 .export cache_upper
@@ -40,11 +42,9 @@ cache_upper: .res 128, $00
 ; Per the library's public API, the first 9 bytes of the library MUST be these
 ; three entry points.
 ;==============================================================================
-entries:
 jmp video_driver_init
 jmp video_driver_next
 jmp video_driver_done
-entries_end:
 
 .include "../include/global.inc"
 .include "../include/math.inc"
@@ -52,7 +52,7 @@ entries_end:
 .ifdef FLIPDLL
 .segment "CODE"
 .else
-.include "../include/cache.inc"
+.include "./cache.inc"
 .endif
 
 ;==============================================================================
@@ -66,15 +66,24 @@ entries_end:
 ; Note, the variable labels are exported only for purpose of making them
 ; available in other assembly files that are part of the FLI Player library.
 ;==============================================================================
-volatiles:
-volatile24a: .res 3, $24
-volatile32a: .res 4, $32
-volatile16a: .res 2, $16
-volatile16b: .res 2, $16
-volatile8a:  .res 1, $08
-volatile8b:  .res 1, $08
-volatile8c:  .res 1, $08
-volatiles_end:
+v24_scratch1: .res 3, $24
+v32_scratch1: .res 4, $32
+v16_scratch1: .res 2, $16
+v16_scratch2: .res 2, $16
+v8_scratch1:  .res 1, $08
+v8_scratch2:  .res 1, $08
+v8_scratch3:  .res 1, $08
+
+v32_chunkSize:       .res 4, $32
+v16_chunkType:       .res 2, $16
+v16_frameIndex:      .res 2, $16
+v16_frameCount:      .res 2, $16
+v8_chunkIndex:       .res 1, $08
+v8_chunkCount:       .res 1, $08
+v8_speedLimitVSyncs: .res 1, $08
+v8_returnCode:       .res 1, $08
+v16_returnDetail:    .res 2, $16
+v8_cacheStatus:      .res 1, $08
 
 vram_addr_table_lo:
 .byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0

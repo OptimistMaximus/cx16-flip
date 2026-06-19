@@ -13,6 +13,8 @@
 .import handle_fli_copy
 .import func_cache_load_page
 
+.import v32_chunkSize
+
 .segment "RODATA"
 
 ;##############################################################################
@@ -44,7 +46,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
 .segment "CODE"
 
-.include "../include/cache.inc"
+.include "./cache.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
@@ -68,7 +70,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; over 200 can be used to signify other stuff
 ;==============================================================================
 .proc func_slurp_chunk: near
-   SIP_INTO_U32 GR32_chunkSize
+   SIP_INTO_U32 v32_chunkSize
    SIP_INTO_U16 GR16_chunkType
 @resolve_loop:
    jsr sub_resolve_chunk_type       ; resolve
@@ -98,7 +100,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ; @effect .Y clobbered
 ;==============================================================================
 .proc func_slurp_frame: near
-   SIP_INTO_U32 GR32_chunkSize
+   SIP_INTO_U32 v32_chunkSize
    SIP_INTO_U16 GR16_chunkType
 @resolve_loop:
    jsr sub_resolve_frame_type       ; resolve
@@ -125,7 +127,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
 ;------------------------------------------------------------------------------
 ; sub_resolve_chunk_type
-; @param GR32_chunkSize holds the chunk size
+; @param v32_chunkSize holds the chunk size
 ; @param GR16_chunkType holds the chunk type
 ; @effect .X holds the jump table offset to the handler (zero means invalid)
 ;------------------------------------------------------------------------------
@@ -154,10 +156,10 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .endproc
 
 .proc sub_shuffle_preamble: near
-   U8_COPY_VAR GR32_chunkSize+0, GR32_chunkSize+1 ; otherwise, shift all bytes
-   U8_COPY_VAR GR32_chunkSize+1, GR32_chunkSize+2 ; over by one and slurp in
-   U8_COPY_VAR GR32_chunkSize+2, GR32_chunkSize+3 ; the next byte, then try
-   U8_COPY_VAR GR32_chunkSize+3, GR16_chunkType+0 ; again
+   U8_COPY_VAR v32_chunkSize+0, v32_chunkSize+1 ; otherwise, shift all bytes
+   U8_COPY_VAR v32_chunkSize+1, v32_chunkSize+2 ; over by one and slurp in
+   U8_COPY_VAR v32_chunkSize+2, v32_chunkSize+3 ; the next byte, then try
+   U8_COPY_VAR v32_chunkSize+3, GR16_chunkType+0 ; again
    U8_COPY_VAR GR16_chunkType+0, GR16_chunkType+1
    SIP_INTO_U8 GR16_chunkType+1
    rts

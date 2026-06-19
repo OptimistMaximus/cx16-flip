@@ -4,7 +4,7 @@
 
 .include "../include/global.inc"
 .include "../include/vera.inc"
-.include "../include/video.inc"
+.include "./video.inc"
 
 ;==============================================================================
 ; handle_black

@@ -40,12 +40,21 @@ INCLUDES := $(wildcard $(INCDIR)/*.inc)
 
 #------------------------------------------------------------------
 # Libraries
+#
+# Note, this establishes two sets of CODEC objects.  The ".to"
+# extension implies "test object", which is a special version of
+# the file, built as a normal object so it can be used directly
+# by the unit tests.
+#
+# The ".so" extension implies "shared library object" which is
+# compiled with a symbol defined that differentiates the object
+# as being intended for the dynamically loadable library.
 #------------------------------------------------------------------
 LIB_CORE_SOURCES  := $(wildcard $(SOURCE)/core/*.asm)
 LIB_CORE_OBJECTS  := $(LIB_CORE_SOURCES:$(SOURCE)/core/%.asm=zzz/core/%.o)
 
 LIB_CODEC_SOURCES := $(wildcard $(SOURCE)/codec/*.asm)
-LIB_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=zzz/codec/%.o)
+LIB_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=zzz/codec/%.to)
 DLL_CODEC_OBJECTS := $(LIB_CODEC_SOURCES:$(SOURCE)/codec/%.asm=zzz/codec/%.so)
 
 LIB_TEST_SOURCES := $(wildcard $(SOURCE)/test/*.asm)
@@ -121,7 +130,7 @@ zzz/core.lib: $(LIB_CORE_OBJECTS) | zzz
 	ar65 a $@ zzz/core/*.o
 
 zzz/codec.lib: $(LIB_CODEC_OBJECTS) | zzz
-	ar65 a $@ zzz/codec/*.o
+	ar65 a $@ zzz/codec/*.to
 
 zzz/test.lib: $(LIB_TEST_OBJECTS) | zzz
 	ar65 a $@ zzz/test/*.o
@@ -146,7 +155,7 @@ zzz/codec/%.so: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
 zzz/core/%.o: $(SOURCE)/core/%.asm $(INCLUDES) | zzz/core
 	cl65 -t cx16 -o $@ -c $<
 
-zzz/codec/%.o: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
+zzz/codec/%.to: $(SOURCE)/codec/%.asm $(INCLUDES) | zzz/codec
 	cl65 -t cx16 -o $@ -c $<
 
 zzz/test/%.o: $(SOURCE)/test/%.asm $(INCLUDES) | zzz/test

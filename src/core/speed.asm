@@ -5,7 +5,7 @@
 
 .segment "CODE"
 
-.include "../include/debug.inc"
+.include "./debug.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"

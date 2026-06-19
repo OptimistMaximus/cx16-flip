@@ -1,8 +1,8 @@
 .ifndef CACHE_INC
         CACHE_INC = 1
 
-.include "./global.inc"
-.include "./vera.inc"
+.include "../include/global.inc"
+.include "../include/vera.inc"
 
 ;==============================================================================
 ; SIP_INTO_A

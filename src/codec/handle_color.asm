@@ -3,19 +3,19 @@
 
 .import func_load_palette
 .import func_cache_load_page
-.import volatile16a
-.import volatile8a
-.import volatile8b
-.import volatile8c
+.import v16_scratch1
+.import v8_scratch1
+.import v8_scratch2
+.import v8_scratch3
 
 .segment "CODE"
 
-.include "../include/cache.inc"
+.include "./cache.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "../include/opcodes.inc"
 .include "../include/vera.inc"
-.include "../include/video.inc"
+.include "./video.inc"
 
 ;------------------------------------------------------------------------------
 ; handle_color_64
@@ -79,17 +79,17 @@
    ; is being declared in 1 packet)
    ;---------------------------------------------------------------------------
    SET_VERA_ADDR24_IMM $00, VRAM_BUFF_PALETTE, $10
-   SIP_INTO_U16 volatile16a
+   SIP_INTO_U16 v16_scratch1
 
-   ldx volatile16a
+   ldx v16_scratch1
    rts
 .endproc
 
 .proc sub_handle_color_packet: near
 
-   tempVeraRed    = volatile8a
-   tempVeraGreen  = volatile8b
-   colorMode      = volatile8c
+   tempVeraRed    = v8_scratch1
+   tempVeraGreen  = v8_scratch2
+   colorMode      = v8_scratch3
 
    sta colorMode
 

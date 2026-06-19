@@ -5,9 +5,9 @@
 
 .segment "CODE"
 
-.include "../include/cache.inc"
+.include "./cache.inc"
 .include "../include/global.inc"
-.include "../include/video.inc"
+.include "./video.inc"
 .include "../include/vera.inc"
 
 .proc handle_fli_copy: near
