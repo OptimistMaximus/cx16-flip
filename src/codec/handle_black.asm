@@ -5,6 +5,7 @@
 .include "../include/global.inc"
 .include "../include/vera.inc"
 .include "./video.inc"
+.include "./api.inc"
 
 ;==============================================================================
 ; handle_black
@@ -28,6 +29,6 @@
    bne @outer_loop
    U8_COPY_IMM ZP8_lineSkip, 0
    U8_COPY_IMM ZP8_lineCount, 200
-   stz GR8_returnCode
+   stz ZP8_returnCode
    rts
 .endproc

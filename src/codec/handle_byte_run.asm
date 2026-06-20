@@ -8,6 +8,7 @@
 .include "./cache.inc"
 .include "../include/global.inc"
 .include "./video.inc"
+.include "./api.inc"
 
 .proc handle_byte_run: near
    SET_VRAM_ADDR_FOR_FULL_LINE
@@ -37,6 +38,6 @@ packet_loop:
    @process_count_done:
    dey
    bne packet_loop
-   stz GR8_returnCode
+   stz ZP8_returnCode
    rts
 .endproc

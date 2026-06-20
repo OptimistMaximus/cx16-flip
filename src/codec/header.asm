@@ -4,6 +4,7 @@
 .import v16_scratch1
 .import v16_scratch2
 .import v8_scratch1
+.import v16_frameCount
 
 .import func_cache_discard_bytes
 .import func_cache_load_page
@@ -14,6 +15,7 @@
 .include "../include/math.inc"
 .include "../include/math2.inc"
 .include "../include/petscii.inc"
+.include "./api.inc"
 
 FILE_TYPE_FLI := $AF11
 
@@ -36,13 +38,13 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    U16_CMP_IMM varFileType, FILE_TYPE_FLI
    beq @fileType_is_fli
-   U8_COPY_IMM GR8_returnCode, RC_UNSUPPORTED_FILE_TYPE
-   U16_COPY_VAR GR16_returnDetail, varFileType
+   U8_COPY_IMM ZP8_returnCode, RC_UNSUPPORTED_FILE_TYPE
+   U16_COPY_VAR ZP16_returnDetail, varFileType
    rts
 
 @fileType_is_fli:
 
-   SIP_INTO_U16 GR16_frameCount
+   SIP_INTO_U16 v16_frameCount
    SIP_INTO_OBLIVION 8          ; width, height, depth, flags
 
    ;---------------------------------------------------------------------------
@@ -82,7 +84,7 @@ FILE_TYPE_FLI := $AF11
    varTemp       = v16_scratch1
    varDivisor    = v16_scratch2
    varMultiplier = v8_scratch1
-   varQuotient   = GR16_returnDetail ; the quotient is also our return code
+   varQuotient   = ZP16_returnDetail ; the quotient is also our return code
 
    U8_COPY_IMM varMultiplier, 6
    U16_SLOW_MULTIPLY varTemp, varSpeed, varMultiplier
@@ -94,7 +96,7 @@ FILE_TYPE_FLI := $AF11
    ;---------------------------------------------------------------------------
    SIP_INTO_OBLIVION 108
 
-   stz GR8_returnCode                ; return code success
+   stz ZP8_returnCode                ; return code success
    rts
 .endproc
 

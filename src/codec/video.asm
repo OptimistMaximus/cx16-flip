@@ -2,9 +2,11 @@
 .export func_vera_restore
 .export func_load_palette
 .export func_load_image
-.export func_init_vram_table
 
 .import v24_scratch1
+.import vram_addr_table_lo
+.import vram_addr_table_me
+.import vram_addr_table_hi
 
 .segment "CODE"
 
@@ -13,6 +15,7 @@
 .include "../include/vera.inc"
 .include "./video.inc"
 .include "../include/zeropage.inc"
+.include "./api.inc"
 
 ;==============================================================================
 ; func_vera_setup
@@ -148,36 +151,5 @@
    bne @bulk_vram_copy_outer_loop
 
    BATCH_COPY_DISABLE
-   rts
-.endproc
-
-;==============================================================================
-; func_init_vram_table
-;
-; This must be called once before calling any FLI related subroutines and
-; macros.
-;
-; This creates a table for 24-bit VRAM addresses where the table index is
-; the line in VRAM, and the resulting address is offset for our staging area
-; already, and whose high byte is already ORA'ed with auto-inc of 1.
-;
-; Invoke this once before any attempts to establish VRAM addresses while
-; rendering chunks.
-;==============================================================================
-.proc func_init_vram_table: near
-   scratch = v24_scratch1
-   U24_COPY_IMM scratch, (VRAM_BUFF_IMAGE | $100000)
-   ldx #0
-@loop:
-   lda scratch+0
-   sta VRAM_ADDR_TABLE_L,x
-   lda scratch+1
-   sta VRAM_ADDR_TABLE_M,x
-   lda scratch+2
-   sta VRAM_ADDR_TABLE_H,x
-   U24_ADD_IMM scratch, 320
-   inx
-   cpx #200
-   bne @loop
    rts
 .endproc

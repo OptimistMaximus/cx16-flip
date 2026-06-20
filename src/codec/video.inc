@@ -24,11 +24,11 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
 ;==============================================================================
 .macro SET_VRAM_ADDR_FOR_DELTA_LINE
    stz VERA_CTRL
-   lda VRAM_ADDR_TABLE_L,x
+   lda vram_addr_table_lo,x
    sta VERA_ADDRx_L
-   lda VRAM_ADDR_TABLE_M,x
+   lda vram_addr_table_me,x
    sta VERA_ADDRx_M
-   lda VRAM_ADDR_TABLE_H,x
+   lda vram_addr_table_hi,x
    sta VERA_ADDRx_H
 .endmacro
 
@@ -63,15 +63,15 @@ VRAM_BUFF_PALETTE := $1F400 ; $1F400-$1F5FF 256 colors at 2 bytes each
    lda #1                    ; establish DATA1
    sta VERA_CTRL
 
-   lda VRAM_ADDR_TABLE_L,x   ; load low byte and effectively subtract $00
+   lda vram_addr_table_lo,x  ; load low byte and effectively subtract $00
    sta VERA_ADDRx_L          ; (the low byte of the stage fold)
 
-   lda VRAM_ADDR_TABLE_M,x   ; load middle byte and subtract $FA
+   lda vram_addr_table_me,x  ; load middle byte and subtract $FA
    sec                       ; (the middle byte of the stage fold)
    sbc #$FA
    sta VERA_ADDRx_M
 
-   lda VRAM_ADDR_TABLE_H,x   ; load high byte and subtract potential carry
+   lda vram_addr_table_hi,x  ; load high byte and subtract potential carry
    sbc #0                    ; note, it was already OR'ed with $10 for
    ora #$20                  ; auto-inc, but we want $30 so OR in $20
    sta VERA_ADDRx_H

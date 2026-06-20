@@ -12,7 +12,6 @@
 .import func_vera_restore
 .import func_slurp_header
 .import func_slurp_frame
-.import func_init_vram_table
 .import func_snooze_if_necessary
 
 .segment "INIT"
@@ -20,6 +19,7 @@
 .segment "ONCE"
 .segment "CODE"
 
+.include "codec/api.inc"
 .include "core/debug.inc"
 .include "include/global.inc"
 .include "include/kernal.inc"

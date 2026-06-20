@@ -7,16 +7,24 @@
 .export v8_scratch3
 
 .export v32_chunkSize
+.export v16_chunkType
+.export v16_frameCount
+.export v8_chunkCount
 
 .export cache_lower
 .export cache_upper
+.export vram_addr_table_lo
+.export vram_addr_table_me
+.export vram_addr_table_hi
+.export line_skip_array
+.export line_count_array
 
-.import func_init_vram_table
 .import func_vera_setup
 .import func_vera_restore
 .import func_cache_init
 .import func_slurp_header
 .import func_slurp_frame
+
 
 .ifdef FLIPDLL
 .segment "DLL_API"
@@ -46,6 +54,7 @@ jmp video_driver_init
 jmp video_driver_next
 jmp video_driver_done
 
+.include "./api.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"
 
@@ -74,16 +83,14 @@ v8_scratch1:  .res 1, $08
 v8_scratch2:  .res 1, $08
 v8_scratch3:  .res 1, $08
 
-v32_chunkSize:       .res 4, $32
-v16_chunkType:       .res 2, $16
-v16_frameIndex:      .res 2, $16
-v16_frameCount:      .res 2, $16
-v8_chunkIndex:       .res 1, $08
-v8_chunkCount:       .res 1, $08
-v8_speedLimitVSyncs: .res 1, $08
-v8_returnCode:       .res 1, $08
-v16_returnDetail:    .res 2, $16
-v8_cacheStatus:      .res 1, $08
+v32_chunkSize:    .res 4, $32
+v16_chunkType:    .res 2, $16
+v16_frameIndex:   .res 2, $16
+v16_frameCount:   .res 2, $16
+v8_chunkCount:    .res 1, $08
+
+line_skip_array:  .res 4, $00
+line_count_array: .res 4, $00
 
 vram_addr_table_lo:
 .byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
@@ -129,28 +136,27 @@ vram_addr_table_hi:
 .byte $11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11,$11
 
 .proc video_driver_init: near
-   jsr func_init_vram_table
    jsr func_vera_setup
    jsr func_cache_init
    jsr func_slurp_header
-   U16_STZ GR16_frameIndex
-   lda GR8_returnCode
-   ldx GR16_returnDetail+0
-   ldy GR16_returnDetail+1
+   U16_STZ v16_frameIndex
+   lda ZP8_returnCode
+   ldx ZP16_returnDetail+0
+   ldy ZP16_returnDetail+1
    rts
 .endproc
 
 .proc video_driver_next: near
    jsr func_slurp_frame
-   lda GR8_returnCode
+   lda ZP8_returnCode
    beq @success
    sec ; no more frames
-   ldx #<GR16_returnDetail
-   ldy #>GR16_returnDetail
+   ldx #<ZP16_returnDetail
+   ldy #>ZP16_returnDetail
    rts
 @success:
-   U16_INC     GR16_frameIndex
-   U16_CMP_VAR GR16_frameIndex, GR16_frameCount ; indirectly sets carry bit
+   U16_INC     v16_frameIndex
+   U16_CMP_VAR v16_frameIndex, v16_frameCount ; indirectly sets carry bit
    lda #0 ; success
    ldx #0 ; FLI does not support per-frame delay
    ldy #0 ; so we'll hard-code it to zero.

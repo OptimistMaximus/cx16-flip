@@ -2,6 +2,9 @@
 
 .import func_cache_load_page
 .import func_cache_read_into_vram
+.import vram_addr_table_lo
+.import vram_addr_table_me
+.import vram_addr_table_hi
 
 .segment "CODE"
 
@@ -9,6 +12,7 @@
 .include "../include/global.inc"
 .include "../include/math.inc"
 .include "./video.inc"
+.include "./api.inc"
 
 .proc handle_delta_fli: near
    SIP_INTO_U8 ZP8_lineSkip  ; slurp low byte of line skip
@@ -30,7 +34,7 @@
       inx
       cpx ZP8_lineStop
       bne @line_loop
-   stz GR8_returnCode
+   stz ZP8_returnCode
    rts
 .endproc
 

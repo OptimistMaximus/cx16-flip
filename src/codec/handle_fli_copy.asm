@@ -9,6 +9,7 @@
 .include "../include/global.inc"
 .include "./video.inc"
 .include "../include/vera.inc"
+.include "./api.inc"
 
 .proc handle_fli_copy: near
    SET_VRAM_ADDR_FOR_FULL_LINE
@@ -20,7 +21,7 @@
    bne @outer_loop
    U8_COPY_IMM ZP8_lineSkip, 0
    U8_COPY_IMM ZP8_lineCount, 200
-   stz GR8_returnCode
+   stz ZP8_returnCode
    rts
 .endproc
 

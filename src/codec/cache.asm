@@ -12,6 +12,7 @@ cache_upper = $7180
 
 .segment "CODE"
 
+.include "./api.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
 .include "../include/math.inc"
@@ -19,7 +20,7 @@ cache_upper = $7180
 
 ; @param targetAddr where to write the result
 ; @param count how many bytes to request
-; @effect ZP8_cacheStatus holds status (0=success, else failure)
+; @effect v8_speedLimitVSyncs holds status (0=success, else failure)
 ;
 ; Note, status update is conditional, so calling code should do LDA
 ;       or similar to check it, instead of assuming status flags hold
@@ -30,8 +31,11 @@ cache_upper = $7180
    lda #count
    clc ; advance
    jsr KERNAL_MACPTR
+.endmacro
+
+.macro LOAD_READST
    jsr KERNAL_READST
-   sta GR8_cacheStatus
+   cmp #0
 .endmacro
 
 ;==============================================================================
@@ -46,7 +50,6 @@ cache_upper = $7180
    sta ZP16_cachePointer+0
    lda #>cache_lower
    sta ZP16_cachePointer+1
-   stz GR8_cacheStatus
    rts
 .endproc
 
@@ -63,7 +66,6 @@ cache_upper = $7180
 ;
 ; @effect .X preserved
 ; @effect .Y preserved
-; @effect ZP8_cacheStatus holds status (0=success, else failure)
 ;
 ; Note, the cache loading is "greedy" and has no concept of how many bytes have
 ; been read already, nor how many are still available. It just tries to read
@@ -84,10 +86,10 @@ cache_upper = $7180
 .proc func_cache_load_page: near
    phx
       phy
-         lda GR8_cacheStatus
+         LOAD_READST
          bne @read_error
          SMACPTR cache_lower, 128
-         lda GR8_cacheStatus
+         LOAD_READST
          bne @read_error
          SMACPTR cache_upper, 128
 @read_error:

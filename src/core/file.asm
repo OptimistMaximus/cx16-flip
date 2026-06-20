@@ -2,6 +2,7 @@
 .export func_close_inputstream
 .export func_load_library
 
+.include "../codec/api.inc"
 .include "../include/kernal.inc"
 .include "../include/global.inc"
 .include "../include/math.inc"

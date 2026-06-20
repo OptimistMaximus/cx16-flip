@@ -16,6 +16,7 @@
 .include "../include/opcodes.inc"
 .include "../include/vera.inc"
 .include "./video.inc"
+.include "./api.inc"
 
 ;------------------------------------------------------------------------------
 ; handle_color_64
@@ -31,7 +32,7 @@
    bne @packet_loop
    U8_COPY_IMM ZP8_lineSkip, $FF
    U8_COPY_IMM ZP8_lineCount, $FF
-   stz GR8_returnCode
+   stz ZP8_returnCode
    rts
 .endproc
 
@@ -49,7 +50,7 @@
    bne @packet_loop
    U8_COPY_IMM ZP8_lineSkip, $FF
    U8_COPY_IMM ZP8_lineCount, $FF
-   stz GR8_returnCode
+   stz ZP8_returnCode
    rts
 .endproc
 

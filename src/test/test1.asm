@@ -8,7 +8,6 @@
 .import func_cache_read_into_vram
 .import func_print_hex
 .import func_cache_init
-.import func_init_vram_table
 
 .segment "RODATA"
 
@@ -132,13 +131,11 @@ VRAM_BUFFER_LINE_4 := $0FA00 + VRAM_IMAGE_LINE_4
    ;---------------------------------------------------------------------------
    ; TEST 12 (video stuff)
    ;
-   ; func_init_vram_table
    ; SET_VRAM_ADDR_FOR_FULL_LINE
    ; SET_VRAM_ADDR_FOR_DELTA_LINE
    ; SET_VRAM_ADDR_FOR_SCREEN_LINE
    ; ADVANCE_VERA_ADDR_FOR_DELTA_PACKET
    ;---------------------------------------------------------------------------
-   jsr func_init_vram_table
 
    ; Line 0 is (0 * 320) + $0FA00 with high byte OR'ed with $10
    ASSERT_VAR_U8_EQUALS_IMM $1200, $00, VRAM_ADDR_TABLE_L+0

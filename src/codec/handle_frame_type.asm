@@ -6,26 +6,39 @@
 .import func_cache_load_page
 .import func_cache_discard_bytes
 
+.import v8_chunkCount
+.import line_skip_array
+.import line_count_array
+
 .segment "CODE"
 
 .include "./cache.inc"
 .include "../include/global.inc"
 .include "../include/vera.inc"
 .include "./video.inc"
+.include "./api.inc"
 
 ;==============================================================================
 ; handle_frame_type
+;==============================================================================
 .proc handle_frame_type: near
-   stz ZP8_imageVSyncsElapsed     ; i.e. start the frame timer
-   SIP_INTO_U8 GR8_chunkCount     ; low byte of chunk count
-   SIP_INTO_OBLIVION 9            ; high byte of chunk count & remaining 8
+   stz ZP8_imageVSyncsElapsed       ; i.e. start the frame timer
+   SIP_INTO_U16 ZP16_returnDetail   ; chunk count (is return detail if too many)
+   U16_CMP_IMM ZP16_returnDetail, 5
+   bcc @cool_chunks
+   U8_COPY_VAR ZP8_returnCode, RC_TOO_MANY_CHUNKS
+   rts
+   
+@cool_chunks:
+   SIP_INTO_OBLIVION 8              ; high byte of chunk count & remaining 8
+   U8_COPY_VAR v8_chunkCount, ZP16_returnDetail ; shuffle to non-volatile
 
-   lda GR8_chunkCount             ; zero-chunk frames are a common way to
+   lda v8_chunkCount              ; zero-chunk frames are a common way to
    cmp #0                         ; make the current image linger longer
    beq @rendering_complete        ; 1-chunk frames are common but optimzing
                                   ; for them has no perceivable benefit.
    jsr sub_render_chunks
-   lda GR8_returnCode
+   lda ZP8_returnCode
    beq @success
    rts
 @success:
@@ -41,20 +54,20 @@
    phy
       jsr func_slurp_chunk        ; .A is return code
    ply
-   lda GR8_returnCode
+   lda ZP8_returnCode
    beq @success
    rts
 @success:
 
    lda ZP8_lineSkip
-   sta CONST_skipArray,y          ; squirrel the line skip
+   sta line_skip_array,y          ; squirrel the line skip
    lda ZP8_lineCount
-   sta CONST_countArray,y         ; squirrel the line count
+   sta line_count_array,y         ; squirrel the line count
    iny
-   cpy GR8_chunkCount
+   cpy v8_chunkCount
    bne @subchunk_loop
 @subchunk_loop_done:
-   stz GR8_returnCode
+   stz ZP8_returnCode
    rts
 .endproc
 
@@ -62,10 +75,10 @@
    ldy #0
 @flip_loop:
    phy
-      ldx CONST_skipArray,y
+      ldx line_skip_array,y
       cpx #$FF
       beq @flip_palette_instead
-      lda CONST_countArray,y
+      lda line_count_array,y
       jsr func_load_image
       bra @flipped
    @flip_palette_instead:
@@ -73,7 +86,7 @@
    @flipped:
    ply
    iny
-   cpy GR8_chunkCount
+   cpy v8_chunkCount
    bne @flip_loop
    rts
 .endproc

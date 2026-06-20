@@ -14,6 +14,7 @@
 .import func_cache_load_page
 
 .import v32_chunkSize
+.import v16_chunkType
 
 .segment "RODATA"
 
@@ -46,6 +47,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 
 .segment "CODE"
 
+.include "./api.inc"
 .include "./cache.inc"
 .include "../include/global.inc"
 .include "../include/kernal.inc"
@@ -71,7 +73,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;==============================================================================
 .proc func_slurp_chunk: near
    SIP_INTO_U32 v32_chunkSize
-   SIP_INTO_U16 GR16_chunkType
+   SIP_INTO_U16 v16_chunkType
 @resolve_loop:
    jsr sub_resolve_chunk_type       ; resolve
    cpx #0                           ; compare to 0 (invalid) ...
@@ -101,7 +103,7 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;==============================================================================
 .proc func_slurp_frame: near
    SIP_INTO_U32 v32_chunkSize
-   SIP_INTO_U16 GR16_chunkType
+   SIP_INTO_U16 v16_chunkType
 @resolve_loop:
    jsr sub_resolve_frame_type       ; resolve
    cpx #0                           ; compare to 0 (invalid) ...
@@ -128,13 +130,13 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 ;------------------------------------------------------------------------------
 ; sub_resolve_chunk_type
 ; @param v32_chunkSize holds the chunk size
-; @param GR16_chunkType holds the chunk type
+; @param v16_chunkType holds the chunk type
 ; @effect .X holds the jump table offset to the handler (zero means invalid)
 ;------------------------------------------------------------------------------
 .proc sub_resolve_chunk_type: near
-   lda GR16_chunkType+1
+   lda v16_chunkType+1
    bne @mismatch
-   lda GR16_chunkType+0
+   lda v16_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $0C, $04 ; DELTA_FLI
    SET_OFFSET_AND_RETURN_IF_MATCH $0B, $06 ; COLOR_64
    SET_OFFSET_AND_RETURN_IF_MATCH $04, $08 ; COLOR_256
@@ -146,10 +148,10 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
 .endproc
 
 .proc sub_resolve_frame_type: near
-   lda GR16_chunkType+1
+   lda v16_chunkType+1
    cmp #$F1
    bne @mismatch
-   lda GR16_chunkType+0
+   lda v16_chunkType+0
    SET_OFFSET_AND_RETURN_IF_MATCH $FA, $02 ; FRAME_TYPE
 @mismatch:
    SET_OFFSET_TO_ZERO_AND_RETURN
@@ -159,9 +161,9 @@ chunk_type_jump_table:     ; listed in order of most to least frequent
    U8_COPY_VAR v32_chunkSize+0, v32_chunkSize+1 ; otherwise, shift all bytes
    U8_COPY_VAR v32_chunkSize+1, v32_chunkSize+2 ; over by one and slurp in
    U8_COPY_VAR v32_chunkSize+2, v32_chunkSize+3 ; the next byte, then try
-   U8_COPY_VAR v32_chunkSize+3, GR16_chunkType+0 ; again
-   U8_COPY_VAR GR16_chunkType+0, GR16_chunkType+1
-   SIP_INTO_U8 GR16_chunkType+1
+   U8_COPY_VAR v32_chunkSize+3, v16_chunkType+0 ; again
+   U8_COPY_VAR v16_chunkType+0, v16_chunkType+1
+   SIP_INTO_U8 v16_chunkType+1
    rts
 .endproc
 
