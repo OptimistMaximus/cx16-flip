@@ -18,6 +18,8 @@
 .export vram_addr_table_hi
 .export line_skip_array
 .export line_count_array
+.export v8_returnCode
+.export v16_returnDetail
 
 .import func_vera_setup
 .import func_vera_restore
@@ -33,36 +35,20 @@
 .endif
 
 ;==============================================================================
-; PAGE-ALIGNED CACHE
-;
-; The caching algorithm is optimized to work only in the scenario where the
-; the cache is page-aligned.  This is most easily acheived by making sure it
-; is the very first thing in the DLL_API segment.  This works perfectly
-; because it means the subroutine entry points can be situated immediately
-; after, and they will exist in the advertised offsets.
-;==============================================================================
-cache_lower: .res 128, $00
-cache_upper: .res 128, $00
-
-;==============================================================================
 ; VIDEO DRIVER ENTRY POINTS (9 bytes)
 ;
 ; Per the library's public API, the first 9 bytes of the library MUST be these
 ; three entry points.
 ;==============================================================================
+first_page_of_stuff:
 jmp video_driver_init
 jmp video_driver_next
 jmp video_driver_done
-
-.include "./api.inc"
-.include "../include/global.inc"
-.include "../include/math.inc"
-
-.ifdef FLIPDLL
-.segment "CODE"
-.else
-.include "./cache.inc"
-.endif
+jmp video_driver_noop
+jmp video_driver_noop
+jmp video_driver_noop
+jmp video_driver_noop
+jmp video_driver_noop
 
 ;==============================================================================
 ; VOLATILE SCRATCH VARIABLES
@@ -83,14 +69,49 @@ v8_scratch1:  .res 1, $08
 v8_scratch2:  .res 1, $08
 v8_scratch3:  .res 1, $08
 
+;==============================================================================
+; GLOBAL VARIABLES
+;
+; These variables are accessible from any subroutine, but have a specific use.
+;==============================================================================
 v32_chunkSize:    .res 4, $32
 v16_chunkType:    .res 2, $16
 v16_frameIndex:   .res 2, $16
 v16_frameCount:   .res 2, $16
 v8_chunkCount:    .res 1, $08
+v8_returnCode:    .res 1, $00
+v16_returnDetail: .res 2, $00
 
-line_skip_array:  .res 4, $00
-line_count_array: .res 4, $00
+line_skip_array:  .res 4, $AA
+line_count_array: .res 4, $AA
+
+first_page_of_stuff_end:
+
+.res (256 - (first_page_of_stuff_end - first_page_of_stuff)), $FF
+;==============================================================================
+; PAGE-ALIGNED CACHE
+;
+; The caching algorithm is optimized to work only in the scenario where the
+; the cache is page-aligned.  For some reason cc65 gives warnings when using
+; the .align directive, saying that things might not be aligned.  To avoid any
+; doubt, we'll just count bytes the old fashioned way.  We know the first 24
+; bytes are the entry points.  Then 232 more bytes of variables and padding.
+; After that will be this 256-aligned cache.
+;==============================================================================
+cache_lower: .res 128, $CC
+cache_upper: .res 128, $CC
+
+
+.include "./api.inc"
+.include "../include/global.inc"
+.include "../include/math.inc"
+
+.ifdef FLIPDLL
+.segment "CODE"
+.else
+.include "./cache.inc"
+.endif
+
 
 vram_addr_table_lo:
 .byte $00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0,$00,$40,$80,$C0
@@ -140,29 +161,37 @@ vram_addr_table_hi:
    jsr func_cache_init
    jsr func_slurp_header
    U16_STZ v16_frameIndex
-   lda ZP8_returnCode
-   ldx ZP16_returnDetail+0
-   ldy ZP16_returnDetail+1
+   lda v8_returnCode
+   ldx v16_returnDetail+0
+   ldy v16_returnDetail+1
    rts
 .endproc
 
 .proc video_driver_next: near
    jsr func_slurp_frame
-   lda ZP8_returnCode
+   lda v8_returnCode
    beq @success
    sec ; no more frames
-   ldx #<ZP16_returnDetail
-   ldy #>ZP16_returnDetail
+   ldx #<v16_returnDetail
+   ldy #>v16_returnDetail
    rts
 @success:
    U16_INC     v16_frameIndex
    U16_CMP_VAR v16_frameIndex, v16_frameCount ; indirectly sets carry bit
    lda #0 ; success
-   ldx #0 ; FLI does not support per-frame delay
-   ldy #0 ; so we'll hard-code it to zero.
+   tax    ; FLI does not support per-frame delay
+   tay    ; so we'll hard-code it to zero.
    rts
 .endproc
 
 .proc video_driver_done: near
-   jmp func_vera_restore
+   jsr func_vera_restore
+   lda #0
+   tax
+   tay
+   rts
+.endproc
+
+.proc video_driver_noop: near
+   rts
 .endproc

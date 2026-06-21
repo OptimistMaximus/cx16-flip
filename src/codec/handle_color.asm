@@ -7,6 +7,7 @@
 .import v8_scratch1
 .import v8_scratch2
 .import v8_scratch3
+.import v8_returnCode
 
 .segment "CODE"
 
@@ -32,7 +33,7 @@
    bne @packet_loop
    U8_COPY_IMM ZP8_lineSkip, $FF
    U8_COPY_IMM ZP8_lineCount, $FF
-   stz ZP8_returnCode
+   stz v8_returnCode
    rts
 .endproc
 
@@ -50,7 +51,7 @@
    bne @packet_loop
    U8_COPY_IMM ZP8_lineSkip, $FF
    U8_COPY_IMM ZP8_lineCount, $FF
-   stz ZP8_returnCode
+   stz v8_returnCode
    rts
 .endproc
 

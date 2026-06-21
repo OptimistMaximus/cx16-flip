@@ -1,5 +1,7 @@
 .export handle_black
 
+.import v8_returnCode
+
 .segment "CODE"
 
 .include "../include/global.inc"
@@ -29,6 +31,6 @@
    bne @outer_loop
    U8_COPY_IMM ZP8_lineSkip, 0
    U8_COPY_IMM ZP8_lineCount, 200
-   stz ZP8_returnCode
+   stz v8_returnCode
    rts
 .endproc

@@ -5,6 +5,7 @@
 .import vram_addr_table_lo
 .import vram_addr_table_me
 .import vram_addr_table_hi
+.import v8_returnCode
 
 .segment "CODE"
 
@@ -34,7 +35,7 @@
       inx
       cpx ZP8_lineStop
       bne @line_loop
-   stz ZP8_returnCode
+   stz v8_returnCode
    rts
 .endproc
 

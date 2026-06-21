@@ -2,6 +2,7 @@
 
 .import func_cache_load_page
 .import func_cache_read_into_vram
+.import v8_returnCode
 
 .segment "CODE"
 
@@ -38,6 +39,6 @@ packet_loop:
    @process_count_done:
    dey
    bne packet_loop
-   stz ZP8_returnCode
+   stz v8_returnCode
    rts
 .endproc

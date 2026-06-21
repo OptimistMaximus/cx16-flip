@@ -5,11 +5,27 @@
 
 ;------------------------------------------------------------------------------
 ; FLI Player Dynamically Loadable Library Symbols
+;
+; To be compliant with the Frame Driver spec, the first 256 bytes of the 
+; library can be whatever the implementation prefers.  The next 24 bytes
+; after that are the official entry points.  Presently only 3 are defined:
+; OPEN, NEXT, CLOSE.  The remaining entries must jump somewhere that 
+; immediately returns via RTS.
+;
+; The reamining bytes of the loadable library can be whatever the
+; implementation prefers.  The maximum size allowed for the library file is
+; $1000 bytes.
 ;------------------------------------------------------------------------------
-FLIP_DLL_LOAD_ADDR  := $7000
-FLIP_DLL_FUNC_OPEN  := FLIP_DLL_LOAD_ADDR + $100
-FLIP_DLL_FUNC_NEXT  := FLIP_DLL_LOAD_ADDR + $103
-FLIP_DLL_FUNC_CLOSE := FLIP_DLL_LOAD_ADDR + $106
+FRAME_DRIVER_LOAD_ADDR  := $7000
+FRAME_DRIVER_FUNC_OPEN  := FRAME_DRIVER_LOAD_ADDR + $00
+FRAME_DRIVER_FUNC_NEXT  := FRAME_DRIVER_LOAD_ADDR + $03
+FRAME_DRIVER_FUNC_CLOSE := FRAME_DRIVER_LOAD_ADDR + $06
+FRAME_DRIVER_RESERVED_1 := FRAME_DRIVER_LOAD_ADDR + $09
+FRAME_DRIVER_RESERVED_2 := FRAME_DRIVER_LOAD_ADDR + $0C
+FRAME_DRIVER_RESERVED_3 := FRAME_DRIVER_LOAD_ADDR + $0F
+FRAME_DRIVER_RESERVED_4 := FRAME_DRIVER_LOAD_ADDR + $12
+FRAME_DRIVER_RESERVED_5 := FRAME_DRIVER_LOAD_ADDR + $15
+
 
 ;------------------------------------------------------------------------------
 ; GLOBAL VARIABLES (Zero Page) -- Library
@@ -26,9 +42,6 @@ ZP8_lineCount           := $27
 ZP8_lineStop            := $28
 ZP8_lineIndex           := $29
 ZP8_cacheRemaining      := $2A
-ZP8_returnCode          := $2B
-ZP16_returnDetail       := $2C
-ZP16_unused             := $2E
 
 ;------------------------------------------------------------------------------
 ; RETURN CODES (set to .A upon exit, optional details in .X and .Y)

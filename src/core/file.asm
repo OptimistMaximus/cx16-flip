@@ -63,7 +63,7 @@ varReadCount: .word $0000
    ldx #<lib_fn
    ldy #>lib_fn
    jsr func_open_inputstream
-   U16_COPY_IMM varLoadAddr, FLIP_DLL_LOAD_ADDR
+   U16_COPY_IMM varLoadAddr, FRAME_DRIVER_LOAD_ADDR
 @load_loop:
    clc
    lda #0

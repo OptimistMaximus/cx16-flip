@@ -2,6 +2,7 @@
 
 .import func_cache_load_page
 .import func_cache_read_into_vram
+.import v8_returnCode
 
 .segment "CODE"
 
@@ -21,7 +22,7 @@
    bne @outer_loop
    U8_COPY_IMM ZP8_lineSkip, 0
    U8_COPY_IMM ZP8_lineCount, 200
-   stz ZP8_returnCode
+   stz v8_returnCode
    rts
 .endproc
 

@@ -9,6 +9,8 @@
 .import v8_chunkCount
 .import line_skip_array
 .import line_count_array
+.import v8_returnCode
+.import v16_returnDetail
 
 .segment "CODE"
 
@@ -23,22 +25,22 @@
 ;==============================================================================
 .proc handle_frame_type: near
    stz ZP8_imageVSyncsElapsed       ; i.e. start the frame timer
-   SIP_INTO_U16 ZP16_returnDetail   ; chunk count (is return detail if too many)
-   U16_CMP_IMM ZP16_returnDetail, 5
+   SIP_INTO_U16 v16_returnDetail   ; chunk count (is return detail if too many)
+   U16_CMP_IMM v16_returnDetail, 5
    bcc @cool_chunks
-   U8_COPY_VAR ZP8_returnCode, RC_TOO_MANY_CHUNKS
+   U8_COPY_VAR v8_returnCode, RC_TOO_MANY_CHUNKS
    rts
    
 @cool_chunks:
    SIP_INTO_OBLIVION 8              ; high byte of chunk count & remaining 8
-   U8_COPY_VAR v8_chunkCount, ZP16_returnDetail ; shuffle to non-volatile
+   U8_COPY_VAR v8_chunkCount, v16_returnDetail ; shuffle to non-volatile
 
    lda v8_chunkCount              ; zero-chunk frames are a common way to
    cmp #0                         ; make the current image linger longer
    beq @rendering_complete        ; 1-chunk frames are common but optimzing
                                   ; for them has no perceivable benefit.
    jsr sub_render_chunks
-   lda ZP8_returnCode
+   lda v8_returnCode
    beq @success
    rts
 @success:
@@ -54,7 +56,7 @@
    phy
       jsr func_slurp_chunk        ; .A is return code
    ply
-   lda ZP8_returnCode
+   lda v8_returnCode
    beq @success
    rts
 @success:
@@ -67,7 +69,7 @@
    cpy v8_chunkCount
    bne @subchunk_loop
 @subchunk_loop_done:
-   stz ZP8_returnCode
+   stz v8_returnCode
    rts
 .endproc
 

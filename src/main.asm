@@ -36,7 +36,7 @@ start:
    jsr func_setup_irq_handler
    jsr func_detect_filename
    jsr func_open_inputstream
-   jsr FLIP_DLL_FUNC_OPEN
+   jsr FRAME_DRIVER_FUNC_OPEN
 
    cmp #0
    beq @open_success
@@ -47,7 +47,7 @@ start:
    DEBUG_TIMER_START
 
 @frame_loop:
-   jsr FLIP_DLL_FUNC_NEXT
+   jsr FRAME_DRIVER_FUNC_NEXT
    bcs @frame_loop_done
    jsr func_snooze_if_necessary
    bra @frame_loop
@@ -60,13 +60,14 @@ start:
 
    DEBUG_TIMER_READ
 
+   jsr func_close_inputstream
+
 .ifndef ENABLE_DEBUG_TIMER
 :  jsr KERNAL_GETIN             ; i.e. press any key to continue
    beq :-                       ; (leaving last image still on-screen)
 .endif
 
-   jsr FLIP_DLL_FUNC_CLOSE
-   jsr func_close_inputstream
+   jsr FRAME_DRIVER_FUNC_CLOSE
    jsr func_restore_irq_handler
 
    DEBUG_TIMER_DUMP
